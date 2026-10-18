@@ -6,8 +6,10 @@ import { AvatarFace } from '@/components/avatar-face';
 import { EggView } from '@/components/home/egg-view';
 import { HatchShow } from '@/components/home/hatch-show';
 import { Icon, ICONS } from '@/components/icon';
+import { TICKET_COLOR } from '@/components/ticket-badge';
 import { CHARACTER_BY_ID, CHARACTERS, GRADES } from '@/constants/characters';
 import { REWARDS } from '@/constants/gacha.generated';
+import { useAchievements } from '@/hooks/use-achievements';
 import { useColors } from '@/hooks/use-colors';
 import { useConfirmExit } from '@/hooks/use-confirm-exit';
 import { useCompanionSteps, useEggs, useNow } from '@/hooks/use-home';
@@ -50,6 +52,7 @@ export default function HomeScreen() {
   const eggs = useEggs();
   const companion = useCompanionSteps();
   const now = useNow();
+  const { claimable } = useAchievements();
   const [hatching, setHatching] = useState<Hatching | null>(null);
 
   const filled = EGG_SLOTS.filter((slot) => eggs?.[slot]).length;
@@ -118,6 +121,27 @@ export default function HomeScreen() {
           </Pressable>
         ))}
       </View>
+
+      {claimable.length > 0 && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`받지 않은 업적 보상 ${claimable.length}개, 업적 보러 가기`}
+          onPress={() => router.navigate('/mypage/achievements')}
+          style={({ pressed }) => [styles.notice, { backgroundColor: `${TICKET_COLOR}14` }, pressed && styles.pressed]}>
+          <View style={[styles.cardIcon, { backgroundColor: '#F59E0B' }]}>
+            <Icon name={ICONS.trophy} size={16} color="#fff" />
+          </View>
+          <View style={styles.noticeBody}>
+            <Text style={[styles.noticeTitle, { color: colors.text }]}>
+              받지 않은 업적 보상이 {claimable.length}개 있어요
+            </Text>
+            <Text style={[styles.noticeSub, { color: TICKET_COLOR }]}>
+              뽑기권 {claimable.reduce((sum, r) => sum + r.tickets, 0)}장 받으러 가기
+            </Text>
+          </View>
+          <Icon name={ICONS.chevron} size={16} color={colors.secondary} />
+        </Pressable>
+      )}
 
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.cardHeader}>
@@ -331,6 +355,26 @@ const styles = StyleSheet.create({
   },
   shortcutLabel: {
     fontSize: 12,
+    fontWeight: '700',
+  },
+  notice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  noticeBody: {
+    flex: 1,
+    gap: 2,
+  },
+  noticeTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  noticeSub: {
+    fontSize: 13,
     fontWeight: '700',
   },
   card: {

@@ -26,7 +26,6 @@ import type { Reward } from '@/lib/rewards';
 import { useSession } from '@/providers/session-provider';
 
 const SIDE_PADDING = 32;
-const POSTER_GAP = 12;
 const MAX_POSTER_RATIO = 1.65;
 
 type Show = { key: number; banner: Banner; count: DrawCount; payment: Payment };
@@ -39,26 +38,16 @@ export default function GachaScreen() {
   const coins = profile?.coins ?? 0;
   const tickets = profile?.tickets ?? 0;
 
-  const [bannerIndex, setBannerIndex] = useState(0);
-  const [stageHeight, setStageHeight] = useState(0);
+  const [pagerHeight, setPagerHeight] = useState(0);
   const [paymentChoice, setPaymentChoice] = useState<Payment>('coins');
   const [show, setShow] = useState<Show | null>(null);
   const [results, setResults] = useState<DrawResult[] | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
 
-  const activeIndex = Math.min(bannerIndex, BANNERS.length - 1);
-  const banner = BANNERS[activeIndex];
-  const ticketable = acceptsTickets(banner);
-  const payment: Payment = ticketable ? paymentChoice : 'coins';
-  const posterWidth = width - SIDE_PADDING * 2;
-  const posterHeight = Math.min(stageHeight - 32, posterWidth * MAX_POSTER_RATIO);
-  const interval = posterWidth + POSTER_GAP;
-
   const scrollX = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollX.set(e.contentOffset.x);
   });
-  const settle = (x: number) => setBannerIndex(Math.max(0, Math.min(BANNERS.length - 1, Math.round(x / interval))));
 
   const affordable = (b: Banner, p: Payment, count: DrawCount) =>
     p === 'coins' ? coins >= b.cost[count] : tickets >= count;
@@ -90,102 +79,87 @@ export default function GachaScreen() {
         </View>
       </View>
 
-      <View style={styles.stage} onLayout={(e) => setStageHeight(e.nativeEvent.layout.height)}>
-        {stageHeight > 0 && (
-          <Animated.ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={interval}
-            decelerationRate="fast"
-            scrollEventThrottle={16}
-            onScroll={onScroll}
-            onMomentumScrollEnd={(e) => settle(e.nativeEvent.contentOffset.x)}
-            onScrollEndDrag={(e) => settle(e.nativeEvent.contentOffset.x)}
-            contentContainerStyle={styles.carousel}>
-            {BANNERS.map((b, index) => (
-              <PosterSlide key={b.id} index={index} interval={interval} scrollX={scrollX}>
-                <BannerPoster banner={b} width={posterWidth} height={posterHeight} />
-              </PosterSlide>
-            ))}
-          </Animated.ScrollView>
-        )}
-      </View>
-
       <View style={styles.dots}>
         {BANNERS.map((b, index) => (
           <Dot
             key={b.id}
             index={index}
-            interval={interval}
+            interval={width}
             scrollX={scrollX}
             idle={colors.border}
             active={colors.primary}
           />
         ))}
-        <View style={styles.odds}>
-          <OddsButton
-            title={`${banner.title} 확률`}
-            rows={banner.rates.map(({ collection, rate }) => {
-              const { name, grade } = COLLECTIONS.find((c) => c.id === collection)!;
-              return {
-                key: collection,
-                label: `${name} ${charactersIn(collection).length}종`,
-                chance: rate,
-                color: GRADES[grade].color,
-              };
-            })}
-            notes={['같은 컬렉션 안의 동물은 모두 같은 확률이에요.']}
-          />
-        </View>
       </View>
 
-      {ticketable && (
-        <View style={[styles.payment, { backgroundColor: colors.surface }]}>
-          {(
-            [
-              ['coins', '코인으로'],
-              ['tickets', `뽑기권 ${tickets}장`],
-            ] as const
-          ).map(([value, label]) => {
-            const selected = payment === value;
-            return (
-              <Pressable
-                key={value}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                onPress={() => setPaymentChoice(value)}
-                style={[styles.paymentOption, selected && [styles.paymentSelected, { backgroundColor: colors.background }]]}>
-                <CostMark kind={value} />
-                <Text
-                  style={[
-                    styles.paymentLabel,
-                    { color: selected ? (value === 'tickets' ? TICKET_COLOR : colors.text) : colors.secondary },
-                  ]}>
-                  {label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      )}
+      <View style={styles.pager} onLayout={(e) => setPagerHeight(e.nativeEvent.layout.height)}>
+        {pagerHeight > 0 && (
+          <Animated.ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            scrollEventThrottle={16}
+            onScroll={onScroll}>
+            {BANNERS.map((banner) => {
+              const payment: Payment = acceptsTickets(banner) ? paymentChoice : 'coins';
+              return (
+                <BannerPage key={banner.id} banner={banner} width={width} height={pagerHeight}>
+                  {acceptsTickets(banner) && (
+                    <View style={[styles.payment, { backgroundColor: colors.surface }]}>
+                      {(
+                        [
+                          ['coins', '코인으로'],
+                          ['tickets', `뽑기권 ${tickets}장`],
+                        ] as const
+                      ).map(([value, label]) => {
+                        const selected = payment === value;
+                        return (
+                          <Pressable
+                            key={value}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected }}
+                            onPress={() => setPaymentChoice(value)}
+                            style={[
+                              styles.paymentOption,
+                              selected && [styles.paymentSelected, { backgroundColor: colors.background }],
+                            ]}>
+                            <CostMark kind={value} />
+                            <Text
+                              style={[
+                                styles.paymentLabel,
+                                { color: selected ? (value === 'tickets' ? TICKET_COLOR : colors.text) : colors.secondary },
+                              ]}>
+                              {label}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  )}
 
-      <View style={styles.buttons}>
-        <DrawButton
-          label="1회 뽑기"
-          cost={costLabel(banner, payment, 1)}
-          kind={payment}
-          disabled={!!show || !affordable(banner, payment, 1)}
-          onPress={() => draw(banner, 1, payment)}
-        />
-        <DrawButton
-          primary
-          label="10회 뽑기"
-          cost={costLabel(banner, payment, 10)}
-          kind={payment}
-          badge={payment === 'coins' ? discountLabel(banner) : undefined}
-          disabled={!!show || !affordable(banner, payment, 10)}
-          onPress={() => draw(banner, 10, payment)}
-        />
+                  <View style={styles.buttons}>
+                    <DrawButton
+                      label="1회 뽑기"
+                      cost={costLabel(banner, payment, 1)}
+                      kind={payment}
+                      disabled={!!show || !affordable(banner, payment, 1)}
+                      onPress={() => draw(banner, 1, payment)}
+                    />
+                    <DrawButton
+                      primary
+                      label="10회 뽑기"
+                      cost={costLabel(banner, payment, 10)}
+                      kind={payment}
+                      badge={payment === 'coins' ? discountLabel(banner) : undefined}
+                      disabled={!!show || !affordable(banner, payment, 10)}
+                      onPress={() => draw(banner, 10, payment)}
+                    />
+                  </View>
+                </BannerPage>
+              );
+            })}
+          </Animated.ScrollView>
+        )}
       </View>
 
       <Modal
@@ -219,21 +193,39 @@ function discountLabel(banner: Banner) {
   return pct > 0 ? `${pct}% 할인` : undefined;
 }
 
-function PosterSlide({ index, interval, scrollX, children }: {
-  index: number;
-  interval: number;
-  scrollX: SharedValue<number>;
+/** One swipeable page: the poster, its odds and the controls that draw from it. */
+function BannerPage({ banner, width, height, children }: {
+  banner: Banner;
+  width: number;
+  height: number;
   children: ReactNode;
 }) {
-  const style = useAnimatedStyle(() => {
-    const range = [(index - 1) * interval, index * interval, (index + 1) * interval];
-    return {
-      opacity: interpolate(scrollX.get(), range, [0.5, 1, 0.5], Extrapolation.CLAMP),
-      transform: [{ scale: interpolate(scrollX.get(), range, [0.92, 1, 0.92], Extrapolation.CLAMP) }],
-    };
-  });
+  const [stageHeight, setStageHeight] = useState(0);
+  const posterWidth = width - SIDE_PADDING * 2;
+  const posterHeight = Math.min(stageHeight - 16, posterWidth * MAX_POSTER_RATIO);
+
   return (
-    <Animated.View style={[styles.slide, style]}>{children}</Animated.View>
+    <View style={{ width, height }}>
+      <View style={styles.stage} onLayout={(e) => setStageHeight(e.nativeEvent.layout.height)}>
+        {stageHeight > 0 && <BannerPoster banner={banner} width={posterWidth} height={posterHeight} />}
+      </View>
+      <View style={styles.odds}>
+        <OddsButton
+          title={`${banner.title} 확률`}
+          rows={banner.rates.map(({ collection, rate }) => {
+            const { name, grade } = COLLECTIONS.find((c) => c.id === collection)!;
+            return {
+              key: collection,
+              label: `${name} ${charactersIn(collection).length}종`,
+              chance: rate,
+              color: GRADES[grade].color,
+            };
+          })}
+          notes={['같은 컬렉션 안의 동물은 모두 같은 확률이에요.']}
+        />
+      </View>
+      {children}
+    </View>
   );
 }
 
@@ -322,29 +314,26 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 2,
   },
-  stage: {
+  pager: {
     flex: 1,
   },
-  carousel: {
-    paddingHorizontal: SIDE_PADDING,
-    gap: POSTER_GAP,
+  stage: {
+    flex: 1,
     alignItems: 'center',
-    paddingVertical: 16,
-  },
-  slide: {
-    borderRadius: 28,
+    justifyContent: 'center',
   },
   dots: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
-    minHeight: 24,
-    marginBottom: 14,
+    marginTop: 12,
   },
   odds: {
-    position: 'absolute',
-    right: 24,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 24,
+    marginBottom: 10,
   },
   dot: {
     height: 8,
