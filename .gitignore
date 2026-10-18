@@ -54,3 +54,6 @@ example
 modules/**/android/build/
 modules/**/android/.cxx/
 modules/**/android/.gradle/
+
+# Firebase deploy cache
+.firebase/
