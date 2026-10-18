@@ -1,0 +1,46 @@
+{
+  "ticketMaxCost": 10,
+  "stepsPerCoin": 50,
+  "character": {
+    "milestones": [5, 10, 30, 50],
+    "every": 100,
+    "default": { "first": 5, "milestone": 5, "every": 10 },
+    "EP": { "first": 10 },
+    "U": { "first": 15, "milestone": 10 },
+    "L": { "first": 30, "milestone": 10, "every": 20 },
+    "H": { "first": 30, "milestone": 10, "every": 20 }
+  },
+  "grade": {
+    "every": 100,
+    "default": { "first": 10, "every": 10 },
+    "EP": { "first": 20 },
+    "U": { "first": 30 },
+    "L": { "first": 50 },
+    "H": { "first": 30, "every": 10 }
+  },
+  "collectionComplete": 30,
+  "drawCount": { "milestones": [100, 500], "every": 1000, "reward": 20 },
+  "crafting": {
+    "tiers": ["N", "R", "EP", "U", "L"],
+    "pool": ["normal", "rare", "epic", "unique", "legendary"]
+  },
+  "breeding": {
+    "hatchMinutes": { "N": 60, "R": 720, "EP": 1440, "U": 2880, "L": 4320 },
+    "coinsPerMinute": 1,
+    "baby": { "collection": "baby", "rate": 0.1 },
+    "sameTier": 0.05,
+    "lowerRatio": 2
+  },
+  "evolution": {
+    "paths": { "normal": "rare", "rare": "epic", "epic": "unique", "unique": "legendary" },
+    "steps": { "N": 3000, "R": 6000, "EP": 12000, "U": 24000 },
+    "coins": { "N": 10, "R": 30, "EP": 60, "U": 120 }
+  },
+  "fusion": {
+    "N": { "coins": 50, "success": 1 },
+    "R": { "coins": 80, "success": 0.8 },
+    "EP": { "coins": 200, "success": 0.7 },
+    "U": { "coins": 400, "success": 0.5 }
+  },
+  "recycle": { "count": 10, "upgrade": { "base": 0.15, "perHigher": 0.05, "decay": 0.1 } }
+}

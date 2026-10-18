@@ -1,0 +1,7 @@
+{
+  "name": "히든 컬렉션",
+  "grade": "H",
+  "order": 50,
+  "namePrefix": "황금 ",
+  "hidden": { "normal": 0.01, "premium": 0.003 }
+}

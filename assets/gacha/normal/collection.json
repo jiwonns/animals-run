@@ -1,0 +1,27 @@
+{
+  "name": "노말 컬렉션",
+  "grade": "N",
+  "base": true,
+  "banner": {
+    "title": "노말 뽑기",
+    "tagline": "12간지 친구들을 모아보세요",
+    "cost": { "1": 5, "10": 45 },
+    "mix": { "rare": 0.05 },
+    "hero": "tiger",
+    "colors": { "background": "#FFE4D2", "accent": "#FF5A1F", "text": "#3A1A0A" }
+  },
+  "names": {
+    "mouse": "쥐",
+    "cow": "소",
+    "tiger": "호랑이",
+    "rabbit": "토끼",
+    "dragon": "용",
+    "snake": "뱀",
+    "horse": "말",
+    "sheep": "양",
+    "monkey": "원숭이",
+    "chicken": "닭",
+    "dog": "강아지",
+    "pig": "돼지"
+  }
+}

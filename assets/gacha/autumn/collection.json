@@ -1,0 +1,14 @@
+{
+  "name": "가을 컬렉션",
+  "grade": "E",
+  "order": 1,
+  "namePrefix": "가을 ",
+  "banner": {
+    "title": "가을 특별 뽑기",
+    "tagline": "단풍 옷을 입은 한정 친구들",
+    "cost": { "1": 8, "10": 72 },
+    "rate": 0.2,
+    "hero": "dog",
+    "colors": { "background": "#9A3412", "accent": "#FDBA74", "text": "#FFF7ED" }
+  }
+}

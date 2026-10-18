@@ -1,0 +1,14 @@
+{
+  "name": "바다 컬렉션",
+  "grade": "R",
+  "order": 1,
+  "namePrefix": "바다 ",
+  "banner": {
+    "title": "바다 특별 뽑기",
+    "tagline": "바닷가에 여행가는 동물 친구들",
+    "cost": { "1": 8, "10": 72 },
+    "rate": 0.2,
+    "hero": "dog",
+    "colors": { "background": "#9A3412", "accent": "#FFFFFF", "text": "#FFF7ED" }
+  }
+}

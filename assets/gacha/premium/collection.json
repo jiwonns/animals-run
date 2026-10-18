@@ -1,0 +1,28 @@
+{
+  "name": "프리미엄 컬렉션",
+  "grade": "R",
+  "order": 3,
+  "banner": {
+    "title": "프리미엄 뽑기",
+    "tagline": "여기서만 만날 수 있는 특별한 친구들",
+    "cost": { "1": 10, "10": 90 },
+    "rate": 0.08,
+    "mix": { "rare": 0.2, "epic": 0.04, "unique": 0.015, "legendary": 0.004 },
+    "hero": "tiger",
+    "colors": { "background": "#EDE9FE", "accent": "#7C3AED", "text": "#2E1065" }
+  },
+  "names": {
+    "mouse": "햄스터",
+    "cow": "젖소",
+    "tiger": "표범",
+    "rabbit": "롭이어 토끼",
+    "dragon": "청룡",
+    "snake": "코브라",
+    "horse": "포니",
+    "sheep": "검은얼굴 양",
+    "monkey": "고릴라",
+    "chicken": "불꽃 닭",
+    "dog": "사모예드",
+    "pig": "기니피그"
+  }
+}
