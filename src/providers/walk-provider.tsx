@@ -53,7 +53,8 @@ export function WalkProvider({ children }: { children: ReactNode }) {
   const uid = user?.uid;
   const [pedometer, setPedometer] = useState<Status>(Platform.OS === 'web' ? 'unavailable' : 'checking');
   const [todaySteps, setTodaySteps] = useState(0);
-  const [location, setLocation] = useState<Status>(Platform.OS === 'web' ? 'unavailable' : 'checking');
+  // Browsers can't report a permission without prompting, so web starts out asking.
+  const [location, setLocation] = useState<Status>(Platform.OS === 'web' ? 'denied' : 'checking');
   const [position, setPosition] = useState<Position | null>(null);
   const [sharing, setSharingState] = useState(true);
   /** Null until the saved choice is read, so counting doesn't start in the wrong mode. */

@@ -1,10 +1,21 @@
 import { SymbolView } from 'expo-symbols';
 import type { ComponentProps } from 'react';
+import { Platform, Text } from 'react-native';
 
 type SymbolName = Extract<ComponentProps<typeof SymbolView>['name'], { ios?: unknown }>;
 
-/** SF Symbol on iOS, Material Symbol on Android. */
+/** SF Symbol on iOS, Material Symbol on Android and web (the font is loaded in lib/web-setup.web.ts). */
 export function Icon({ name, size = 20, color }: { name: SymbolName; size?: number; color: string }) {
+  if (Platform.OS === 'web') {
+    return (
+      <Text
+        aria-hidden
+        selectable={false}
+        style={{ fontFamily: 'Material Symbols Rounded', fontSize: size, lineHeight: size, width: size, color }}>
+        {name.android}
+      </Text>
+    );
+  }
   return <SymbolView name={name} size={size} tintColor={color} />;
 }
 

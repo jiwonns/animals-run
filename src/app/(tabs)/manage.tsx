@@ -53,22 +53,26 @@ export default function MapScreen() {
   }
 
   const stepNote =
-    walk.pedometer === 'unavailable'
-      ? '걸음 센서가 없는 기기예요'
+    Platform.OS === 'web'
+      ? '걸음은 앱에서만 셀 수 있어요'
+      : walk.pedometer === 'unavailable'
+        ? '걸음 센서가 없는 기기예요'
       : walk.pedometer === 'denied'
         ? '신체 활동을 허용하면 걸음이 코인이 돼요'
         : `${REWARDS.stepsPerCoin}걸음마다 1코인 · 오늘 +${Math.floor(walk.todaySteps / REWARDS.stepsPerCoin).toLocaleString()}코인`;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {Platform.OS === 'web' ? (
-        <Message title="지도는 앱에서 볼 수 있어요" colors={colors} />
-      ) : walk.location === 'denied' ? (
+      {walk.location === 'denied' ? (
         <Message
           title="위치 권한이 필요해요"
-          body="내 위치와 주변 친구들을 지도에 보여주려면 위치를 허용해주세요."
+          body={
+            Platform.OS === 'web'
+              ? '내 위치와 주변 친구들을 지도에 보여주려면 위치를 허용해주세요. 허용 창이 안 뜨면 브라우저 설정에서 이 사이트의 위치를 허용해주세요.'
+              : '내 위치와 주변 친구들을 지도에 보여주려면 위치를 허용해주세요.'
+          }
           action={{ label: '위치 허용하기', onPress: () => walk.requestLocation() }}
-          secondary={{ label: '설정 열기', onPress: () => Linking.openSettings() }}
+          secondary={Platform.OS === 'web' ? undefined : { label: '설정 열기', onPress: () => Linking.openSettings() }}
           colors={colors}
         />
       ) : (
@@ -92,7 +96,7 @@ export default function MapScreen() {
           </View>
           <CoinBadge coins={profile?.coins ?? 0} />
         </View>
-        {walk.location === 'ready' && Platform.OS !== 'web' && (
+        {walk.location === 'ready' && (
           <View style={styles.chips} pointerEvents="box-none">
             <View style={[styles.chip, { backgroundColor: colors.background, borderColor: colors.border }]}>
               <Icon name={ICONS.people} size={15} color={colors.text} />
@@ -123,7 +127,7 @@ export default function MapScreen() {
         )}
       </SafeAreaView>
 
-      {walk.location === 'ready' && Platform.OS !== 'web' && (
+      {walk.location === 'ready' && (
         <View style={[styles.bottom, { bottom: insets.bottom + 16 }]} pointerEvents="box-none">
           <View style={styles.row} pointerEvents="box-none">
             {!profile?.avatar && (
