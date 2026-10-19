@@ -6,6 +6,8 @@ import { AvatarFace } from '@/components/avatar-face';
 import { EggView } from '@/components/home/egg-view';
 import { HatchShow } from '@/components/home/hatch-show';
 import { Icon, ICONS } from '@/components/icon';
+import { IconTile } from '@/components/icon-tile';
+import { CoinToken } from '@/components/coin-badge';
 import { TICKET_COLOR } from '@/components/ticket-badge';
 import { CHARACTER_BY_ID, CHARACTERS, GRADES } from '@/constants/characters';
 import { REWARDS } from '@/constants/gacha.generated';
@@ -29,7 +31,7 @@ type Hatching = { key: number; egg: Egg; saved: boolean; isNew: boolean };
 
 /** Shortcuts to other tabs; navigate() switches the tab bar selection too. Null href is not built yet. */
 const SHORTCUTS: { label: string; icon: keyof typeof ICONS; tint: string; href: Href | null }[] = [
-  { label: '커뮤니티', icon: 'community', tint: '#6366F1', href: null },
+  { label: '커뮤니티', icon: 'community', tint: '#6366F1', href: '/community' },
   { label: '지도', icon: 'map', tint: '#10B981', href: '/manage' },
   { label: '뽑기', icon: 'gift', tint: '#FF5A1F', href: '/gacha' },
   { label: '도감', icon: 'dex', tint: '#3B82F6', href: '/collection/dex' },
@@ -112,9 +114,7 @@ export default function HomeScreen() {
               else Alert.alert('준비 중이에요', `${item.label}은(는) 곧 열려요.`);
             }}
             style={({ pressed }) => [styles.shortcut, pressed && styles.pressed]}>
-            <View style={[styles.shortcutIcon, { backgroundColor: item.tint }, !item.href && styles.disabled]}>
-              <Icon name={ICONS[item.icon]} size={22} color="#fff" />
-            </View>
+            <IconTile name={ICONS[item.icon]} color={item.tint} />
             <Text style={[styles.shortcutLabel, { color: item.href ? colors.text : colors.secondary }]}>
               {item.label}
             </Text>
@@ -211,9 +211,7 @@ export default function HomeScreen() {
                     <Text style={styles.hatchLabel}>부화하기</Text>
                   ) : (
                     <View style={styles.skipRow}>
-                      <View style={styles.coin}>
-                        <Text style={styles.coinLabel}>C</Text>
-                      </View>
+                      <CoinToken size={16} />
                       <Text style={[styles.skipLabel, { color: colors.text }]}>{cost}</Text>
                     </View>
                   )}

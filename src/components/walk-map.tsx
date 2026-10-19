@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import { StyleSheet } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { useEffect, useRef, useState } from "react";
+import { StyleSheet } from "react-native";
+import { WebView } from "react-native-webview";
 
-import { mapHtml, type MapPlayer } from '@/components/walk-map-html';
-import type { CharacterId } from '@/constants/characters';
-import { avatarDataUri } from '@/lib/avatar-data';
+import { mapHtml, type MapPlayer } from "@/components/walk-map-html";
+import type { CharacterId } from "@/constants/characters";
+import { avatarDataUri } from "@/lib/avatar-data";
 
 export type { MapPlayer };
 
@@ -13,14 +13,16 @@ type Props = {
   /** Changing this moves the map back to the player. */
   focusKey: number;
   color: string;
+  onPlayerPress?: (uid: string) => void;
 };
 
-export function WalkMap({ players, focusKey, color }: Props) {
+export function WalkMap({ players, focusKey, color, onPlayerPress }: Props) {
   const web = useRef<WebView<object>>(null);
   const sentFaces = useRef(new Set<CharacterId>());
   const [loads, setLoads] = useState(0);
 
-  const run = (script: string) => web.current?.injectJavaScript(`${script};true;`);
+  const run = (script: string) =>
+    web.current?.injectJavaScript(`${script};true;`);
 
   useEffect(() => {
     if (!loads) return;
@@ -29,23 +31,38 @@ export function WalkMap({ players, focusKey, color }: Props) {
       if (!avatar || sentFaces.current.has(avatar)) continue;
       sentFaces.current.add(avatar);
       avatarDataUri(avatar)
-        .then((uri) => run(`app.setFace(${JSON.stringify(avatar)}, ${JSON.stringify(uri)})`))
+        .then((uri) =>
+          run(`app.setFace(${JSON.stringify(avatar)}, ${JSON.stringify(uri)})`),
+        )
         .catch(() => sentFaces.current.delete(avatar));
     }
   }, [loads, players]);
 
   useEffect(() => {
-    if (loads && focusKey) run('app.focusMe()');
+    if (loads && focusKey) run("app.focusMe()");
   }, [loads, focusKey]);
 
   return (
     <WebView<object>
       ref={web}
       style={styles.map}
-      originWhitelist={['*']}
-      source={{ html: mapHtml(color), baseUrl: 'https://animalsrun.app/' }}
+      originWhitelist={["*"]}
+      source={{ html: mapHtml(color), baseUrl: "https://animalsrun.app/" }}
       onMessage={(event) => {
-        if (event.nativeEvent.data !== 'ready') return;
+        if (event.nativeEvent.data !== "ready") {
+          try {
+            const message = JSON.parse(event.nativeEvent.data);
+            if (
+              message.type === "walk-map:player" &&
+              typeof message.uid === "string" &&
+              players.some((p) => p.id === message.uid)
+            )
+              onPlayerPress?.(message.uid);
+          } catch {
+            /* Ignore messages outside the map bridge. */
+          }
+          return;
+        }
         sentFaces.current.clear();
         setLoads((n) => n + 1);
       }}
@@ -59,6 +76,6 @@ export function WalkMap({ players, focusKey, color }: Props) {
 const styles = StyleSheet.create({
   map: {
     flex: 1,
-    backgroundColor: '#eef1f4',
+    backgroundColor: "#eef1f4",
   },
 });

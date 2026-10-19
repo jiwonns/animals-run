@@ -12,7 +12,15 @@ export function BannerPoster({ banner, width, height }: { banner: Banner; width:
     return (
       <View style={[styles.poster, styles.imagePoster, { width, height, backgroundColor: background }]}>
         <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition="top" />
-        {banner.tagline ? (
+        {banner.id === 'cats' ? (
+          <>
+            <View style={[styles.catEyebrow, { backgroundColor: '#FFF9F0E8' }]}><Text style={{ color: accent, fontSize: 9, letterSpacing: 1, fontWeight: '900' }}>MEOW CLUB  ·  10 BREEDS</Text></View>
+            <View style={styles.catTitleCard}>
+              <Text style={[styles.catFooterTitle, { color: text }]}>{banner.title}</Text>
+              <Text style={[styles.catFooterBody, { color: text }]}>{banner.tagline}</Text>
+            </View>
+          </>
+        ) : banner.tagline ? (
           <View style={styles.overlay}>
             <Text style={styles.description}>{banner.tagline}</Text>
           </View>
@@ -88,4 +96,8 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 8,
   },
+  catEyebrow: { alignSelf: 'flex-start', marginTop: 2, marginLeft: 2, paddingVertical: 7, paddingHorizontal: 10, borderRadius: 20 },
+  catTitleCard: { gap: 4, alignItems: 'center', marginHorizontal: 2, marginBottom: 2, paddingVertical: 10, paddingHorizontal: 8, borderRadius: 16, backgroundColor: '#FFF9F0E8' },
+  catFooterTitle: { fontSize: 15, fontWeight: '900' },
+  catFooterBody: { fontSize: 9, textAlign: 'center' },
 });

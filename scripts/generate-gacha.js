@@ -81,6 +81,7 @@ function readRewards() {
   const isCount = (n) => Number.isInteger(n) && n >= 0;
   const { character, grade, drawCount } = rewards;
   const ok =
+    GRADES.every((g) => isCount(rewards.sale?.[g])) &&
     isCount(rewards.ticketMaxCost) &&
     rewards.stepsPerCoin > 0 &&
     isCount(rewards.stepsPerCoin) &&
@@ -214,7 +215,7 @@ function readCollections() {
       if (!banner.title || !banner.cost?.['1'] || !banner.cost?.['10']) {
         fail(`${folder}: "banner.title" and "banner.cost" { "1": n, "10": n } are required`);
       }
-      if (!config.base && !(banner.rate > 0 && banner.rate <= 1)) fail(`${folder}: "banner.rate" must be between 0 and 1`);
+      if ((banner.fallback ?? (config.base ? folder : null)) !== folder && !(banner.rate > 0 && banner.rate <= 1)) fail(`${folder}: "banner.rate" must be between 0 and 1`);
       if (banner.hero && !keys.includes(banner.hero)) fail(`${folder}: banner.hero "${banner.hero}" has no image`);
       if (banner.mix && !Object.values(banner.mix).every(isRate)) fail(`${folder}: "banner.mix" rates must be between 0 and 1`);
     }
@@ -235,6 +236,11 @@ function readCollections() {
 
   const base = collections[0];
   for (const collection of collections) {
+    const fallbackId = collection.config.banner?.fallback ?? base.id;
+    const fallback = collections.find((c) => c.id === fallbackId);
+    if (collection.config.banner && (!fallback || fallback.config.hidden)) {
+      fail(`${collection.id}: banner.fallback "${fallbackId}" must be a non-hidden collection`);
+    }
     for (const host of Object.keys(collection.config.hidden ?? {})) {
       if (!collections.some((c) => c.id === host && c.config.banner)) {
         fail(`${collection.id}: hidden banner "${host}" is not a collection with a banner`);
@@ -242,25 +248,26 @@ function readCollections() {
     }
     for (const id of Object.keys(collection.config.banner?.mix ?? {})) {
       const mixed = collections.find((c) => c.id === id);
-      if (!mixed || mixed === base || mixed === collection || mixed.config.hidden) {
-        fail(`${collection.id}: banner.mix "${id}" must be another non-base, non-hidden collection`);
+      if (!mixed || mixed === fallback || mixed === collection || mixed.config.hidden) {
+        fail(`${collection.id}: banner.mix "${id}" must be another non-fallback, non-hidden collection`);
       }
     }
   }
-  // Each banner's odds: the base collection gets whatever its own, mixed and hidden collections leave.
+  // Each banner's fallback gets the remainder. Existing banners default to the original zodiac base.
   for (const collection of collections) {
     const { banner } = collection.config;
     if (!banner) continue;
+    const fallbackId = banner.fallback ?? base.id;
     const extra = [
-      ...(collection === base ? [] : [{ collection: collection.id, rate: banner.rate, hidden: false }]),
+      ...(collection.id === fallbackId ? [] : [{ collection: collection.id, rate: banner.rate, hidden: false }]),
       ...Object.entries(banner.mix ?? {}).map(([id, rate]) => ({ collection: id, rate, hidden: false })),
       ...collections
         .filter((c) => c.config.hidden?.[collection.id])
         .map((c) => ({ collection: c.id, rate: c.config.hidden[collection.id], hidden: true })),
     ];
     const baseRate = Math.round((1 - extra.reduce((sum, r) => sum + r.rate, 0)) * 1e6) / 1e6;
-    if (baseRate <= 0) fail(`${collection.id}: banner rates leave nothing for the base collection`);
-    collection.rates = [{ collection: base.id, rate: baseRate, hidden: false }, ...extra];
+    if (baseRate <= 0) fail(`${collection.id}: banner rates leave nothing for the fallback collection`);
+    collection.rates = [{ collection: fallbackId, rate: baseRate, hidden: false }, ...extra];
   }
   // Characters follow the order of the base collection's "names", then alphabetical.
   const baseOrder = Object.keys(base.config.names ?? {});
@@ -389,7 +396,7 @@ function renderRules(collections, rewards) {
       Object.entries(amounts).map(([g, n]) => [`g == '${g}'`, n]),
       '-1',
     );
-  const recycleSlots = Array.from({ length: recycle.count }, (_, i) => `recycled(a, b, inputs, out, allowed, ${i})`);
+  const recycleSlots = Array.from({ length: recycle.count }, (_, i) => `recycled(a, b, inputs, out, allowed, ${i}, before.get('avatar', null))`);
   // Recycling inputs only have to be in a crafting tier: one regex, so each of the ten slots costs a single match.
   const recycleInputs = regexOf(collections.filter((c) => crafting.tiers.includes(c.config.grade)));
 
@@ -412,12 +419,12 @@ function renderRules(collections, rewards) {
 // Paste into Firebase console > Firestore Database > Rules, then Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
+${fs.readFileSync(path.join(ROOT, 'scripts/session.rules'), 'utf8').trimEnd()}
+${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
     match /users/{uid} {
       allow read: if isOwner(uid);
       allow create: if isOwner(uid) && isNewProfile();
-      allow update: if isOwner(uid)
-        && (isLegalDraw() || isClaim(uid) || isStepReward() || isAvatarChange() || isHatch(uid) || isUsernameChange()
-          || isNicknameChange() || isFuse() || isRecycle() || isEvolve(uid));
+      allow update: if isOwner(uid) && isProfileUpdate(uid);
       // Leaving: the profile goes first, then its history (see isGone).
       allow delete: if isOwner(uid);
     }
@@ -435,6 +442,40 @@ service cloud.firestore {
       allow read: if isOwner(uid);
       allow create, update: if isOwner(uid) && (isCompanionSteps(uid) || isEvolveSpend(uid));
       allow delete: if isOwner(uid);
+    }
+
+    // Route each operation by its changed counter before evaluating expensive inventory rules.
+    function isProfileUpdate(uid) {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return (changed.hasAny(['drawCount']) && isLegalDraw())
+        || (changed.hasAny(['lastClaim']) && isClaim(uid))
+        || (changed.hasAny(['steps']) && isStepReward())
+        || (changed.hasAny(['hatchCount']) && isHatch(uid))
+        || (changed.hasAny(['username']) && isUsernameChange())
+        || (changed.hasAny(['nickname']) && isNicknameChange())
+        || (changed.hasAny(['fuseCount']) && isFuse())
+        || (changed.hasAny(['recycleCount']) && isRecycle())
+        || (changed.hasAny(['evolveCount']) && isEvolve(uid))
+        || (changed.hasOnly(['avatar']) && isAvatarChange())
+        || (changed.hasAny(['characters']) && isSale());
+    }
+
+    function isSale() {
+      let before = resource.data;
+      let after = request.resource.data;
+      let sale = after.lastSale;
+      let c = sale.character;
+      let n = sale.quantity;
+      let prices = ${JSON.stringify(rewards.sale)};
+      let price = prices.get(gradeOf(c), -1);
+      let remaining = before.characters.get(c, 0) - n;
+      return after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastSale'])
+        && sale.keys().hasOnly(['character', 'quantity'])
+        && c is string && n is int && n > 0 && price >= 0
+        && remaining >= (before.get('avatar', null) == c ? 1 : 0)
+        && after.characters.diff(before.characters).affectedKeys().hasOnly([c])
+        && after.characters.get(c, 0) == remaining
+        && after.coins == before.coins + price * n;
     }
 
     // Crafting writes lastCraft { inputs, output } with its counter. Odds are rolled on the phone, so these
@@ -460,6 +501,8 @@ service cloud.firestore {
           ? a.get(c, 0) == b.get(c, 0) - 2
           : a.get(c, 0) == b.get(c, 0) - 1 && a.get(d, 0) == b.get(d, 0) - 1)
         && a.get(c, 0) >= 0 && a.get(d, 0) >= 0
+        && a.get(c, 0) >= (before.get('avatar', null) == c ? 1 : 0)
+        && a.get(d, 0) >= (before.get('avatar', null) == d ? 1 : 0)
         && (craft.output == null
           ? a.diff(b).affectedKeys().hasOnly([c, d])
           : poolTier(craft.output) == tierOf(c) + 1
@@ -487,10 +530,12 @@ service cloud.firestore {
         && ${recycleSlots.join('\n        && ')};
     }
 
-    function recycled(a, b, inputs, out, allowed, i) {
+    function recycled(a, b, inputs, out, allowed, i, avatar) {
       let c = inputs[i];
+      let spent = ${recycle.count} - inputs.removeAll([c]).size();
       return c.matches(allowed) && a.get(c, 0) >= 0
-        && (c == out || a.get(c, 0) - b.get(c, 0) == inputs.removeAll([c]).size() - ${recycle.count});
+        && b.get(c, 0) - spent >= (avatar == c ? 1 : 0)
+        && (c == out || a.get(c, 0) - b.get(c, 0) == -spent);
     }
 
     // Evolution: one character becomes the same animal in the next collection, paid with coins and the
@@ -530,7 +575,7 @@ service cloud.firestore {
 
     // Public leaderboard entry, a copy of the player's profile numbers; any signed-in player can read it.
     match /rankings/{uid} {
-      allow read: if request.auth != null;
+      allow read: if isSignedIn();
       allow create, update: if isOwner(uid) && isRanking(uid);
       allow delete: if isOwner(uid);
     }
@@ -607,7 +652,7 @@ service cloud.firestore {
 
     // Where each player is on the map; any signed-in player can see everyone who shares.
     match /locations/{uid} {
-      allow read: if request.auth != null;
+      allow read: if isSignedIn();
       allow create, update: if isOwner(uid) && isLocation(uid);
       allow delete: if isOwner(uid);
     }
@@ -672,10 +717,6 @@ service cloud.firestore {
         && d.lng is number && d.lng >= -180 && d.lng <= 180
         && d.updatedAt == request.time;
     }
-  }
-
-  function isOwner(uid) {
-    return request.auth != null && request.auth.uid == uid;
   }
 
   // First sign-in: exactly 100 coins, username tied to the account's email. With a birthday
@@ -774,7 +815,7 @@ service cloud.firestore {
 
   // The animal behind an id, e.g. 'tiger' for 'sea_tiger'.
   function speciesOf(c) {
-    return c.replace('^(${collections.filter((c) => c !== base).map((c) => c.id).join('|')})_', '');
+    return c.replace('^(${collections.filter((c) => c !== base).map((c) => c.id).sort((a, b) => b.length - a.length).join('|')})_', '');
   }
 
   // ${baby ? `${Math.round(breeding.baby.rate * 100)}% of eggs hold the ${baby.id} version of a parent's animal.` : 'No baby collection.'}
@@ -973,7 +1014,7 @@ function watch() {
   watcher.unref();
 }
 
-module.exports = { generate, watch, renderRules, readRewards };
+module.exports = { generate, watch, renderRules, readRewards, readCollections };
 
 if (require.main === module) {
   const collections = generate();

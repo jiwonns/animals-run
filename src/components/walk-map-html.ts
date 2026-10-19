@@ -75,6 +75,11 @@ export const mapHtml = (color: string) => `<!DOCTYPE html>
       if (!marker) {
         markers[p.id] = L.marker([p.lat, p.lng], { icon: icon(p), zIndexOffset: p.me ? 1000 : 0 }).addTo(map);
         markers[p.id].key = key;
+        markers[p.id].on('click', () => {
+          const message = { type: 'walk-map:player', uid: p.id };
+          if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify(message));
+          else window.parent.postMessage(message, '*');
+        });
       } else {
         marker.setLatLng([p.lat, p.lng]);
         if (marker.key !== key) {

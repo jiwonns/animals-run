@@ -1,0 +1,20 @@
+{
+  "name": "고양이 히든 컬렉션",
+  "grade": "H",
+  "order": 1.55,
+  "names": {
+    "american_shorthair": "별빛 아메리칸 쇼트헤어",
+    "british_shorthair": "별빛 브리티시 쇼트헤어",
+    "russian_blue": "별빛 러시안 블루",
+    "siamese": "별빛 샴",
+    "ragdoll": "별빛 랙돌",
+    "persian": "별빛 페르시안",
+    "maine_coon": "별빛 메인쿤",
+    "bengal": "별빛 벵갈",
+    "abyssinian": "별빛 아비시니안",
+    "turkish_angora": "별빛 터키시 앙고라"
+  },
+  "hidden": {
+    "cats": 0.001
+  }
+}

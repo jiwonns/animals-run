@@ -1,0 +1,251 @@
+import { Image } from "expo-image";
+import { Stack, useLocalSearchParams } from "expo-router";
+import { getDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { AvatarFace } from "@/components/avatar-face";
+import { CommunityEmpty } from "@/components/community-ui";
+import { Icon, ICONS } from "@/components/icon";
+import { RunningLoader } from "@/components/running-loader";
+import {
+  CHARACTERS,
+  CHARACTER_BY_ID,
+  GRADES,
+  GRADE_ORDER,
+} from "@/constants/characters";
+import { useColors } from "@/hooks/use-colors";
+import { locationRef, displayName } from "@/lib/profile";
+import { ownedByGrade, rankingRef, type RankingEntry } from "@/lib/ranking";
+
+export default function PlayerScreen() {
+  const { uid } = useLocalSearchParams<{ uid: string }>();
+  const c = useColors();
+  const [entry, setEntry] = useState<RankingEntry | null | undefined>();
+  const [failed, setFailed] = useState(false);
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    let live = true;
+    async function load() {
+      try {
+        const snap = await getDoc(rankingRef(uid));
+        let data = snap.exists() ? (snap.data() as RankingEntry) : null;
+        if (!data) {
+          const location = await getDoc(locationRef(uid));
+          if (location.exists())
+            data = {
+              ...location.data(),
+              steps: 0,
+              characters: {},
+              hatchCount: 0,
+              evolveCount: 0,
+              fuseCount: 0,
+              recycleCount: 0,
+            } as RankingEntry;
+        }
+        if (live) {
+          setEntry(data);
+          setFailed(false);
+        }
+      } catch {
+        if (live) setFailed(true);
+      }
+    }
+    if (uid) void load();
+    return () => {
+      live = false;
+    };
+  }, [uid, retry]);
+  const owned = CHARACTERS.filter((a) => (entry?.characters?.[a.id] ?? 0) > 0);
+  const grades = ownedByGrade(entry?.characters ?? {});
+  const avatar = entry?.avatar ? CHARACTER_BY_ID[entry.avatar] : null;
+  return (
+    <View style={{ flex: 1, backgroundColor: c.background }}>
+      <Stack.Screen
+        options={{
+          title: "친구 프로필",
+          headerShown: true,
+          headerTintColor: c.text,
+          headerStyle: { backgroundColor: c.background },
+          headerShadowVisible: false,
+        }}
+      />
+      {failed ? (
+        <CommunityEmpty
+          title="프로필을 불러오지 못했어요"
+          body="연결 상태를 확인하고 다시 시도해주세요."
+          action="다시 시도"
+          onPress={() => setRetry((v) => v + 1)}
+        />
+      ) : entry === undefined ? (
+        <RunningLoader label="친구를 만나러 가는 중" />
+      ) : !entry ? (
+        <CommunityEmpty
+          title="아직 공개 프로필이 없어요"
+          body="친구가 앱에 접속하면 프로필이 업데이트돼요."
+        />
+      ) : (
+        <ScrollView
+          contentContainerStyle={{ padding: 22, gap: 24, paddingBottom: 45 }}
+        >
+          <View
+            style={{
+              alignItems: "center",
+              backgroundColor: c.surface,
+              borderRadius: 30,
+              padding: 30,
+              gap: 12,
+            }}
+          >
+            <AvatarFace
+              avatar={entry.avatar}
+              size={108}
+              fallback={displayName(entry)}
+              borderColor={c.primary}
+            />
+            <Text style={{ color: c.text, fontSize: 25, fontWeight: "900" }}>
+              {displayName(entry)}
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 5,
+                alignItems: "center",
+                backgroundColor: "#FF5A1F15",
+                paddingHorizontal: 12,
+                paddingVertical: 7,
+                borderRadius: 14,
+              }}
+            >
+              <Icon name={ICONS.character} size={14} color={c.primary} />
+              <Text
+                style={{ color: c.primary, fontWeight: "700", fontSize: 12 }}
+              >
+                {avatar ? `${avatar.name}와 함께 걷는 중` : "새로운 산책 친구"}
+              </Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            {[
+              { label: "누적 걸음", value: entry.steps ?? 0, icon: ICONS.walk },
+              { label: "발견한 동물", value: owned.length, icon: ICONS.dex },
+            ].map((stat) => (
+              <View
+                key={stat.label}
+                style={{
+                  flex: 1,
+                  backgroundColor: c.surface,
+                  padding: 20,
+                  borderRadius: 23,
+                  gap: 10,
+                }}
+              >
+                <Icon name={stat.icon} size={22} color={c.primary} />
+                <Text
+                  style={{ color: c.text, fontSize: 25, fontWeight: "900" }}
+                >
+                  {stat.value.toLocaleString()}
+                </Text>
+                <Text style={{ color: c.secondary, fontSize: 12 }}>
+                  {stat.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <Text style={{ color: c.text, fontWeight: "800", fontSize: 19 }}>
+            친구의 발자취
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+            {[
+              { label: "부화", value: entry.hatchCount },
+              { label: "진화", value: entry.evolveCount },
+              { label: "합성", value: entry.fuseCount },
+              { label: "재활용", value: entry.recycleCount },
+            ].map((stat) => (
+              <View
+                key={stat.label}
+                style={{
+                  minWidth: "45%",
+                  flexGrow: 1,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  backgroundColor: c.surface,
+                  padding: 17,
+                  borderRadius: 18,
+                }}
+              >
+                <Text style={{ color: c.secondary }}>{stat.label}</Text>
+                <Text style={{ color: c.text, fontWeight: "800" }}>
+                  {(stat.value ?? 0).toLocaleString()}회
+                </Text>
+              </View>
+            ))}
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {GRADE_ORDER.filter((g) => grades[g] > 0).map((g) => (
+              <View
+                key={g}
+                style={{
+                  backgroundColor: `${GRADES[g].color}18`,
+                  padding: 9,
+                  borderRadius: 12,
+                }}
+              >
+                <Text
+                  style={{
+                    color: GRADES[g].color,
+                    fontSize: 11,
+                    fontWeight: "800",
+                  }}
+                >
+                  {GRADES[g].label} {grades[g]}마리
+                </Text>
+              </View>
+            ))}
+          </View>
+          <Text style={{ color: c.text, fontWeight: "800", fontSize: 19 }}>
+            함께하는 동물{" "}
+            <Text style={{ color: c.primary }}>{owned.length}</Text>
+          </Text>
+          {owned.length ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
+              {owned.map((animal) => (
+                <Pressable
+                  key={animal.id}
+                  accessibilityLabel={`${animal.name}, ${entry.characters[animal.id]}마리`}
+                  style={{
+                    width: "30.5%",
+                    flexGrow: 0,
+                    alignItems: "center",
+                    backgroundColor: c.surface,
+                    borderRadius: 19,
+                    padding: 9,
+                    gap: 5,
+                  }}
+                >
+                  <Image
+                    source={animal.thumb}
+                    style={{ width: "100%", aspectRatio: 1 }}
+                    contentFit="contain"
+                  />
+                  <Text
+                    style={{ color: c.text, fontWeight: "700", fontSize: 11 }}
+                    numberOfLines={1}
+                  >
+                    {animal.name}
+                  </Text>
+                  <Text style={{ color: c.secondary, fontSize: 10 }}>
+                    ×{entry.characters[animal.id]}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : (
+            <Text style={{ color: c.secondary }}>
+              아직 공개된 동물이 없어요.
+            </Text>
+          )}
+        </ScrollView>
+      )}
+    </View>
+  );
+}

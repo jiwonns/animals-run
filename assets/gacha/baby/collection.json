@@ -2,5 +2,17 @@
   "name": "아기 컬렉션",
   "grade": "N",
   "order": 5,
-  "namePrefix": "아기 "
+  "namePrefix": "아기 ",
+  "names": {
+    "american_shorthair": "아기 아메리칸 쇼트헤어",
+    "british_shorthair": "아기 브리티시 쇼트헤어",
+    "russian_blue": "아기 러시안 블루",
+    "siamese": "아기 샴",
+    "ragdoll": "아기 랙돌",
+    "persian": "아기 페르시안",
+    "maine_coon": "아기 메인쿤",
+    "bengal": "아기 벵갈",
+    "abyssinian": "아기 아비시니안",
+    "turkish_angora": "아기 터키시 앙고라"
+  }
 }

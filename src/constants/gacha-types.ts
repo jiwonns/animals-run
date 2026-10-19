@@ -27,6 +27,8 @@ type GradeOverrides<T> = { default: T } & Partial<Record<Grade, Partial<T>>>;
 
 /** assets/gacha/rewards.json; amounts are free tickets. */
 export type Rewards = {
+  /** Coins paid per sold copy, including zero-coin normal cleanup. */
+  sale: Record<Grade, number>;
   /** Tickets work on banners whose single draw costs at most this many coins. */
   ticketMaxCost: number;
   /** Walking this many steps earns one coin. */

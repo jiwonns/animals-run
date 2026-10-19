@@ -32,12 +32,20 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FB7103",
+          "backgroundColor": "#FFF3E7",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 220
+          "imageWidth": 205
         }
       ],
       "expo-asset",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "커뮤니티에 올릴 사진을 고르기 위해 사진 접근을 사용해요.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       [
         "expo-location",
         {

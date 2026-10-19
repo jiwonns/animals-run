@@ -13,10 +13,10 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BannerPoster } from '@/components/banner-poster';
-import { CoinBadge } from '@/components/coin-badge';
+import { CoinBadge, CoinToken } from '@/components/coin-badge';
 import { DrawShow } from '@/components/gacha/draw-show';
 import { OddsButton } from '@/components/odds-info';
-import { TICKET_COLOR, TicketBadge } from '@/components/ticket-badge';
+import { TICKET_COLOR, TicketBadge, TicketToken } from '@/components/ticket-badge';
 import { BANNERS, type Banner, type DrawCount } from '@/constants/banners';
 import { charactersIn, COLLECTIONS, GRADES } from '@/constants/characters';
 import { useColors } from '@/hooks/use-colors';
@@ -245,18 +245,8 @@ function Dot({ index, interval, scrollX, idle, active }: {
 }
 
 function CostMark({ kind, inverse = false }: { kind: Payment; inverse?: boolean }) {
-  if (kind === 'tickets') {
-    return (
-      <View style={[styles.ticketMark, inverse && styles.markInverse]}>
-        <Text style={styles.markLabel}>T</Text>
-      </View>
-    );
-  }
-  return (
-    <View style={styles.coinMark}>
-      <Text style={styles.coinMarkLabel}>C</Text>
-    </View>
-  );
+  const colors = useColors();
+  return kind === 'tickets' ? <TicketToken size={20} cutoutColor={inverse ? colors.primary : colors.surface} /> : <CoinToken size={18} />;
 }
 
 function DrawButton({ label, cost, kind, badge, primary = false, disabled, onPress }: {

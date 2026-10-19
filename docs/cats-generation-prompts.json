@@ -1,0 +1,463 @@
+{
+  "tool": "built-in image_gen.imagegen",
+  "styleReference": "assets/gacha/normal/characters/rabbit.png",
+  "breedReference": "https://cfa.org/breeds/",
+  "breeds": [
+    {
+      "id": "american_shorthair",
+      "name": "아메리칸 쇼트헤어",
+      "motif": "silver short coat with bold charcoal classic tabby swirls and forehead M, round cheeks, amber eyes"
+    },
+    {
+      "id": "british_shorthair",
+      "name": "브리티시 쇼트헤어",
+      "motif": "solid plush blue-gray coat, very round broad head and chubby cheeks, small spaced upright ears, copper-orange eyes, thick curved tail"
+    },
+    {
+      "id": "russian_blue",
+      "name": "러시안 블루",
+      "motif": "smooth solid dark silver-blue coat, more wedge shaped slim face than British Shorthair, large upright ears, bright green eyes, slim curved tail"
+    },
+    {
+      "id": "siamese",
+      "name": "샴",
+      "motif": "ivory cream body with seal-brown face mask, ears, paws and tail, vivid blue eyes, elegant pointed upright ears"
+    },
+    {
+      "id": "ragdoll",
+      "name": "랙돌",
+      "motif": "fluffy cream white long coat with blue-gray bicolor ears and face sides, clear inverted white V on face, blue eyes, fluffy tail"
+    },
+    {
+      "id": "persian",
+      "name": "페르시안",
+      "motif": "warm white long fluffy coat, very rounded wide face, tiny low-set pink nose and small rounded ears, gentle amber eyes, plush fluffy tail"
+    },
+    {
+      "id": "maine_coon",
+      "name": "메인쿤",
+      "motif": "brown charcoal tabby long fluffy coat, prominent cheek ruff, square muzzle, large pointed ears with lynx tufts, green eyes, large bushy striped tail"
+    },
+    {
+      "id": "bengal",
+      "name": "벵갈",
+      "motif": "warm honey golden short coat with a few big dark brown rosette spots on body, striped face, amber-green eyes, ringed curved tail"
+    },
+    {
+      "id": "abyssinian",
+      "name": "아비시니안",
+      "motif": "warm ruddy cinnamon short ticked coat, lighter peach muzzle and belly, very large upright pointed ears, amber-gold eyes, darker back and tail tip"
+    },
+    {
+      "id": "turkish_angora",
+      "name": "터키시 앙고라",
+      "motif": "silky snow-white medium long coat, refined triangular face, tall pointed tufted ears, ONE blue eye and ONE amber eye, graceful plumed tail"
+    }
+  ],
+  "tiers": [
+    {
+      "id": "cats",
+      "grade": "N",
+      "name": "고양이 노말",
+      "prefix": "",
+      "design": "NORMAL rarity. Plain natural cat with NO clothes, accessories, head ornaments or floating sparkles."
+    },
+    {
+      "id": "cats_rare",
+      "grade": "R",
+      "name": "고양이 레어",
+      "prefix": "산뜻한 ",
+      "design": "RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories."
+    },
+    {
+      "id": "cats_epic",
+      "grade": "EP",
+      "name": "고양이 에픽",
+      "prefix": "달빛 ",
+      "design": "EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns."
+    },
+    {
+      "id": "cats_unique",
+      "grade": "U",
+      "name": "고양이 유니크",
+      "prefix": "꽃빛 ",
+      "design": "UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers."
+    },
+    {
+      "id": "cats_legendary",
+      "grade": "L",
+      "name": "고양이 레전더리",
+      "prefix": "왕실 ",
+      "design": "LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff."
+    },
+    {
+      "id": "cats_hidden",
+      "grade": "H",
+      "name": "고양이 히든",
+      "prefix": "별빛 ",
+      "design": "HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog."
+    }
+  ],
+  "images": [
+    {
+      "grade": "N",
+      "breed": "american_shorthair",
+      "asset": "assets/gacha/cats/characters/american_shorthair.png",
+      "prompt": "Use case: stylized-concept. Create ONE game character PNG with genuine transparent background for the Animals Run mobile gacha game. The provided rabbit is STYLE REFERENCE ONLY, not an edit target. Draw a cute chibi AMERICAN SHORTHAIR CAT, NORMAL rarity, no clothing or accessories. Actual breed motif: silver short coat, crisp dark charcoal classic tabby swirls and forehead M, rounded cheeks, small upright triangular ears, expressive amber-brown eyes. Match the reference's simple clean 2D sticker illustration, medium warm brown outlines, flat pastel fills, at most a little soft shading, pink cheeks, tiny pink nose and happy tiny mouth, oversized head and tiny full body standing upright with two small front paws held near chest, two feet, ONE curved tail. Cat anatomy, exactly TWO ears. Full body centered on a square canvas, character fills about 88% height, ears fully visible, face in upper half, transparent padding at edges. Clear readable silhouette at 64px. No background, text, letters, labels, border, floor, extra animals, photorealism, 3D, texture or busy ornament. Deliver a single finished cat sprite."
+    },
+    {
+      "grade": "N",
+      "breed": "british_shorthair",
+      "asset": "assets/gacha/cats/characters/british_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: single finished transparent game character sprite for Animals Run. Reference is drawing STYLE ONLY; draw a CAT not rabbit. Subject: 브리티시 쇼트헤어, actual british shorthair cat breed motif: solid plush blue-gray coat, very round broad head and chubby cheeks, small spaced upright ears, copper-orange eyes, thick curved tail. NORMAL rarity. Plain natural cat with NO clothes, accessories, head ornaments or floating sparkles. Simple clean 2D chibi sticker matching the reference's drawing style: warm brown outlines, flat soft pastel fills, minimal shading, pink cheeks, tiny nose and happy tiny mouth, very large head and tiny full body upright, front paws near chest. Exactly TWO ears, two forepaws, two feet, ONE tail; full anatomy visible. Face in upper half for avatar cropping. Centered on square transparent canvas; about 88% height; keep ears and tail fully inside margin. Readable at 64px. No text, labels, border, floor, background, 3D, realistic fur texture, extra animals."
+    },
+    {
+      "grade": "N",
+      "breed": "russian_blue",
+      "asset": "assets/gacha/cats/characters/russian_blue.png",
+      "prompt": "Use case: stylized-concept. Asset: single finished transparent game character sprite for Animals Run. Reference is drawing STYLE ONLY; draw a CAT not rabbit. Subject: 러시안 블루, actual russian blue cat breed motif: smooth solid dark silver-blue coat, more wedge shaped slim face than British Shorthair, large upright ears, bright green eyes, slim curved tail. NORMAL rarity. Plain natural cat with NO clothes, accessories, head ornaments or floating sparkles. Simple clean 2D chibi sticker matching the reference's drawing style: warm brown outlines, flat soft pastel fills, minimal shading, pink cheeks, tiny nose and happy tiny mouth, very large head and tiny full body upright, front paws near chest. Exactly TWO ears, two forepaws, two feet, ONE tail; full anatomy visible. Face in upper half for avatar cropping. Centered on square transparent canvas; about 88% height; keep ears and tail fully inside margin. Readable at 64px. No text, labels, border, floor, background, 3D, realistic fur texture, extra animals."
+    },
+    {
+      "grade": "N",
+      "breed": "siamese",
+      "asset": "assets/gacha/cats/characters/siamese.png",
+      "prompt": "Use case: stylized-concept. Asset: single finished transparent game character sprite for Animals Run. Reference is drawing STYLE ONLY; draw a CAT not rabbit. Subject: 샴, actual siamese cat breed motif: ivory cream body with seal-brown face mask, ears, paws and tail, vivid blue eyes, elegant pointed upright ears. NORMAL rarity. Plain natural cat with NO clothes, accessories, head ornaments or floating sparkles. Simple clean 2D chibi sticker matching the reference's drawing style: warm brown outlines, flat soft pastel fills, minimal shading, pink cheeks, tiny nose and happy tiny mouth, very large head and tiny full body upright, front paws near chest. Exactly TWO ears, two forepaws, two feet, ONE tail; full anatomy visible. Face in upper half for avatar cropping. Centered on square transparent canvas; about 88% height; keep ears and tail fully inside margin. Readable at 64px. No text, labels, border, floor, background, 3D, realistic fur texture, extra animals."
+    },
+    {
+      "grade": "N",
+      "breed": "ragdoll",
+      "asset": "assets/gacha/cats/characters/ragdoll.png",
+      "prompt": "Use case: stylized-concept. Asset: single finished transparent game character sprite for Animals Run. Reference is drawing STYLE ONLY; draw a CAT not rabbit. Subject: 랙돌, actual ragdoll cat breed motif: fluffy cream white long coat with blue-gray bicolor ears and face sides, clear inverted white V on face, blue eyes, fluffy tail. NORMAL rarity. Plain natural cat with NO clothes, accessories, head ornaments or floating sparkles. Simple clean 2D chibi sticker matching the reference's drawing style: warm brown outlines, flat soft pastel fills, minimal shading, pink cheeks, tiny nose and happy tiny mouth, very large head and tiny full body upright, front paws near chest. Exactly TWO ears, two forepaws, two feet, ONE tail; full anatomy visible. Face in upper half for avatar cropping. Centered on square transparent canvas; about 88% height; keep ears and tail fully inside margin. Readable at 64px. No text, labels, border, floor, background, 3D, realistic fur texture, extra animals."
+    },
+    {
+      "grade": "N",
+      "breed": "persian",
+      "asset": "assets/gacha/cats/characters/persian.png",
+      "prompt": "Use case: stylized-concept. Asset: single finished transparent game character sprite for Animals Run. Reference is drawing STYLE ONLY; draw a CAT not rabbit. Subject: 페르시안, actual persian cat breed motif: warm white long fluffy coat, very rounded wide face, tiny low-set pink nose and small rounded ears, gentle amber eyes, plush fluffy tail. NORMAL rarity. Plain natural cat with NO clothes, accessories, head ornaments or floating sparkles. Simple clean 2D chibi sticker matching the reference's drawing style: warm brown outlines, flat soft pastel fills, minimal shading, pink cheeks, tiny nose and happy tiny mouth, very large head and tiny full body upright, front paws near chest. Exactly TWO ears, two forepaws, two feet, ONE tail; full anatomy visible. Face in upper half for avatar cropping. Centered on square transparent canvas; about 88% height; keep ears and tail fully inside margin. Readable at 64px. No text, labels, border, floor, background, 3D, realistic fur texture, extra animals."
+    },
+    {
+      "grade": "N",
+      "breed": "maine_coon",
+      "asset": "assets/gacha/cats/characters/maine_coon.png",
+      "prompt": "Use case: stylized-concept. Asset: single finished transparent game character sprite for Animals Run. Reference is drawing STYLE ONLY; draw a CAT not rabbit. Subject: 메인쿤, actual maine coon cat breed motif: brown charcoal tabby long fluffy coat, prominent cheek ruff, square muzzle, large pointed ears with lynx tufts, green eyes, large bushy striped tail. NORMAL rarity. Plain natural cat with NO clothes, accessories, head ornaments or floating sparkles. Simple clean 2D chibi sticker matching the reference's drawing style: warm brown outlines, flat soft pastel fills, minimal shading, pink cheeks, tiny nose and happy tiny mouth, very large head and tiny full body upright, front paws near chest. Exactly TWO ears, two forepaws, two feet, ONE tail; full anatomy visible. Face in upper half for avatar cropping. Centered on square transparent canvas; about 88% height; keep ears and tail fully inside margin. Readable at 64px. No text, labels, border, floor, background, 3D, realistic fur texture, extra animals."
+    },
+    {
+      "grade": "N",
+      "breed": "bengal",
+      "asset": "assets/gacha/cats/characters/bengal.png",
+      "prompt": "Use case: stylized-concept. Asset: single finished transparent game character sprite for Animals Run. Reference is drawing STYLE ONLY; draw a CAT not rabbit. Subject: 벵갈, actual bengal cat breed motif: warm honey golden short coat with a few big dark brown rosette spots on body, striped face, amber-green eyes, ringed curved tail. NORMAL rarity. Plain natural cat with NO clothes, accessories, head ornaments or floating sparkles. Simple clean 2D chibi sticker matching the reference's drawing style: warm brown outlines, flat soft pastel fills, minimal shading, pink cheeks, tiny nose and happy tiny mouth, very large head and tiny full body upright, front paws near chest. Exactly TWO ears, two forepaws, two feet, ONE tail; full anatomy visible. Face in upper half for avatar cropping. Centered on square transparent canvas; about 88% height; keep ears and tail fully inside margin. Readable at 64px. No text, labels, border, floor, background, 3D, realistic fur texture, extra animals."
+    },
+    {
+      "grade": "N",
+      "breed": "abyssinian",
+      "asset": "assets/gacha/cats/characters/abyssinian.png",
+      "prompt": "Use case: stylized-concept. Asset: single finished transparent game character sprite for Animals Run. Reference is drawing STYLE ONLY; draw a CAT not rabbit. Subject: 아비시니안, actual abyssinian cat breed motif: warm ruddy cinnamon short ticked coat, lighter peach muzzle and belly, very large upright pointed ears, amber-gold eyes, darker back and tail tip. NORMAL rarity. Plain natural cat with NO clothes, accessories, head ornaments or floating sparkles. Simple clean 2D chibi sticker matching the reference's drawing style: warm brown outlines, flat soft pastel fills, minimal shading, pink cheeks, tiny nose and happy tiny mouth, very large head and tiny full body upright, front paws near chest. Exactly TWO ears, two forepaws, two feet, ONE tail; full anatomy visible. Face in upper half for avatar cropping. Centered on square transparent canvas; about 88% height; keep ears and tail fully inside margin. Readable at 64px. No text, labels, border, floor, background, 3D, realistic fur texture, extra animals."
+    },
+    {
+      "grade": "N",
+      "breed": "turkish_angora",
+      "asset": "assets/gacha/cats/characters/turkish_angora.png",
+      "prompt": "Use case: stylized-concept. Asset: single finished transparent game character sprite for Animals Run. Reference is drawing STYLE ONLY; draw a CAT not rabbit. Subject: 터키시 앙고라, actual turkish angora cat breed motif: silky snow-white medium long coat, refined triangular face, tall pointed tufted ears, ONE blue eye and ONE amber eye, graceful plumed tail. NORMAL rarity. Plain natural cat with NO clothes, accessories, head ornaments or floating sparkles. Simple clean 2D chibi sticker matching the reference's drawing style: warm brown outlines, flat soft pastel fills, minimal shading, pink cheeks, tiny nose and happy tiny mouth, very large head and tiny full body upright, front paws near chest. Exactly TWO ears, two forepaws, two feet, ONE tail; full anatomy visible. Face in upper half for avatar cropping. Centered on square transparent canvas; about 88% height; keep ears and tail fully inside margin. Readable at 64px. No text, labels, border, floor, background, 3D, realistic fur texture, extra animals."
+    },
+    {
+      "grade": "R",
+      "breed": "american_shorthair",
+      "asset": "assets/gacha/cats_rare/characters/american_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레어. Image 1 is EDIT TARGET and identity/style reference: the NORMAL american shorthair cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: silver short coat with bold charcoal classic tabby swirls and forehead M, round cheeks, amber eyes. Change ONLY rarity accessories: RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "R",
+      "breed": "british_shorthair",
+      "asset": "assets/gacha/cats_rare/characters/british_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레어. Image 1 is EDIT TARGET and identity/style reference: the NORMAL british shorthair cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: solid plush blue-gray coat, very round broad head and chubby cheeks, small spaced upright ears, copper-orange eyes, thick curved tail. Change ONLY rarity accessories: RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "R",
+      "breed": "russian_blue",
+      "asset": "assets/gacha/cats_rare/characters/russian_blue.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레어. Image 1 is EDIT TARGET and identity/style reference: the NORMAL russian blue cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: smooth solid dark silver-blue coat, more wedge shaped slim face than British Shorthair, large upright ears, bright green eyes, slim curved tail. Change ONLY rarity accessories: RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "R",
+      "breed": "siamese",
+      "asset": "assets/gacha/cats_rare/characters/siamese.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레어. Image 1 is EDIT TARGET and identity/style reference: the NORMAL siamese cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: ivory cream body with seal-brown face mask, ears, paws and tail, vivid blue eyes, elegant pointed upright ears. Change ONLY rarity accessories: RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "R",
+      "breed": "ragdoll",
+      "asset": "assets/gacha/cats_rare/characters/ragdoll.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레어. Image 1 is EDIT TARGET and identity/style reference: the NORMAL ragdoll cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: fluffy cream white long coat with blue-gray bicolor ears and face sides, clear inverted white V on face, blue eyes, fluffy tail. Change ONLY rarity accessories: RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "R",
+      "breed": "persian",
+      "asset": "assets/gacha/cats_rare/characters/persian.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레어. Image 1 is EDIT TARGET and identity/style reference: the NORMAL persian cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm white long fluffy coat, very rounded wide face, tiny low-set pink nose and small rounded ears, gentle amber eyes, plush fluffy tail. Change ONLY rarity accessories: RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "R",
+      "breed": "maine_coon",
+      "asset": "assets/gacha/cats_rare/characters/maine_coon.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레어. Image 1 is EDIT TARGET and identity/style reference: the NORMAL maine coon cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: brown charcoal tabby long fluffy coat, prominent cheek ruff, square muzzle, large pointed ears with lynx tufts, green eyes, large bushy striped tail. Change ONLY rarity accessories: RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "R",
+      "breed": "bengal",
+      "asset": "assets/gacha/cats_rare/characters/bengal.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레어. Image 1 is EDIT TARGET and identity/style reference: the NORMAL bengal cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm honey golden short coat with a few big dark brown rosette spots on body, striped face, amber-green eyes, ringed curved tail. Change ONLY rarity accessories: RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "R",
+      "breed": "abyssinian",
+      "asset": "assets/gacha/cats_rare/characters/abyssinian.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레어. Image 1 is EDIT TARGET and identity/style reference: the NORMAL abyssinian cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm ruddy cinnamon short ticked coat, lighter peach muzzle and belly, very large upright pointed ears, amber-gold eyes, darker back and tail tip. Change ONLY rarity accessories: RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "R",
+      "breed": "turkish_angora",
+      "asset": "assets/gacha/cats_rare/characters/turkish_angora.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레어. Image 1 is EDIT TARGET and identity/style reference: the NORMAL turkish angora cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: silky snow-white medium long coat, refined triangular face, tall pointed tufted ears, ONE blue eye and ONE amber eye, graceful plumed tail. Change ONLY rarity accessories: RARE rarity. One simple sky-blue triangular bandana with tiny golden bell at neck. No other accessories. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "EP",
+      "breed": "american_shorthair",
+      "asset": "assets/gacha/cats_epic/characters/american_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 에픽. Image 1 is EDIT TARGET and identity/style reference: the NORMAL american shorthair cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: silver short coat with bold charcoal classic tabby swirls and forehead M, round cheeks, amber eyes. Change ONLY rarity accessories: EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "EP",
+      "breed": "british_shorthair",
+      "asset": "assets/gacha/cats_epic/characters/british_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 에픽. Image 1 is EDIT TARGET and identity/style reference: the NORMAL british shorthair cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: solid plush blue-gray coat, very round broad head and chubby cheeks, small spaced upright ears, copper-orange eyes, thick curved tail. Change ONLY rarity accessories: EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "EP",
+      "breed": "russian_blue",
+      "asset": "assets/gacha/cats_epic/characters/russian_blue.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 에픽. Image 1 is EDIT TARGET and identity/style reference: the NORMAL russian blue cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: smooth solid dark silver-blue coat, more wedge shaped slim face than British Shorthair, large upright ears, bright green eyes, slim curved tail. Change ONLY rarity accessories: EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "EP",
+      "breed": "siamese",
+      "asset": "assets/gacha/cats_epic/characters/siamese.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 에픽. Image 1 is EDIT TARGET and identity/style reference: the NORMAL siamese cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: ivory cream body with seal-brown face mask, ears, paws and tail, vivid blue eyes, elegant pointed upright ears. Change ONLY rarity accessories: EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "EP",
+      "breed": "ragdoll",
+      "asset": "assets/gacha/cats_epic/characters/ragdoll.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 에픽. Image 1 is EDIT TARGET and identity/style reference: the NORMAL ragdoll cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: fluffy cream white long coat with blue-gray bicolor ears and face sides, clear inverted white V on face, blue eyes, fluffy tail. Change ONLY rarity accessories: EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "EP",
+      "breed": "persian",
+      "asset": "assets/gacha/cats_epic/characters/persian.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 에픽. Image 1 is EDIT TARGET and identity/style reference: the NORMAL persian cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm white long fluffy coat, very rounded wide face, tiny low-set pink nose and small rounded ears, gentle amber eyes, plush fluffy tail. Change ONLY rarity accessories: EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "EP",
+      "breed": "maine_coon",
+      "asset": "assets/gacha/cats_epic/characters/maine_coon.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 에픽. Image 1 is EDIT TARGET and identity/style reference: the NORMAL maine coon cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: brown charcoal tabby long fluffy coat, prominent cheek ruff, square muzzle, large pointed ears with lynx tufts, green eyes, large bushy striped tail. Change ONLY rarity accessories: EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "EP",
+      "breed": "bengal",
+      "asset": "assets/gacha/cats_epic/characters/bengal.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 에픽. Image 1 is EDIT TARGET and identity/style reference: the NORMAL bengal cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm honey golden short coat with a few big dark brown rosette spots on body, striped face, amber-green eyes, ringed curved tail. Change ONLY rarity accessories: EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "EP",
+      "breed": "abyssinian",
+      "asset": "assets/gacha/cats_epic/characters/abyssinian.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 에픽. Image 1 is EDIT TARGET and identity/style reference: the NORMAL abyssinian cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm ruddy cinnamon short ticked coat, lighter peach muzzle and belly, very large upright pointed ears, amber-gold eyes, darker back and tail tip. Change ONLY rarity accessories: EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "EP",
+      "breed": "turkish_angora",
+      "asset": "assets/gacha/cats_epic/characters/turkish_angora.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 에픽. Image 1 is EDIT TARGET and identity/style reference: the NORMAL turkish angora cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: silky snow-white medium long coat, refined triangular face, tall pointed tufted ears, ONE blue eye and ONE amber eye, graceful plumed tail. Change ONLY rarity accessories: EPIC rarity. Short simple lavender cape, tiny crescent moon clasp on chest. No hat, no crown, no staff, no complex patterns. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "U",
+      "breed": "american_shorthair",
+      "asset": "assets/gacha/cats_unique/characters/american_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 유니크. Image 1 is EDIT TARGET and identity/style reference: the NORMAL american shorthair cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: silver short coat with bold charcoal classic tabby swirls and forehead M, round cheeks, amber eyes. Change ONLY rarity accessories: UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "U",
+      "breed": "british_shorthair",
+      "asset": "assets/gacha/cats_unique/characters/british_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 유니크. Image 1 is EDIT TARGET and identity/style reference: the NORMAL british shorthair cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: solid plush blue-gray coat, very round broad head and chubby cheeks, small spaced upright ears, copper-orange eyes, thick curved tail. Change ONLY rarity accessories: UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "U",
+      "breed": "russian_blue",
+      "asset": "assets/gacha/cats_unique/characters/russian_blue.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 유니크. Image 1 is EDIT TARGET and identity/style reference: the NORMAL russian blue cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: smooth solid dark silver-blue coat, more wedge shaped slim face than British Shorthair, large upright ears, bright green eyes, slim curved tail. Change ONLY rarity accessories: UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "U",
+      "breed": "siamese",
+      "asset": "assets/gacha/cats_unique/characters/siamese.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 유니크. Image 1 is EDIT TARGET and identity/style reference: the NORMAL siamese cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: ivory cream body with seal-brown face mask, ears, paws and tail, vivid blue eyes, elegant pointed upright ears. Change ONLY rarity accessories: UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "U",
+      "breed": "ragdoll",
+      "asset": "assets/gacha/cats_unique/characters/ragdoll.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 유니크. Image 1 is EDIT TARGET and identity/style reference: the NORMAL ragdoll cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: fluffy cream white long coat with blue-gray bicolor ears and face sides, clear inverted white V on face, blue eyes, fluffy tail. Change ONLY rarity accessories: UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "U",
+      "breed": "persian",
+      "asset": "assets/gacha/cats_unique/characters/persian.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 유니크. Image 1 is EDIT TARGET and identity/style reference: the NORMAL persian cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm white long fluffy coat, very rounded wide face, tiny low-set pink nose and small rounded ears, gentle amber eyes, plush fluffy tail. Change ONLY rarity accessories: UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "U",
+      "breed": "maine_coon",
+      "asset": "assets/gacha/cats_unique/characters/maine_coon.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 유니크. Image 1 is EDIT TARGET and identity/style reference: the NORMAL maine coon cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: brown charcoal tabby long fluffy coat, prominent cheek ruff, square muzzle, large pointed ears with lynx tufts, green eyes, large bushy striped tail. Change ONLY rarity accessories: UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "U",
+      "breed": "bengal",
+      "asset": "assets/gacha/cats_unique/characters/bengal.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 유니크. Image 1 is EDIT TARGET and identity/style reference: the NORMAL bengal cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm honey golden short coat with a few big dark brown rosette spots on body, striped face, amber-green eyes, ringed curved tail. Change ONLY rarity accessories: UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "U",
+      "breed": "abyssinian",
+      "asset": "assets/gacha/cats_unique/characters/abyssinian.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 유니크. Image 1 is EDIT TARGET and identity/style reference: the NORMAL abyssinian cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm ruddy cinnamon short ticked coat, lighter peach muzzle and belly, very large upright pointed ears, amber-gold eyes, darker back and tail tip. Change ONLY rarity accessories: UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "U",
+      "breed": "turkish_angora",
+      "asset": "assets/gacha/cats_unique/characters/turkish_angora.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 유니크. Image 1 is EDIT TARGET and identity/style reference: the NORMAL turkish angora cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: silky snow-white medium long coat, refined triangular face, tall pointed tufted ears, ONE blue eye and ONE amber eye, graceful plumed tail. Change ONLY rarity accessories: UNIQUE rarity. Small pink-and-cream flower wreath just ABOVE the forehead BETWEEN the two visible ears, one rose-pink gem pendant. Keep silhouette simple; no cape, no busy flowers. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "L",
+      "breed": "american_shorthair",
+      "asset": "assets/gacha/cats_legendary/characters/american_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레전더리. Image 1 is EDIT TARGET and identity/style reference: the NORMAL american shorthair cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: silver short coat with bold charcoal classic tabby swirls and forehead M, round cheeks, amber eyes. Change ONLY rarity accessories: LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "L",
+      "breed": "british_shorthair",
+      "asset": "assets/gacha/cats_legendary/characters/british_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레전더리. Image 1 is EDIT TARGET and identity/style reference: the NORMAL british shorthair cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: solid plush blue-gray coat, very round broad head and chubby cheeks, small spaced upright ears, copper-orange eyes, thick curved tail. Change ONLY rarity accessories: LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "L",
+      "breed": "russian_blue",
+      "asset": "assets/gacha/cats_legendary/characters/russian_blue.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레전더리. Image 1 is EDIT TARGET and identity/style reference: the NORMAL russian blue cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: smooth solid dark silver-blue coat, more wedge shaped slim face than British Shorthair, large upright ears, bright green eyes, slim curved tail. Change ONLY rarity accessories: LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "L",
+      "breed": "siamese",
+      "asset": "assets/gacha/cats_legendary/characters/siamese.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레전더리. Image 1 is EDIT TARGET and identity/style reference: the NORMAL siamese cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: ivory cream body with seal-brown face mask, ears, paws and tail, vivid blue eyes, elegant pointed upright ears. Change ONLY rarity accessories: LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "L",
+      "breed": "ragdoll",
+      "asset": "assets/gacha/cats_legendary/characters/ragdoll.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레전더리. Image 1 is EDIT TARGET and identity/style reference: the NORMAL ragdoll cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: fluffy cream white long coat with blue-gray bicolor ears and face sides, clear inverted white V on face, blue eyes, fluffy tail. Change ONLY rarity accessories: LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "L",
+      "breed": "persian",
+      "asset": "assets/gacha/cats_legendary/characters/persian.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레전더리. Image 1 is EDIT TARGET and identity/style reference: the NORMAL persian cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm white long fluffy coat, very rounded wide face, tiny low-set pink nose and small rounded ears, gentle amber eyes, plush fluffy tail. Change ONLY rarity accessories: LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "L",
+      "breed": "maine_coon",
+      "asset": "assets/gacha/cats_legendary/characters/maine_coon.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레전더리. Image 1 is EDIT TARGET and identity/style reference: the NORMAL maine coon cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: brown charcoal tabby long fluffy coat, prominent cheek ruff, square muzzle, large pointed ears with lynx tufts, green eyes, large bushy striped tail. Change ONLY rarity accessories: LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "L",
+      "breed": "bengal",
+      "asset": "assets/gacha/cats_legendary/characters/bengal.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레전더리. Image 1 is EDIT TARGET and identity/style reference: the NORMAL bengal cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm honey golden short coat with a few big dark brown rosette spots on body, striped face, amber-green eyes, ringed curved tail. Change ONLY rarity accessories: LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "L",
+      "breed": "abyssinian",
+      "asset": "assets/gacha/cats_legendary/characters/abyssinian.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레전더리. Image 1 is EDIT TARGET and identity/style reference: the NORMAL abyssinian cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm ruddy cinnamon short ticked coat, lighter peach muzzle and belly, very large upright pointed ears, amber-gold eyes, darker back and tail tip. Change ONLY rarity accessories: LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "L",
+      "breed": "turkish_angora",
+      "asset": "assets/gacha/cats_legendary/characters/turkish_angora.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 레전더리. Image 1 is EDIT TARGET and identity/style reference: the NORMAL turkish angora cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: silky snow-white medium long coat, refined triangular face, tall pointed tufted ears, ONE blue eye and ONE amber eye, graceful plumed tail. Change ONLY rarity accessories: LEGENDARY rarity. Small warm gold three-point crown BETWEEN the two visible ears and a short burgundy cape with a cream collar and small gold clasp. At most two small clean gold sparkles. Keep readable and minimal, no staff. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "H",
+      "breed": "american_shorthair",
+      "asset": "assets/gacha/cats_hidden/characters/american_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 히든. Image 1 is EDIT TARGET and identity/style reference: the NORMAL american shorthair cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: silver short coat with bold charcoal classic tabby swirls and forehead M, round cheeks, amber eyes. Change ONLY rarity accessories: HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "H",
+      "breed": "british_shorthair",
+      "asset": "assets/gacha/cats_hidden/characters/british_shorthair.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 히든. Image 1 is EDIT TARGET and identity/style reference: the NORMAL british shorthair cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: solid plush blue-gray coat, very round broad head and chubby cheeks, small spaced upright ears, copper-orange eyes, thick curved tail. Change ONLY rarity accessories: HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "H",
+      "breed": "russian_blue",
+      "asset": "assets/gacha/cats_hidden/characters/russian_blue.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 히든. Image 1 is EDIT TARGET and identity/style reference: the NORMAL russian blue cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: smooth solid dark silver-blue coat, more wedge shaped slim face than British Shorthair, large upright ears, bright green eyes, slim curved tail. Change ONLY rarity accessories: HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "H",
+      "breed": "siamese",
+      "asset": "assets/gacha/cats_hidden/characters/siamese.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 히든. Image 1 is EDIT TARGET and identity/style reference: the NORMAL siamese cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: ivory cream body with seal-brown face mask, ears, paws and tail, vivid blue eyes, elegant pointed upright ears. Change ONLY rarity accessories: HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "H",
+      "breed": "ragdoll",
+      "asset": "assets/gacha/cats_hidden/characters/ragdoll.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 히든. Image 1 is EDIT TARGET and identity/style reference: the NORMAL ragdoll cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: fluffy cream white long coat with blue-gray bicolor ears and face sides, clear inverted white V on face, blue eyes, fluffy tail. Change ONLY rarity accessories: HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "H",
+      "breed": "persian",
+      "asset": "assets/gacha/cats_hidden/characters/persian.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 히든. Image 1 is EDIT TARGET and identity/style reference: the NORMAL persian cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm white long fluffy coat, very rounded wide face, tiny low-set pink nose and small rounded ears, gentle amber eyes, plush fluffy tail. Change ONLY rarity accessories: HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "H",
+      "breed": "maine_coon",
+      "asset": "assets/gacha/cats_hidden/characters/maine_coon.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 히든. Image 1 is EDIT TARGET and identity/style reference: the NORMAL maine coon cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: brown charcoal tabby long fluffy coat, prominent cheek ruff, square muzzle, large pointed ears with lynx tufts, green eyes, large bushy striped tail. Change ONLY rarity accessories: HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "H",
+      "breed": "bengal",
+      "asset": "assets/gacha/cats_hidden/characters/bengal.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 히든. Image 1 is EDIT TARGET and identity/style reference: the NORMAL bengal cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm honey golden short coat with a few big dark brown rosette spots on body, striped face, amber-green eyes, ringed curved tail. Change ONLY rarity accessories: HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "H",
+      "breed": "abyssinian",
+      "asset": "assets/gacha/cats_hidden/characters/abyssinian.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 히든. Image 1 is EDIT TARGET and identity/style reference: the NORMAL abyssinian cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: warm ruddy cinnamon short ticked coat, lighter peach muzzle and belly, very large upright pointed ears, amber-gold eyes, darker back and tail tip. Change ONLY rarity accessories: HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    },
+    {
+      "grade": "H",
+      "breed": "turkish_angora",
+      "asset": "assets/gacha/cats_hidden/characters/turkish_angora.png",
+      "prompt": "Use case: stylized-concept. Asset: ONE transparent cat game sprite, 고양이 히든. Image 1 is EDIT TARGET and identity/style reference: the NORMAL turkish angora cat for Animals Run. Preserve this exact cat's breed, face shape, eye colors, ear size and position, coat colors and markings, body, upright chibi pose, warm brown outline style and clean 2D pastel rendering. Breed motif must remain recognizable: silky snow-white medium long coat, refined triangular face, tall pointed tufted ears, ONE blue eye and ONE amber eye, graceful plumed tail. Change ONLY rarity accessories: HIDDEN rarity. Delicate thin gold crescent halo floating above the head and two tiny clean gold four-point stars, short pearly ivory shoulder cape with small turquoise star clasp. Natural breed coat colors and markings still fully distinct. No oversized wings, no royal crown, no complex costume, no glowing fog. Preserve exactly TWO ears and ONE tail, both ears fully visible. Do not add third ears or hide/reposition the ears behind the ornament. Do not change the natural cat colors into gold. Entire character and accessories centered, fully visible with 6% transparent margin, square canvas. Same scale/proportions across the set; face in upper half. Very simple mobile-readable illustration. No text, labels, frames, background, ground shadow, photo, 3D, extra animals or detailed textures. Genuine transparent PNG."
+    }
+  ]
+}

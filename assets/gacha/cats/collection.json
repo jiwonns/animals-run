@@ -1,0 +1,38 @@
+{
+  "name": "고양이 노말 컬렉션",
+  "grade": "N",
+  "order": 1.5,
+  "names": {
+    "american_shorthair": "아메리칸 쇼트헤어",
+    "british_shorthair": "브리티시 쇼트헤어",
+    "russian_blue": "러시안 블루",
+    "siamese": "샴",
+    "ragdoll": "랙돌",
+    "persian": "페르시안",
+    "maine_coon": "메인쿤",
+    "bengal": "벵갈",
+    "abyssinian": "아비시니안",
+    "turkish_angora": "터키시 앙고라"
+  },
+  "banner": {
+    "title": "고양이 뽑기",
+    "tagline": "10가지 품종 모티브 · 작고 사랑스러운 고양이 친구들",
+    "fallback": "cats",
+    "cost": {
+      "1": 10,
+      "10": 90
+    },
+    "hero": "siamese",
+    "mix": {
+      "cats_rare": 0.2,
+      "cats_epic": 0.05,
+      "cats_unique": 0.02,
+      "cats_legendary": 0.009
+    },
+    "colors": {
+      "background": "#FFF0E9",
+      "accent": "#E57968",
+      "text": "#653E37"
+    }
+  }
+}

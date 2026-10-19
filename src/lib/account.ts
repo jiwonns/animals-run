@@ -15,6 +15,7 @@ import { auth } from './firebase-auth';
 import { companionRef, eggsRef } from './home';
 import { claimsRef, drawLogsRef, locationRef, profileRef } from './profile';
 import { rankingRef } from './ranking';
+import { activateSession, beginSessionLogin, sessionRef } from './session-lease';
 
 /** While true the session must not recreate the profile it sees disappear. */
 let leaving = false;
@@ -29,7 +30,12 @@ function currentUser(): User {
 /** Sensitive account changes need a fresh sign-in; asking for the password covers that. */
 async function reauthenticate(password: string) {
   const user = currentUser();
-  await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email!, password));
+  const finish = beginSessionLogin();
+  if (!finish) throw new Error('로그인이 진행 중이에요. 잠시 후 다시 시도해주세요.');
+  try {
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email!, password));
+    await activateSession(user);
+  } finally { finish(); }
   return user;
 }
 
@@ -96,6 +102,7 @@ export async function deleteAccount(password: string): Promise<string | null> {
       deleteDoc(locationRef(uid)),
       deleteDoc(rankingRef(uid)),
     ]);
+    await deleteDoc(sessionRef(uid));
     await deleteUser(user);
     return null;
   } catch (error) {

@@ -1,11 +1,11 @@
-import { Image } from 'expo-image';
-import { memo, useCallback, useLayoutEffect, useRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from "expo-image";
+import { memo, useCallback, useLayoutEffect, useRef } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { GradeBadge } from '@/components/grade-badge';
-import type { Character, CharacterId } from '@/constants/characters';
-import { useColors } from '@/hooks/use-colors';
-import { useGridCellWidth } from '@/hooks/use-grid-cell-width';
+import { GradeBadge } from "@/components/grade-badge";
+import type { Character, CharacterId } from "@/constants/characters";
+import { useColors } from "@/hooks/use-colors";
+import { useGridCellWidth } from "@/hooks/use-grid-cell-width";
 
 export const PICK_PADDING = 20;
 const COLUMNS = 4;
@@ -15,7 +15,13 @@ const GAP = 10;
  * Owned characters to pick from. A cell shows how many copies are picked (or owned), or why it can't be
  * picked; blocked cells are greyed out and ignore taps.
  */
-export function PickGrid({ items, owned, picked, blockedReason, onPress }: {
+export function PickGrid({
+  items,
+  owned,
+  picked,
+  blockedReason,
+  onPress,
+}: {
   items: Character[];
   owned: Partial<Record<CharacterId, number>>;
   picked: Partial<Record<CharacterId, number>>;
@@ -47,7 +53,14 @@ export function PickGrid({ items, owned, picked, blockedReason, onPress }: {
   );
 }
 
-const PickCell = memo(function PickCell({ character, width, count, have, blocked, onPress }: {
+const PickCell = memo(function PickCell({
+  character,
+  width,
+  count,
+  have,
+  blocked,
+  onPress,
+}: {
   character: Character;
   width: number;
   count: number;
@@ -59,7 +72,9 @@ const PickCell = memo(function PickCell({ character, width, count, have, blocked
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={blocked ? `${character.name}, ${blocked}` : character.name}
+      accessibilityLabel={
+        blocked ? `${character.name}, ${blocked}` : character.name
+      }
       accessibilityState={{ selected: count > 0, disabled: !!blocked }}
       disabled={!!blocked}
       onPress={() => onPress(character.id)}
@@ -69,12 +84,17 @@ const PickCell = memo(function PickCell({ character, width, count, have, blocked
           width,
           height: width / 0.8,
           backgroundColor: colors.surface,
-          borderColor: count > 0 ? colors.primary : 'transparent',
+          borderColor: count > 0 ? colors.primary : "transparent",
         },
         pressed && styles.pressed,
-      ]}>
+      ]}
+    >
       <View style={[styles.body, blocked && styles.blocked]}>
-        <Image source={character.thumb} style={styles.image} contentFit="contain" />
+        <Image
+          source={character.thumb}
+          style={styles.image}
+          contentFit="contain"
+        />
         <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
           {character.name}
         </Text>
@@ -84,11 +104,15 @@ const PickCell = memo(function PickCell({ character, width, count, have, blocked
       </View>
       {blocked ? (
         <View style={[styles.tag, { backgroundColor: colors.background }]}>
-          <Text style={[styles.tagLabel, { color: colors.secondary }]}>{blocked}</Text>
+          <Text style={[styles.tagLabel, { color: colors.secondary }]}>
+            {blocked}
+          </Text>
         </View>
       ) : count > 0 ? (
         <View style={[styles.count, { backgroundColor: colors.primary }]}>
-          <Text style={styles.countLabel}>{count}</Text>
+          <Text style={styles.countLabel}>
+            {count}/{have}
+          </Text>
         </View>
       ) : (
         <Text style={[styles.have, { color: colors.secondary }]}>×{have}</Text>
@@ -99,41 +123,41 @@ const PickCell = memo(function PickCell({ character, width, count, have, blocked
 
 const styles = StyleSheet.create({
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: GAP,
   },
   cell: {
     borderRadius: 14,
     borderWidth: 2,
-    alignItems: 'center',
+    alignItems: "center",
   },
   body: {
     ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 4,
   },
   blocked: {
     opacity: 0.35,
   },
   image: {
-    width: '78%',
+    width: "78%",
     aspectRatio: 1,
   },
   name: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
     marginTop: 2,
   },
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: 4,
     left: 4,
     transform: [{ scale: 0.8 }],
   },
   tag: {
-    position: 'absolute',
+    position: "absolute",
     top: 4,
     right: 4,
     borderRadius: 999,
@@ -142,30 +166,30 @@ const styles = StyleSheet.create({
   },
   tagLabel: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   have: {
-    position: 'absolute',
+    position: "absolute",
     top: 5,
     right: 7,
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   count: {
-    position: 'absolute',
+    position: "absolute",
     top: 4,
     right: 4,
     minWidth: 20,
     height: 20,
     borderRadius: 10,
     paddingHorizontal: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   countLabel: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: "900",
   },
   pressed: {
     opacity: 0.7,

@@ -1,9 +1,10 @@
 import { FirebaseError } from 'firebase/app';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential, signInWithEmailAndPassword, signOut as firebaseSignOut, type User } from 'firebase/auth';
 
 import { NICKNAME_PATTERN } from '@/constants/gacha.generated';
 
 import { auth } from './firebase-auth';
+import { activateSession, beginSessionLogin, forgetSession, releaseSession, SessionCollision, setSessionSigningOut } from './session-lease';
 
 /**
  * Firebase Auth requires an email, so each username maps to a synthetic address that is never mailed.
@@ -63,25 +64,51 @@ export function pendingSignUpFor(username: string): SignUpExtras | null {
 }
 
 export async function signUp(username: string, password: string, extras: SignUpExtras): Promise<string | null> {
+  const finish = beginSessionLogin();
+  if (!finish) return '로그인이 진행 중이에요.';
   pending = { username: normalize(username), extras: { ...extras, nickname: extras.nickname.trim() } };
   try {
-    await createUserWithEmailAndPassword(auth, toEmail(username), password);
+    const result = await createUserWithEmailAndPassword(auth, toEmail(username), password);
+    await loginLease(result.user, password);
     return null;
   } catch (error) {
     pending = null;
+    await firebaseSignOut(auth).catch(() => {});
+    forgetSession();
     return toMessage(error, '회원가입에 실패했어요.');
-  }
+  } finally { finish(); }
 }
 
 export async function signIn(username: string, password: string): Promise<string | null> {
+  const finish = beginSessionLogin();
+  if (!finish) return '로그인이 진행 중이에요.';
   try {
-    await signInWithEmailAndPassword(auth, toEmail(username), password);
+    const result = await signInWithEmailAndPassword(auth, toEmail(username), password);
+    await loginLease(result.user, password);
     return null;
   } catch (error) {
+    await firebaseSignOut(auth).catch(() => {});
+    forgetSession();
     return toMessage(error, '로그인에 실패했어요.');
+  } finally { finish(); }
+}
+
+async function loginLease(user: User, password: string) {
+  try { await activateSession(user); }
+  catch (error) {
+    if (!(error instanceof SessionCollision)) throw error;
+    // Firebase auth_time has second precision. A genuinely new login needs a distinct signed time.
+    await new Promise(resolve => setTimeout(resolve, 1100));
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email!, password));
+    await activateSession(user);
   }
 }
 
-export function signOut() {
-  return firebaseSignOut(auth);
+export async function signOut() {
+  setSessionSigningOut(true);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([releaseSession().catch(() => {}), new Promise<void>(resolve => { timer = setTimeout(resolve, 1500); })]);
+    await firebaseSignOut(auth);
+  } finally { if (timer) clearTimeout(timer); forgetSession(); setSessionSigningOut(false); }
 }

@@ -1,0 +1,80 @@
+    function isCommunityAuthor(d) {
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return d.uid == request.auth.uid && d.name == user.get('nickname', user.username) && d.avatar == user.get('avatar', null);
+    }
+    function ownsCommunityAnimal(id) {
+      return id is string && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.characters.get(id, 0) > 0;
+    }
+    function validCommunityAnimals(d) {
+      let ids = d.get('characters', []);
+      return (d.character == null || ownsCommunityAnimal(d.character)) && ids is list && ids.size() <= 3 && ids.toSet().size() == ids.size()
+        && (ids.size() < 1 || ownsCommunityAnimal(ids[0])) && (ids.size() < 2 || ownsCommunityAnimal(ids[1])) && (ids.size() < 3 || ownsCommunityAnimal(ids[2]))
+        && (!('characters' in d) || (ids.size() == 0 ? d.character == null : d.character == ids[0]))
+        && (!('characters' in d) || (d.topic == '자랑' ? ids.size() > 0 : d.topic == '산책' ? ids.size() <= 1 : ids.size() == 0));
+    }
+    function validCommunityWalk(d) {
+      let w = d.get('walk', null);
+      return w == null ? (d.topic != '산책' || !('walk' in d)) :
+        d.topic == '산책' && w is map && w.keys().hasAll(['kind', 'steps', 'goal', 'date']) && w.keys().hasOnly(['kind', 'steps', 'goal', 'date'])
+        && w.kind in ['today', 'total'] && w.steps is int && w.steps >= 0
+        && (w.kind == 'today' ? w.steps <= 200000 : w.steps == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('steps', 0))
+        && w.goal in [1000, 3000, 5000, 10000] && w.date is string && w.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+    match /communityPosts/{postId} {
+      function photoExists(id) { return getAfter(/databases/$(database)/documents/communityPosts/$(postId)/photos/$(id)).data.uid == request.auth.uid; }
+      function validPhotos(d) {
+        let ids = d.get('photos', []);
+        return ids is list && ids.size() <= 3 && ids.toSet().size() == ids.size() && ids.hasOnly(['0', '1', '2']) && (d.topic != '자랑' || ids.size() == 0)
+          && (ids.size() < 1 || photoExists(ids[0])) && (ids.size() < 2 || photoExists(ids[1])) && (ids.size() < 3 || photoExists(ids[2]));
+      }
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasAll(['uid', 'name', 'avatar', 'topic', 'title', 'body', 'character', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'avatar', 'topic', 'title', 'body', 'character', 'characters', 'photos', 'walk', 'questionTag', 'createdAt'])
+        && isCommunityAuthor(request.resource.data) && request.resource.data.topic in ['자유', '자랑', '질문', '산책']
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 60
+        && request.resource.data.body is string && request.resource.data.body.size() > 0 && request.resource.data.body.size() <= 2000
+        && validCommunityAnimals(request.resource.data) && validPhotos(request.resource.data) && validCommunityWalk(request.resource.data)
+        && (!('questionTag' in request.resource.data) || (request.resource.data.topic == '질문' ? request.resource.data.questionTag in ['뽑기', '합성·진화', '걸음·지도', '계정·기타'] : request.resource.data.questionTag == null))
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+      match /photos/{photoId} {
+        function parentAfter() { return getAfter(/databases/$(database)/documents/communityPosts/$(postId)).data; }
+        allow read: if isSignedIn() && exists(/databases/$(database)/documents/communityPosts/$(postId)) && photoId in get(/databases/$(database)/documents/communityPosts/$(postId)).data.get('photos', []);
+        allow create: if isSignedIn() && parentAfter().uid == request.auth.uid && photoId in parentAfter().get('photos', [])
+          && request.resource.data.keys().hasAll(['uid', 'data', 'width', 'height', 'createdAt']) && request.resource.data.keys().hasOnly(['uid', 'data', 'width', 'height', 'createdAt'])
+          && request.resource.data.uid == request.auth.uid && request.resource.data.data is string && request.resource.data.data.size() <= 350000 && request.resource.data.data.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')
+          && request.resource.data.width is int && request.resource.data.width > 0 && request.resource.data.width <= 1200 && request.resource.data.height is int && request.resource.data.height > 0 && request.resource.data.height <= 1200
+          && request.resource.data.createdAt == request.time;
+      }
+      match /comments/{commentId} {
+        function parentExists() { return exists(/databases/$(database)/documents/communityPosts/$(postId)); }
+        function validReply(d) {
+          let parentId = d.get('parentId', null);
+          return parentId == null ? d.get('replyTo', null) == null : parentId is string
+            && exists(/databases/$(database)/documents/communityPosts/$(postId)/comments/$(parentId))
+            && get(/databases/$(database)/documents/communityPosts/$(postId)/comments/$(parentId)).data.get('parentId', null) == null
+            && !get(/databases/$(database)/documents/communityPosts/$(postId)/comments/$(parentId)).data.get('deleted', false)
+            && d.replyTo is string && d.replyTo.size() > 0 && d.replyTo.size() <= 30;
+        }
+        allow read: if isSignedIn() && parentExists();
+        allow create: if isSignedIn() && parentExists()
+          && request.resource.data.keys().hasAll(['uid', 'name', 'avatar', 'body', 'createdAt']) && request.resource.data.keys().hasOnly(['uid', 'name', 'avatar', 'body', 'parentId', 'replyTo', 'deleted', 'createdAt'])
+          && isCommunityAuthor(request.resource.data) && validReply(request.resource.data) && request.resource.data.get('deleted', false) == false
+          && request.resource.data.body is string && request.resource.data.body.size() > 0 && request.resource.data.body.size() <= 500 && request.resource.data.createdAt == request.time;
+        allow update: if isSignedIn() && parentExists() && resource.data.uid == request.auth.uid && !resource.data.get('deleted', false)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['body', 'deleted']) && request.resource.data.body == '' && request.resource.data.deleted == true;
+        allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+        match /likes/{uid} {
+          function commentVisible() { return exists(/databases/$(database)/documents/communityPosts/$(postId)) && exists(/databases/$(database)/documents/communityPosts/$(postId)/comments/$(commentId)) && !get(/databases/$(database)/documents/communityPosts/$(postId)/comments/$(commentId)).data.get('deleted', false); }
+          allow read: if isSignedIn() && commentVisible();
+          allow create: if isOwner(uid) && commentVisible() && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;
+          allow delete: if isOwner(uid);
+        }
+      }
+      match /likes/{uid} {
+        allow read: if isSignedIn() && exists(/databases/$(database)/documents/communityPosts/$(postId));
+        allow create: if isOwner(uid) && exists(/databases/$(database)/documents/communityPosts/$(postId)) && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;
+        allow delete: if isOwner(uid);
+      }
+    }

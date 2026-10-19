@@ -4,12 +4,117 @@ rules_version = '2';
 // Paste into Firebase console > Firestore Database > Rules, then Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/activeSessions/$(request.auth.uid))
+        && get(/databases/$(database)/documents/activeSessions/$(request.auth.uid)).data.active
+        && get(/databases/$(database)/documents/activeSessions/$(request.auth.uid)).data.authTime == request.auth.token.auth_time;
+    }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    match /activeSessions/{uid} {
+      function owner() { return request.auth != null && request.auth.uid == uid; }
+      function validSession() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['sessionId', 'authTime', 'active', 'updatedAt'])
+          && d.keys().hasOnly(['sessionId', 'authTime', 'active', 'updatedAt'])
+          && d.sessionId is string && d.sessionId.matches('^[A-Za-z0-9_-]{20,128}$')
+          && d.authTime is int && d.authTime == request.auth.token.auth_time
+          && d.active is bool && d.updatedAt == request.time;
+      }
+      allow get: if owner();
+      allow create: if owner() && validSession() && request.resource.data.active;
+      allow update: if owner() && validSession() && (
+        (request.resource.data.authTime > resource.data.authTime && request.resource.data.active)
+        || (request.resource.data.authTime == resource.data.authTime
+          && request.resource.data.sessionId == resource.data.sessionId && resource.data.active)
+      );
+      allow delete: if owner() && request.auth.token.auth_time == resource.data.authTime
+        && !exists(/databases/$(database)/documents/users/$(uid));
+    }
+    function isCommunityAuthor(d) {
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return d.uid == request.auth.uid && d.name == user.get('nickname', user.username) && d.avatar == user.get('avatar', null);
+    }
+    function ownsCommunityAnimal(id) {
+      return id is string && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.characters.get(id, 0) > 0;
+    }
+    function validCommunityAnimals(d) {
+      let ids = d.get('characters', []);
+      return (d.character == null || ownsCommunityAnimal(d.character)) && ids is list && ids.size() <= 3 && ids.toSet().size() == ids.size()
+        && (ids.size() < 1 || ownsCommunityAnimal(ids[0])) && (ids.size() < 2 || ownsCommunityAnimal(ids[1])) && (ids.size() < 3 || ownsCommunityAnimal(ids[2]))
+        && (!('characters' in d) || (ids.size() == 0 ? d.character == null : d.character == ids[0]))
+        && (!('characters' in d) || (d.topic == '자랑' ? ids.size() > 0 : d.topic == '산책' ? ids.size() <= 1 : ids.size() == 0));
+    }
+    function validCommunityWalk(d) {
+      let w = d.get('walk', null);
+      return w == null ? (d.topic != '산책' || !('walk' in d)) :
+        d.topic == '산책' && w is map && w.keys().hasAll(['kind', 'steps', 'goal', 'date']) && w.keys().hasOnly(['kind', 'steps', 'goal', 'date'])
+        && w.kind in ['today', 'total'] && w.steps is int && w.steps >= 0
+        && (w.kind == 'today' ? w.steps <= 200000 : w.steps == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('steps', 0))
+        && w.goal in [1000, 3000, 5000, 10000] && w.date is string && w.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+    match /communityPosts/{postId} {
+      function photoExists(id) { return getAfter(/databases/$(database)/documents/communityPosts/$(postId)/photos/$(id)).data.uid == request.auth.uid; }
+      function validPhotos(d) {
+        let ids = d.get('photos', []);
+        return ids is list && ids.size() <= 3 && ids.toSet().size() == ids.size() && ids.hasOnly(['0', '1', '2']) && (d.topic != '자랑' || ids.size() == 0)
+          && (ids.size() < 1 || photoExists(ids[0])) && (ids.size() < 2 || photoExists(ids[1])) && (ids.size() < 3 || photoExists(ids[2]));
+      }
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasAll(['uid', 'name', 'avatar', 'topic', 'title', 'body', 'character', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'avatar', 'topic', 'title', 'body', 'character', 'characters', 'photos', 'walk', 'questionTag', 'createdAt'])
+        && isCommunityAuthor(request.resource.data) && request.resource.data.topic in ['자유', '자랑', '질문', '산책']
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 60
+        && request.resource.data.body is string && request.resource.data.body.size() > 0 && request.resource.data.body.size() <= 2000
+        && validCommunityAnimals(request.resource.data) && validPhotos(request.resource.data) && validCommunityWalk(request.resource.data)
+        && (!('questionTag' in request.resource.data) || (request.resource.data.topic == '질문' ? request.resource.data.questionTag in ['뽑기', '합성·진화', '걸음·지도', '계정·기타'] : request.resource.data.questionTag == null))
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+      match /photos/{photoId} {
+        function parentAfter() { return getAfter(/databases/$(database)/documents/communityPosts/$(postId)).data; }
+        allow read: if isSignedIn() && exists(/databases/$(database)/documents/communityPosts/$(postId)) && photoId in get(/databases/$(database)/documents/communityPosts/$(postId)).data.get('photos', []);
+        allow create: if isSignedIn() && parentAfter().uid == request.auth.uid && photoId in parentAfter().get('photos', [])
+          && request.resource.data.keys().hasAll(['uid', 'data', 'width', 'height', 'createdAt']) && request.resource.data.keys().hasOnly(['uid', 'data', 'width', 'height', 'createdAt'])
+          && request.resource.data.uid == request.auth.uid && request.resource.data.data is string && request.resource.data.data.size() <= 350000 && request.resource.data.data.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')
+          && request.resource.data.width is int && request.resource.data.width > 0 && request.resource.data.width <= 1200 && request.resource.data.height is int && request.resource.data.height > 0 && request.resource.data.height <= 1200
+          && request.resource.data.createdAt == request.time;
+      }
+      match /comments/{commentId} {
+        function parentExists() { return exists(/databases/$(database)/documents/communityPosts/$(postId)); }
+        function validReply(d) {
+          let parentId = d.get('parentId', null);
+          return parentId == null ? d.get('replyTo', null) == null : parentId is string
+            && exists(/databases/$(database)/documents/communityPosts/$(postId)/comments/$(parentId))
+            && get(/databases/$(database)/documents/communityPosts/$(postId)/comments/$(parentId)).data.get('parentId', null) == null
+            && !get(/databases/$(database)/documents/communityPosts/$(postId)/comments/$(parentId)).data.get('deleted', false)
+            && d.replyTo is string && d.replyTo.size() > 0 && d.replyTo.size() <= 30;
+        }
+        allow read: if isSignedIn() && parentExists();
+        allow create: if isSignedIn() && parentExists()
+          && request.resource.data.keys().hasAll(['uid', 'name', 'avatar', 'body', 'createdAt']) && request.resource.data.keys().hasOnly(['uid', 'name', 'avatar', 'body', 'parentId', 'replyTo', 'deleted', 'createdAt'])
+          && isCommunityAuthor(request.resource.data) && validReply(request.resource.data) && request.resource.data.get('deleted', false) == false
+          && request.resource.data.body is string && request.resource.data.body.size() > 0 && request.resource.data.body.size() <= 500 && request.resource.data.createdAt == request.time;
+        allow update: if isSignedIn() && parentExists() && resource.data.uid == request.auth.uid && !resource.data.get('deleted', false)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['body', 'deleted']) && request.resource.data.body == '' && request.resource.data.deleted == true;
+        allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+        match /likes/{uid} {
+          function commentVisible() { return exists(/databases/$(database)/documents/communityPosts/$(postId)) && exists(/databases/$(database)/documents/communityPosts/$(postId)/comments/$(commentId)) && !get(/databases/$(database)/documents/communityPosts/$(postId)/comments/$(commentId)).data.get('deleted', false); }
+          allow read: if isSignedIn() && commentVisible();
+          allow create: if isOwner(uid) && commentVisible() && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;
+          allow delete: if isOwner(uid);
+        }
+      }
+      match /likes/{uid} {
+        allow read: if isSignedIn() && exists(/databases/$(database)/documents/communityPosts/$(postId));
+        allow create: if isOwner(uid) && exists(/databases/$(database)/documents/communityPosts/$(postId)) && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;
+        allow delete: if isOwner(uid);
+      }
+    }
     match /users/{uid} {
       allow read: if isOwner(uid);
       allow create: if isOwner(uid) && isNewProfile();
-      allow update: if isOwner(uid)
-        && (isLegalDraw() || isClaim(uid) || isStepReward() || isAvatarChange() || isHatch(uid) || isUsernameChange()
-          || isNicknameChange() || isFuse() || isRecycle() || isEvolve(uid));
+      allow update: if isOwner(uid) && isProfileUpdate(uid);
       // Leaving: the profile goes first, then its history (see isGone).
       allow delete: if isOwner(uid);
     }
@@ -27,6 +132,40 @@ service cloud.firestore {
       allow read: if isOwner(uid);
       allow create, update: if isOwner(uid) && (isCompanionSteps(uid) || isEvolveSpend(uid));
       allow delete: if isOwner(uid);
+    }
+
+    // Route each operation by its changed counter before evaluating expensive inventory rules.
+    function isProfileUpdate(uid) {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return (changed.hasAny(['drawCount']) && isLegalDraw())
+        || (changed.hasAny(['lastClaim']) && isClaim(uid))
+        || (changed.hasAny(['steps']) && isStepReward())
+        || (changed.hasAny(['hatchCount']) && isHatch(uid))
+        || (changed.hasAny(['username']) && isUsernameChange())
+        || (changed.hasAny(['nickname']) && isNicknameChange())
+        || (changed.hasAny(['fuseCount']) && isFuse())
+        || (changed.hasAny(['recycleCount']) && isRecycle())
+        || (changed.hasAny(['evolveCount']) && isEvolve(uid))
+        || (changed.hasOnly(['avatar']) && isAvatarChange())
+        || (changed.hasAny(['characters']) && isSale());
+    }
+
+    function isSale() {
+      let before = resource.data;
+      let after = request.resource.data;
+      let sale = after.lastSale;
+      let c = sale.character;
+      let n = sale.quantity;
+      let prices = {"N":0,"R":1,"EP":10,"U":30,"L":50,"E":1,"H":100};
+      let price = prices.get(gradeOf(c), -1);
+      let remaining = before.characters.get(c, 0) - n;
+      return after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastSale'])
+        && sale.keys().hasOnly(['character', 'quantity'])
+        && c is string && n is int && n > 0 && price >= 0
+        && remaining >= (before.get('avatar', null) == c ? 1 : 0)
+        && after.characters.diff(before.characters).affectedKeys().hasOnly([c])
+        && after.characters.get(c, 0) == remaining
+        && after.coins == before.coins + price * n;
     }
 
     // Crafting writes lastCraft { inputs, output } with its counter. Odds are rolled on the phone, so these
@@ -52,6 +191,8 @@ service cloud.firestore {
           ? a.get(c, 0) == b.get(c, 0) - 2
           : a.get(c, 0) == b.get(c, 0) - 1 && a.get(d, 0) == b.get(d, 0) - 1)
         && a.get(c, 0) >= 0 && a.get(d, 0) >= 0
+        && a.get(c, 0) >= (before.get('avatar', null) == c ? 1 : 0)
+        && a.get(d, 0) >= (before.get('avatar', null) == d ? 1 : 0)
         && (craft.output == null
           ? a.diff(b).affectedKeys().hasOnly([c, d])
           : poolTier(craft.output) == tierOf(c) + 1
@@ -69,29 +210,31 @@ service cloud.firestore {
       let a = after.characters;
       let b = before.characters;
       let t = poolTier(out);
-      let allowed = '^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^sea_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$';
+      let allowed = '^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^sea_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_rare_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_epic_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_unique_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_legendary_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig|abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$';
       return after.diff(before).affectedKeys().hasOnly(['characters', 'recycleCount', 'lastCraft'])
         && after.get('recycleCount', 0) == before.get('recycleCount', 0) + 1
         && after.lastCraft.keys().hasOnly(['inputs', 'output'])
         && inputs is list && inputs.size() == 10 && out is string && t > 0
         && a.diff(b).affectedKeys().hasOnly(inputs.concat([out]))
         && a.get(out, 0) - b.get(out, 0) == 1 - (10 - inputs.removeAll([out]).size())
-        && recycled(a, b, inputs, out, allowed, 0)
-        && recycled(a, b, inputs, out, allowed, 1)
-        && recycled(a, b, inputs, out, allowed, 2)
-        && recycled(a, b, inputs, out, allowed, 3)
-        && recycled(a, b, inputs, out, allowed, 4)
-        && recycled(a, b, inputs, out, allowed, 5)
-        && recycled(a, b, inputs, out, allowed, 6)
-        && recycled(a, b, inputs, out, allowed, 7)
-        && recycled(a, b, inputs, out, allowed, 8)
-        && recycled(a, b, inputs, out, allowed, 9);
+        && recycled(a, b, inputs, out, allowed, 0, before.get('avatar', null))
+        && recycled(a, b, inputs, out, allowed, 1, before.get('avatar', null))
+        && recycled(a, b, inputs, out, allowed, 2, before.get('avatar', null))
+        && recycled(a, b, inputs, out, allowed, 3, before.get('avatar', null))
+        && recycled(a, b, inputs, out, allowed, 4, before.get('avatar', null))
+        && recycled(a, b, inputs, out, allowed, 5, before.get('avatar', null))
+        && recycled(a, b, inputs, out, allowed, 6, before.get('avatar', null))
+        && recycled(a, b, inputs, out, allowed, 7, before.get('avatar', null))
+        && recycled(a, b, inputs, out, allowed, 8, before.get('avatar', null))
+        && recycled(a, b, inputs, out, allowed, 9, before.get('avatar', null));
     }
 
-    function recycled(a, b, inputs, out, allowed, i) {
+    function recycled(a, b, inputs, out, allowed, i, avatar) {
       let c = inputs[i];
+      let spent = 10 - inputs.removeAll([c]).size();
       return c.matches(allowed) && a.get(c, 0) >= 0
-        && (c == out || a.get(c, 0) - b.get(c, 0) == inputs.removeAll([c]).size() - 10);
+        && b.get(c, 0) - spent >= (avatar == c ? 1 : 0)
+        && (c == out || a.get(c, 0) - b.get(c, 0) == -spent);
     }
 
     // Evolution: one character becomes the same animal in the next collection, paid with coins and the
@@ -131,7 +274,7 @@ service cloud.firestore {
 
     // Public leaderboard entry, a copy of the player's profile numbers; any signed-in player can read it.
     match /rankings/{uid} {
-      allow read: if request.auth != null;
+      allow read: if isSignedIn();
       allow create, update: if isOwner(uid) && isRanking(uid);
       allow delete: if isOwner(uid);
     }
@@ -208,7 +351,7 @@ service cloud.firestore {
 
     // Where each player is on the map; any signed-in player can see everyone who shares.
     match /locations/{uid} {
-      allow read: if request.auth != null;
+      allow read: if isSignedIn();
       allow create, update: if isOwner(uid) && isLocation(uid);
       allow delete: if isOwner(uid);
     }
@@ -273,10 +416,6 @@ service cloud.firestore {
         && d.lng is number && d.lng >= -180 && d.lng <= 180
         && d.updatedAt == request.time;
     }
-  }
-
-  function isOwner(uid) {
-    return request.auth != null && request.auth.uid == uid;
   }
 
   // First sign-in: exactly 100 coins, username tied to the account's email. With a birthday
@@ -364,13 +503,13 @@ service cloud.firestore {
   }
 
   function gradeOf(c) {
-    return c.matches('^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'N'
-      : c.matches('^sea_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'R'
-      : c.matches('^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'EP'
-      : c.matches('^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'U'
-      : c.matches('^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'L'
+    return c.matches('^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig|abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 'N'
+      : c.matches('^sea_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_rare_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'R'
+      : c.matches('^cats_epic_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'EP'
+      : c.matches('^cats_unique_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'U'
+      : c.matches('^cats_legendary_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'L'
       : c.matches('^autumn_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'E'
-      : c.matches('^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'H'
+      : c.matches('^cats_hidden_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'H'
       : '';
   }
 
@@ -385,32 +524,32 @@ service cloud.firestore {
 
   // Crafting tier (position in rewards.json crafting.tiers, from 1) of any character, or 0 outside the tiers.
   function tierOf(c) {
-    return c.matches('^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 1
-      : c.matches('^sea_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 2
-      : c.matches('^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 3
-      : c.matches('^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 4
-      : c.matches('^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 5
+    return c.matches('^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig|abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 1
+      : c.matches('^sea_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_rare_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 2
+      : c.matches('^cats_epic_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 3
+      : c.matches('^cats_unique_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 4
+      : c.matches('^cats_legendary_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 5
       : 0;
   }
 
   // The same, for animals crafting can produce (crafting.pool).
   function poolTier(c) {
-    return c.matches('^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 1
-      : c.matches('^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 2
-      : c.matches('^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 3
-      : c.matches('^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 4
-      : c.matches('^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 5
+    return c.matches('^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 1
+      : c.matches('^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_rare_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 2
+      : c.matches('^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_epic_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 3
+      : c.matches('^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_unique_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 4
+      : c.matches('^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_legendary_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 5
       : 0;
   }
 
   // The animal behind an id, e.g. 'tiger' for 'sea_tiger'.
   function speciesOf(c) {
-    return c.replace('^(autumn|sea|rare|premium|baby|epic|unique|legendary|hidden)_', '');
+    return c.replace('^(cats_legendary|cats_unique|cats_hidden|cats_rare|cats_epic|legendary|premium|autumn|unique|hidden|cats|rare|baby|epic|sea)_', '');
   }
 
   // 10% of eggs hold the baby version of a parent's animal.
   function isBaby(child, p) {
-    return child.matches('^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$')
+    return child.matches('^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig|abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$')
       && (child == 'baby_' + speciesOf(p[0]) || child == 'baby_' + speciesOf(p[1]));
   }
 
@@ -425,6 +564,10 @@ service cloud.firestore {
       : c.matches('^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'epic_' + speciesOf(c)
       : c.matches('^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'unique_' + speciesOf(c)
       : c.matches('^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'legendary_' + speciesOf(c)
+      : c.matches('^cats_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 'cats_rare_' + speciesOf(c)
+      : c.matches('^cats_rare_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 'cats_epic_' + speciesOf(c)
+      : c.matches('^cats_epic_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 'cats_unique_' + speciesOf(c)
+      : c.matches('^cats_unique_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 'cats_legendary_' + speciesOf(c)
       : '';
   }
 
@@ -501,6 +644,8 @@ service cloud.firestore {
         && picks.join(',').matches('^(?:(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|autumn_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig))(?:,(?:(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|autumn_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)))*$'))
       || (banner == 'sea' && pay(draws, cost, 8, 72, true)
         && picks.join(',').matches('^(?:(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|sea_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig))(?:,(?:(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|sea_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)))*$'))
+      || (banner == 'cats' && pay(draws, cost, 10, 90, true)
+        && picks.join(',').matches('^(?:cats_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)|cats_rare_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)|cats_epic_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)|cats_unique_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)|cats_legendary_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)|cats_hidden_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora))(?:,(?:cats_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)|cats_rare_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)|cats_epic_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)|cats_unique_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)|cats_legendary_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)|cats_hidden_(?:abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)))*$'))
       || (banner == 'premium' && pay(draws, cost, 10, 90, true)
         && picks.join(',').matches('^(?:(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|premium_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|rare_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|epic_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|unique_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|legendary_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|hidden_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig))(?:,(?:(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|premium_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|rare_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|epic_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|unique_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|legendary_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)|hidden_(?:mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)))*$'));
   }
@@ -537,13 +682,13 @@ service cloud.firestore {
   }
 
   function gradeFirstReward(g, chars) {
-    return g == 'N' ? (chars.keys().hasAny(['mouse', 'cow', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'sheep', 'monkey', 'chicken', 'dog', 'pig', 'baby_mouse', 'baby_cow', 'baby_tiger', 'baby_rabbit', 'baby_dragon', 'baby_snake', 'baby_horse', 'baby_sheep', 'baby_monkey', 'baby_chicken', 'baby_dog', 'baby_pig']) ? 10 : -1)
-      : g == 'R' ? (chars.keys().hasAny(['sea_mouse', 'sea_cow', 'sea_tiger', 'sea_rabbit', 'sea_dragon', 'sea_snake', 'sea_horse', 'sea_sheep', 'sea_monkey', 'sea_chicken', 'sea_dog', 'sea_pig', 'rare_mouse', 'rare_cow', 'rare_tiger', 'rare_rabbit', 'rare_dragon', 'rare_snake', 'rare_horse', 'rare_sheep', 'rare_monkey', 'rare_chicken', 'rare_dog', 'rare_pig', 'premium_mouse', 'premium_cow', 'premium_tiger', 'premium_rabbit', 'premium_dragon', 'premium_snake', 'premium_horse', 'premium_sheep', 'premium_monkey', 'premium_chicken', 'premium_dog', 'premium_pig']) ? 10 : -1)
-      : g == 'EP' ? (chars.keys().hasAny(['epic_mouse', 'epic_cow', 'epic_tiger', 'epic_rabbit', 'epic_dragon', 'epic_snake', 'epic_horse', 'epic_sheep', 'epic_monkey', 'epic_chicken', 'epic_dog', 'epic_pig']) ? 20 : -1)
-      : g == 'U' ? (chars.keys().hasAny(['unique_mouse', 'unique_cow', 'unique_tiger', 'unique_rabbit', 'unique_dragon', 'unique_snake', 'unique_horse', 'unique_sheep', 'unique_monkey', 'unique_chicken', 'unique_dog', 'unique_pig']) ? 30 : -1)
-      : g == 'L' ? (chars.keys().hasAny(['legendary_mouse', 'legendary_cow', 'legendary_tiger', 'legendary_rabbit', 'legendary_dragon', 'legendary_snake', 'legendary_horse', 'legendary_sheep', 'legendary_monkey', 'legendary_chicken', 'legendary_dog', 'legendary_pig']) ? 50 : -1)
+    return g == 'N' ? (chars.keys().hasAny(['mouse', 'cow', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'sheep', 'monkey', 'chicken', 'dog', 'pig', 'cats_abyssinian', 'cats_american_shorthair', 'cats_bengal', 'cats_british_shorthair', 'cats_maine_coon', 'cats_persian', 'cats_ragdoll', 'cats_russian_blue', 'cats_siamese', 'cats_turkish_angora', 'baby_mouse', 'baby_cow', 'baby_tiger', 'baby_rabbit', 'baby_dragon', 'baby_snake', 'baby_horse', 'baby_sheep', 'baby_monkey', 'baby_chicken', 'baby_dog', 'baby_pig', 'baby_abyssinian', 'baby_american_shorthair', 'baby_bengal', 'baby_british_shorthair', 'baby_maine_coon', 'baby_persian', 'baby_ragdoll', 'baby_russian_blue', 'baby_siamese', 'baby_turkish_angora']) ? 10 : -1)
+      : g == 'R' ? (chars.keys().hasAny(['sea_mouse', 'sea_cow', 'sea_tiger', 'sea_rabbit', 'sea_dragon', 'sea_snake', 'sea_horse', 'sea_sheep', 'sea_monkey', 'sea_chicken', 'sea_dog', 'sea_pig', 'cats_rare_abyssinian', 'cats_rare_american_shorthair', 'cats_rare_bengal', 'cats_rare_british_shorthair', 'cats_rare_maine_coon', 'cats_rare_persian', 'cats_rare_ragdoll', 'cats_rare_russian_blue', 'cats_rare_siamese', 'cats_rare_turkish_angora', 'rare_mouse', 'rare_cow', 'rare_tiger', 'rare_rabbit', 'rare_dragon', 'rare_snake', 'rare_horse', 'rare_sheep', 'rare_monkey', 'rare_chicken', 'rare_dog', 'rare_pig', 'premium_mouse', 'premium_cow', 'premium_tiger', 'premium_rabbit', 'premium_dragon', 'premium_snake', 'premium_horse', 'premium_sheep', 'premium_monkey', 'premium_chicken', 'premium_dog', 'premium_pig']) ? 10 : -1)
+      : g == 'EP' ? (chars.keys().hasAny(['cats_epic_abyssinian', 'cats_epic_american_shorthair', 'cats_epic_bengal', 'cats_epic_british_shorthair', 'cats_epic_maine_coon', 'cats_epic_persian', 'cats_epic_ragdoll', 'cats_epic_russian_blue', 'cats_epic_siamese', 'cats_epic_turkish_angora', 'epic_mouse', 'epic_cow', 'epic_tiger', 'epic_rabbit', 'epic_dragon', 'epic_snake', 'epic_horse', 'epic_sheep', 'epic_monkey', 'epic_chicken', 'epic_dog', 'epic_pig']) ? 20 : -1)
+      : g == 'U' ? (chars.keys().hasAny(['cats_unique_abyssinian', 'cats_unique_american_shorthair', 'cats_unique_bengal', 'cats_unique_british_shorthair', 'cats_unique_maine_coon', 'cats_unique_persian', 'cats_unique_ragdoll', 'cats_unique_russian_blue', 'cats_unique_siamese', 'cats_unique_turkish_angora', 'unique_mouse', 'unique_cow', 'unique_tiger', 'unique_rabbit', 'unique_dragon', 'unique_snake', 'unique_horse', 'unique_sheep', 'unique_monkey', 'unique_chicken', 'unique_dog', 'unique_pig']) ? 30 : -1)
+      : g == 'L' ? (chars.keys().hasAny(['cats_legendary_abyssinian', 'cats_legendary_american_shorthair', 'cats_legendary_bengal', 'cats_legendary_british_shorthair', 'cats_legendary_maine_coon', 'cats_legendary_persian', 'cats_legendary_ragdoll', 'cats_legendary_russian_blue', 'cats_legendary_siamese', 'cats_legendary_turkish_angora', 'legendary_mouse', 'legendary_cow', 'legendary_tiger', 'legendary_rabbit', 'legendary_dragon', 'legendary_snake', 'legendary_horse', 'legendary_sheep', 'legendary_monkey', 'legendary_chicken', 'legendary_dog', 'legendary_pig']) ? 50 : -1)
       : g == 'E' ? (chars.keys().hasAny(['autumn_mouse', 'autumn_cow', 'autumn_tiger', 'autumn_rabbit', 'autumn_dragon', 'autumn_snake', 'autumn_horse', 'autumn_sheep', 'autumn_monkey', 'autumn_chicken', 'autumn_dog', 'autumn_pig']) ? 10 : -1)
-      : g == 'H' ? (chars.keys().hasAny(['hidden_mouse', 'hidden_cow', 'hidden_tiger', 'hidden_rabbit', 'hidden_dragon', 'hidden_snake', 'hidden_horse', 'hidden_sheep', 'hidden_monkey', 'hidden_chicken', 'hidden_dog', 'hidden_pig']) ? 30 : -1)
+      : g == 'H' ? (chars.keys().hasAny(['cats_hidden_abyssinian', 'cats_hidden_american_shorthair', 'cats_hidden_bengal', 'cats_hidden_british_shorthair', 'cats_hidden_maine_coon', 'cats_hidden_persian', 'cats_hidden_ragdoll', 'cats_hidden_russian_blue', 'cats_hidden_siamese', 'cats_hidden_turkish_angora', 'hidden_mouse', 'hidden_cow', 'hidden_tiger', 'hidden_rabbit', 'hidden_dragon', 'hidden_snake', 'hidden_horse', 'hidden_sheep', 'hidden_monkey', 'hidden_chicken', 'hidden_dog', 'hidden_pig']) ? 30 : -1)
       : -1;
   }
 
@@ -563,24 +708,24 @@ service cloud.firestore {
   }
 
   function charFirstReward(c, chars) {
-    return c.matches('^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^autumn_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^sea_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') && chars.get(c, 0) > 0
-      ? c.matches('^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 10
-        : c.matches('^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 15
-        : c.matches('^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 30
-        : c.matches('^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 30
+    return c.matches('^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^autumn_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^sea_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_rare_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_epic_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_unique_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_legendary_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_hidden_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig|abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') && chars.get(c, 0) > 0
+      ? c.matches('^cats_epic_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 10
+        : c.matches('^cats_unique_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 15
+        : c.matches('^cats_legendary_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 30
+        : c.matches('^cats_hidden_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 30
         : 5
       : -1;
   }
 
   function charCountReward(c, s, chars) {
     let m = int(s);
-    return string(m) == s && c.matches('^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^autumn_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^sea_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') && chars.get(c, 0) >= m
-      ? ([5, 10, 30, 50].hasAny([m]) ? c.matches('^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 10
-        : c.matches('^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 10
-        : c.matches('^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 10
+    return string(m) == s && c.matches('^(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^autumn_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^sea_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^cats_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_rare_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_epic_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_unique_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_legendary_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^cats_hidden_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^rare_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^baby_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig|abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^epic_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$|^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') && chars.get(c, 0) >= m
+      ? ([5, 10, 30, 50].hasAny([m]) ? c.matches('^cats_unique_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^unique_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 10
+        : c.matches('^cats_legendary_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 10
+        : c.matches('^cats_hidden_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 10
         : 5
-        : m > 0 && m % 100 == 0 ? c.matches('^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 20
-        : c.matches('^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 20
+        : m > 0 && m % 100 == 0 ? c.matches('^cats_legendary_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^legendary_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 20
+        : c.matches('^cats_hidden_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$|^hidden_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 20
         : 10
         : -1)
       : -1;
@@ -590,9 +735,15 @@ service cloud.firestore {
     return col == 'normal' ? (chars.keys().hasAll(['mouse', 'cow', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'sheep', 'monkey', 'chicken', 'dog', 'pig']) ? 30 : -1)
       : col == 'autumn' ? (chars.keys().hasAll(['autumn_mouse', 'autumn_cow', 'autumn_tiger', 'autumn_rabbit', 'autumn_dragon', 'autumn_snake', 'autumn_horse', 'autumn_sheep', 'autumn_monkey', 'autumn_chicken', 'autumn_dog', 'autumn_pig']) ? 30 : -1)
       : col == 'sea' ? (chars.keys().hasAll(['sea_mouse', 'sea_cow', 'sea_tiger', 'sea_rabbit', 'sea_dragon', 'sea_snake', 'sea_horse', 'sea_sheep', 'sea_monkey', 'sea_chicken', 'sea_dog', 'sea_pig']) ? 30 : -1)
+      : col == 'cats' ? (chars.keys().hasAll(['cats_abyssinian', 'cats_american_shorthair', 'cats_bengal', 'cats_british_shorthair', 'cats_maine_coon', 'cats_persian', 'cats_ragdoll', 'cats_russian_blue', 'cats_siamese', 'cats_turkish_angora']) ? 30 : -1)
+      : col == 'cats_rare' ? (chars.keys().hasAll(['cats_rare_abyssinian', 'cats_rare_american_shorthair', 'cats_rare_bengal', 'cats_rare_british_shorthair', 'cats_rare_maine_coon', 'cats_rare_persian', 'cats_rare_ragdoll', 'cats_rare_russian_blue', 'cats_rare_siamese', 'cats_rare_turkish_angora']) ? 30 : -1)
+      : col == 'cats_epic' ? (chars.keys().hasAll(['cats_epic_abyssinian', 'cats_epic_american_shorthair', 'cats_epic_bengal', 'cats_epic_british_shorthair', 'cats_epic_maine_coon', 'cats_epic_persian', 'cats_epic_ragdoll', 'cats_epic_russian_blue', 'cats_epic_siamese', 'cats_epic_turkish_angora']) ? 30 : -1)
+      : col == 'cats_unique' ? (chars.keys().hasAll(['cats_unique_abyssinian', 'cats_unique_american_shorthair', 'cats_unique_bengal', 'cats_unique_british_shorthair', 'cats_unique_maine_coon', 'cats_unique_persian', 'cats_unique_ragdoll', 'cats_unique_russian_blue', 'cats_unique_siamese', 'cats_unique_turkish_angora']) ? 30 : -1)
+      : col == 'cats_legendary' ? (chars.keys().hasAll(['cats_legendary_abyssinian', 'cats_legendary_american_shorthair', 'cats_legendary_bengal', 'cats_legendary_british_shorthair', 'cats_legendary_maine_coon', 'cats_legendary_persian', 'cats_legendary_ragdoll', 'cats_legendary_russian_blue', 'cats_legendary_siamese', 'cats_legendary_turkish_angora']) ? 30 : -1)
+      : col == 'cats_hidden' ? (chars.keys().hasAll(['cats_hidden_abyssinian', 'cats_hidden_american_shorthair', 'cats_hidden_bengal', 'cats_hidden_british_shorthair', 'cats_hidden_maine_coon', 'cats_hidden_persian', 'cats_hidden_ragdoll', 'cats_hidden_russian_blue', 'cats_hidden_siamese', 'cats_hidden_turkish_angora']) ? 30 : -1)
       : col == 'rare' ? (chars.keys().hasAll(['rare_mouse', 'rare_cow', 'rare_tiger', 'rare_rabbit', 'rare_dragon', 'rare_snake', 'rare_horse', 'rare_sheep', 'rare_monkey', 'rare_chicken', 'rare_dog', 'rare_pig']) ? 30 : -1)
       : col == 'premium' ? (chars.keys().hasAll(['premium_mouse', 'premium_cow', 'premium_tiger', 'premium_rabbit', 'premium_dragon', 'premium_snake', 'premium_horse', 'premium_sheep', 'premium_monkey', 'premium_chicken', 'premium_dog', 'premium_pig']) ? 30 : -1)
-      : col == 'baby' ? (chars.keys().hasAll(['baby_mouse', 'baby_cow', 'baby_tiger', 'baby_rabbit', 'baby_dragon', 'baby_snake', 'baby_horse', 'baby_sheep', 'baby_monkey', 'baby_chicken', 'baby_dog', 'baby_pig']) ? 30 : -1)
+      : col == 'baby' ? (chars.keys().hasAll(['baby_mouse', 'baby_cow', 'baby_tiger', 'baby_rabbit', 'baby_dragon', 'baby_snake', 'baby_horse', 'baby_sheep', 'baby_monkey', 'baby_chicken', 'baby_dog', 'baby_pig', 'baby_abyssinian', 'baby_american_shorthair', 'baby_bengal', 'baby_british_shorthair', 'baby_maine_coon', 'baby_persian', 'baby_ragdoll', 'baby_russian_blue', 'baby_siamese', 'baby_turkish_angora']) ? 30 : -1)
       : col == 'epic' ? (chars.keys().hasAll(['epic_mouse', 'epic_cow', 'epic_tiger', 'epic_rabbit', 'epic_dragon', 'epic_snake', 'epic_horse', 'epic_sheep', 'epic_monkey', 'epic_chicken', 'epic_dog', 'epic_pig']) ? 30 : -1)
       : col == 'unique' ? (chars.keys().hasAll(['unique_mouse', 'unique_cow', 'unique_tiger', 'unique_rabbit', 'unique_dragon', 'unique_snake', 'unique_horse', 'unique_sheep', 'unique_monkey', 'unique_chicken', 'unique_dog', 'unique_pig']) ? 30 : -1)
       : col == 'legendary' ? (chars.keys().hasAll(['legendary_mouse', 'legendary_cow', 'legendary_tiger', 'legendary_rabbit', 'legendary_dragon', 'legendary_snake', 'legendary_horse', 'legendary_sheep', 'legendary_monkey', 'legendary_chicken', 'legendary_dog', 'legendary_pig']) ? 30 : -1)

@@ -1,5 +1,6 @@
-import { getAuth } from 'firebase/auth';
+import { initializeAuth, inMemoryPersistence } from 'firebase/auth';
 
 import { app } from './firebase';
 
-export const auth = getAuth(app);
+// A new page/app process starts at sign-in; credentials are never restored from browser storage.
+export const auth = initializeAuth(app, { persistence: inMemoryPersistence });

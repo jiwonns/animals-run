@@ -1,0 +1,27 @@
+    function isSignedIn() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/activeSessions/$(request.auth.uid))
+        && get(/databases/$(database)/documents/activeSessions/$(request.auth.uid)).data.active
+        && get(/databases/$(database)/documents/activeSessions/$(request.auth.uid)).data.authTime == request.auth.token.auth_time;
+    }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    match /activeSessions/{uid} {
+      function owner() { return request.auth != null && request.auth.uid == uid; }
+      function validSession() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['sessionId', 'authTime', 'active', 'updatedAt'])
+          && d.keys().hasOnly(['sessionId', 'authTime', 'active', 'updatedAt'])
+          && d.sessionId is string && d.sessionId.matches('^[A-Za-z0-9_-]{20,128}$')
+          && d.authTime is int && d.authTime == request.auth.token.auth_time
+          && d.active is bool && d.updatedAt == request.time;
+      }
+      allow get: if owner();
+      allow create: if owner() && validSession() && request.resource.data.active;
+      allow update: if owner() && validSession() && (
+        (request.resource.data.authTime > resource.data.authTime && request.resource.data.active)
+        || (request.resource.data.authTime == resource.data.authTime
+          && request.resource.data.sessionId == resource.data.sessionId && resource.data.active)
+      );
+      allow delete: if owner() && request.auth.token.auth_time == resource.data.authTime
+        && !exists(/databases/$(database)/documents/users/$(uid));
+    }

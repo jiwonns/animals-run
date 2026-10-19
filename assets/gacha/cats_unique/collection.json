@@ -1,0 +1,17 @@
+{
+  "name": "고양이 유니크 컬렉션",
+  "grade": "U",
+  "order": 1.53,
+  "names": {
+    "american_shorthair": "꽃빛 아메리칸 쇼트헤어",
+    "british_shorthair": "꽃빛 브리티시 쇼트헤어",
+    "russian_blue": "꽃빛 러시안 블루",
+    "siamese": "꽃빛 샴",
+    "ragdoll": "꽃빛 랙돌",
+    "persian": "꽃빛 페르시안",
+    "maine_coon": "꽃빛 메인쿤",
+    "bengal": "꽃빛 벵갈",
+    "abyssinian": "꽃빛 아비시니안",
+    "turkish_angora": "꽃빛 터키시 앙고라"
+  }
+}

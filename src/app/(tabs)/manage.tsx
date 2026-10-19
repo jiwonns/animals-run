@@ -1,20 +1,30 @@
-import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import {
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
-import { CoinBadge } from '@/components/coin-badge';
-import { Icon, ICONS } from '@/components/icon';
-import { WalkMap, type MapPlayer } from '@/components/walk-map';
-import { REWARDS } from '@/constants/gacha.generated';
-import { useActivePlayers } from '@/hooks/use-active-players';
-import { useColors } from '@/hooks/use-colors';
-import { useConfirmExit } from '@/hooks/use-confirm-exit';
-import { displayName } from '@/lib/profile';
-import { useSession } from '@/providers/session-provider';
-import { useWalk } from '@/providers/walk-provider';
+import { CoinBadge } from "@/components/coin-badge";
+import { Icon, ICONS } from "@/components/icon";
+import { WalkMap, type MapPlayer } from "@/components/walk-map";
+import { REWARDS } from "@/constants/gacha.generated";
+import { useActivePlayers } from "@/hooks/use-active-players";
+import { useColors } from "@/hooks/use-colors";
+import { useConfirmExit } from "@/hooks/use-confirm-exit";
+import { displayName } from "@/lib/profile";
+import { useSession } from "@/providers/session-provider";
+import { useWalk } from "@/providers/walk-provider";
 
-const WALK_COLOR = '#10B981';
+const WALK_COLOR = "#10B981";
 
 export default function MapScreen() {
   const colors = useColors();
@@ -29,7 +39,7 @@ export default function MapScreen() {
 
   // Asks once on the first visit; after that only the button asks.
   useEffect(() => {
-    if (location !== 'denied' || asked.current) return;
+    if (location !== "denied" || asked.current) return;
     asked.current = true;
     requestLocation();
   }, [location, requestLocation]);
@@ -44,7 +54,7 @@ export default function MapScreen() {
   }));
   if (walk.position && profile) {
     players.push({
-      id: user?.uid ?? 'me',
+      id: user?.uid ?? "me",
       name: displayName(profile),
       avatar: profile.avatar ?? null,
       ...walk.position,
@@ -53,54 +63,91 @@ export default function MapScreen() {
   }
 
   const stepNote =
-    Platform.OS === 'web'
-      ? '걸음은 앱에서만 셀 수 있어요'
-      : walk.pedometer === 'unavailable'
-        ? '걸음 센서가 없는 기기예요'
-      : walk.pedometer === 'denied'
-        ? '신체 활동을 허용하면 걸음이 코인이 돼요'
-        : `${REWARDS.stepsPerCoin}걸음마다 1코인 · 오늘 +${Math.floor(walk.todaySteps / REWARDS.stepsPerCoin).toLocaleString()}코인`;
+    Platform.OS === "web"
+      ? "걸음은 앱에서만 셀 수 있어요"
+      : walk.pedometer === "unavailable"
+        ? "걸음 센서가 없는 기기예요"
+        : walk.pedometer === "denied"
+          ? "신체 활동을 허용하면 걸음이 코인이 돼요"
+          : `${REWARDS.stepsPerCoin}걸음마다 1코인 · 오늘 +${Math.floor(walk.todaySteps / REWARDS.stepsPerCoin).toLocaleString()}코인`;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {walk.location === 'denied' ? (
+      {walk.location === "denied" ? (
         <Message
           title="위치 권한이 필요해요"
           body={
-            Platform.OS === 'web'
-              ? '내 위치와 주변 친구들을 지도에 보여주려면 위치를 허용해주세요. 허용 창이 안 뜨면 브라우저 설정에서 이 사이트의 위치를 허용해주세요.'
-              : '내 위치와 주변 친구들을 지도에 보여주려면 위치를 허용해주세요.'
+            Platform.OS === "web"
+              ? "내 위치와 주변 친구들을 지도에 보여주려면 위치를 허용해주세요. 허용 창이 안 뜨면 브라우저 설정에서 이 사이트의 위치를 허용해주세요."
+              : "내 위치와 주변 친구들을 지도에 보여주려면 위치를 허용해주세요."
           }
-          action={{ label: '위치 허용하기', onPress: () => walk.requestLocation() }}
-          secondary={Platform.OS === 'web' ? undefined : { label: '설정 열기', onPress: () => Linking.openSettings() }}
+          action={{
+            label: "위치 허용하기",
+            onPress: () => walk.requestLocation(),
+          }}
+          secondary={
+            Platform.OS === "web"
+              ? undefined
+              : { label: "설정 열기", onPress: () => Linking.openSettings() }
+          }
           colors={colors}
         />
       ) : (
-        <WalkMap players={players} focusKey={focusKey} color={colors.primary} />
+        <WalkMap
+          players={players}
+          focusKey={focusKey}
+          color={colors.primary}
+          onPlayerPress={(uid) =>
+            router.push({ pathname: "/player/[uid]", params: { uid } })
+          }
+        />
       )}
 
-      <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
-        <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
+      <SafeAreaView edges={["top"]} style={styles.top} pointerEvents="box-none">
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colors.background, borderColor: colors.border },
+          ]}
+        >
           <View style={[styles.well, { backgroundColor: `${WALK_COLOR}22` }]}>
             <Icon name={ICONS.walk} size={24} color={WALK_COLOR} />
           </View>
           <View style={styles.cardBody}>
-            <Text style={[styles.cardLabel, { color: colors.secondary }]}>오늘 걸음</Text>
+            <Text style={[styles.cardLabel, { color: colors.secondary }]}>
+              오늘 걸음
+            </Text>
             <Text style={[styles.steps, { color: colors.text }]}>
               {walk.todaySteps.toLocaleString()}
-              <Text style={[styles.stepsUnit, { color: colors.secondary }]}> 걸음</Text>
+              <Text style={[styles.stepsUnit, { color: colors.secondary }]}>
+                {" "}
+                걸음
+              </Text>
             </Text>
-            <Text style={[styles.cardNote, { color: colors.secondary }]} numberOfLines={1}>
+            <Text
+              style={[styles.cardNote, { color: colors.secondary }]}
+              numberOfLines={1}
+            >
               {stepNote}
             </Text>
           </View>
           <CoinBadge coins={profile?.coins ?? 0} />
         </View>
-        {walk.location === 'ready' && (
+        {walk.location === "ready" && (
           <View style={styles.chips} pointerEvents="box-none">
-            <View style={[styles.chip, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <View
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
               <Icon name={ICONS.people} size={15} color={colors.text} />
-              <Text style={[styles.chipLabel, { color: colors.text }]}>지금 {others.length}명</Text>
+              <Text style={[styles.chipLabel, { color: colors.text }]}>
+                지금 {others.length}명
+              </Text>
             </View>
             <Pressable
               accessibilityRole="switch"
@@ -111,31 +158,50 @@ export default function MapScreen() {
                 styles.chip,
                 walk.sharing
                   ? { backgroundColor: WALK_COLOR, borderColor: WALK_COLOR }
-                  : { backgroundColor: colors.background, borderColor: colors.border },
+                  : {
+                      backgroundColor: colors.background,
+                      borderColor: colors.border,
+                    },
                 pressed && styles.pressed,
-              ]}>
+              ]}
+            >
               <Icon
                 name={walk.sharing ? ICONS.visible : ICONS.hidden}
                 size={15}
-                color={walk.sharing ? '#fff' : colors.secondary}
+                color={walk.sharing ? "#fff" : colors.secondary}
               />
-              <Text style={[styles.chipLabel, { color: walk.sharing ? '#fff' : colors.secondary }]}>
-                {walk.sharing ? '내 위치 공유 중' : '내 위치 숨김'}
+              <Text
+                style={[
+                  styles.chipLabel,
+                  { color: walk.sharing ? "#fff" : colors.secondary },
+                ]}
+              >
+                {walk.sharing ? "내 위치 공유 중" : "내 위치 숨김"}
               </Text>
             </Pressable>
           </View>
         )}
       </SafeAreaView>
 
-      {walk.location === 'ready' && (
-        <View style={[styles.bottom, { bottom: insets.bottom + 16 }]} pointerEvents="box-none">
+      {walk.location === "ready" && (
+        <View
+          style={[styles.bottom, { bottom: insets.bottom + 16 }]}
+          pointerEvents="box-none"
+        >
           <View style={styles.row} pointerEvents="box-none">
             {!profile?.avatar && (
               <Pressable
                 accessibilityRole="button"
-                onPress={() => router.navigate('/mypage/avatar')}
-                style={({ pressed }) => [styles.pill, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                <Text style={[styles.pillLabel, { color: '#fff' }]}>지도에 표시할 동물 고르기</Text>
+                onPress={() => router.navigate("/mypage/avatar")}
+                style={({ pressed }) => [
+                  styles.pill,
+                  { backgroundColor: colors.primary },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={[styles.pillLabel, { color: "#fff" }]}>
+                  지도에 표시할 동물 고르기
+                </Text>
               </Pressable>
             )}
             <View style={styles.spacer} />
@@ -145,9 +211,13 @@ export default function MapScreen() {
               onPress={() => setFocusKey((k) => k + 1)}
               style={({ pressed }) => [
                 styles.locate,
-                { backgroundColor: colors.background, borderColor: colors.border },
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
                 pressed && styles.pressed,
-              ]}>
+              ]}
+            >
               <Icon name={ICONS.locate} size={22} color={colors.primary} />
             </Pressable>
           </View>
@@ -172,18 +242,33 @@ function Message({ title, body, action, secondary, colors }: MessageProps) {
         <Icon name={ICONS.location} size={36} color={colors.primary} />
       </View>
       <Text style={[styles.messageTitle, { color: colors.text }]}>{title}</Text>
-      {body && <Text style={[styles.messageBody, { color: colors.secondary }]}>{body}</Text>}
+      {body && (
+        <Text style={[styles.messageBody, { color: colors.secondary }]}>
+          {body}
+        </Text>
+      )}
       {action && (
         <Pressable
           accessibilityRole="button"
           onPress={action.onPress}
-          style={({ pressed }) => [styles.messageButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+          style={({ pressed }) => [
+            styles.messageButton,
+            { backgroundColor: colors.primary },
+            pressed && styles.pressed,
+          ]}
+        >
           <Text style={styles.messageButtonLabel}>{action.label}</Text>
         </Pressable>
       )}
       {secondary && (
-        <Pressable accessibilityRole="button" onPress={secondary.onPress} hitSlop={8}>
-          <Text style={[styles.messageLink, { color: colors.secondary }]}>{secondary.label}</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={secondary.onPress}
+          hitSlop={8}
+        >
+          <Text style={[styles.messageLink, { color: colors.secondary }]}>
+            {secondary.label}
+          </Text>
         </Pressable>
       )}
     </View>
@@ -195,7 +280,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   top: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -203,106 +288,106 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     padding: 14,
     borderRadius: 20,
     borderWidth: 1,
-    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.12)',
+    boxShadow: "0 4px 14px rgba(0, 0, 0, 0.12)",
   },
   well: {
     width: 48,
     height: 48,
     borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   cardBody: {
     flex: 1,
   },
   cardLabel: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   steps: {
     fontSize: 26,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
   },
   stepsUnit: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cardNote: {
     fontSize: 12,
     marginTop: 1,
   },
   chips: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 10,
   },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 5,
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 999,
     borderWidth: 1,
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
   },
   chipLabel: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   bottom: {
-    position: 'absolute',
+    position: "absolute",
     left: 16,
     right: 16,
     gap: 10,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   spacer: {
     flex: 1,
   },
   pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'transparent',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
+    borderColor: "transparent",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
   },
   pillLabel: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   locate: {
     width: 52,
     height: 52,
     borderRadius: 26,
     borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
   },
   pressed: {
     opacity: 0.7,
   },
   message: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 32,
     gap: 12,
   },
@@ -310,17 +395,17 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 4,
   },
   messageTitle: {
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   messageBody: {
     fontSize: 15,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
   messageButton: {
@@ -330,13 +415,13 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   messageButtonLabel: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   messageLink: {
     fontSize: 14,
-    fontWeight: '600',
-    textDecorationLine: 'underline',
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
 });
