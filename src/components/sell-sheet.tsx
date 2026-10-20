@@ -1,4 +1,4 @@
-import { Image } from "expo-image";
+import { Image } from '@/components/gacha-image';
 import { useRef, useState } from "react";
 import { Alert, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

@@ -2,6 +2,9 @@ import { router, type Href } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { AvatarFace } from '@/components/avatar-face';
+import { BondCard } from '@/components/bond-card';
+import { EquippedMedal } from '@/components/medal-showcase';
+import { useMedalShowcase } from '@/hooks/use-medal-showcase';
 import { Icon, ICONS } from '@/components/icon';
 import { TICKET_COLOR } from '@/components/ticket-badge';
 import { CHARACTERS } from '@/constants/characters';
@@ -13,6 +16,8 @@ import { displayName } from '@/lib/profile';
 import { useSession } from '@/providers/session-provider';
 
 const MENU: { label: string; href: Href; icon: keyof typeof ICONS; tint: string }[] = [
+  { label: '친구', href: '/friends', icon: 'people', tint: '#10B981' },
+  { label: '알림', href: '/notifications', icon: 'bell', tint: '#F59E0B' },
   { label: '랭킹', href: '/mypage/ranking', icon: 'ranking', tint: '#8B5CF6' },
   { label: '업적', href: '/mypage/achievements', icon: 'trophy', tint: '#F59E0B' },
   { label: '뽑기 기록', href: '/mypage/history', icon: 'history', tint: '#3B82F6' },
@@ -25,13 +30,14 @@ const AVATAR_SIZE = 92;
 export default function MyPageScreen() {
   const colors = useColors();
   useConfirmExit();
-  const { profile } = useSession();
+  const { user, profile } = useSession();
+  const showcase = useMedalShowcase(user?.uid);
   const { claimable } = useAchievements();
   const name = profile ? displayName(profile) : '';
   const owned = CHARACTERS.filter((c) => (profile?.characters[c.id] ?? 0) > 0).length;
 
   const stats = [
-    { label: '도감', value: `${owned}/${CHARACTERS.length}` },
+    { label: '보유 동물', value: `${owned}종` },
     { label: '뽑기 횟수', value: (profile?.drawCount ?? 0).toLocaleString() },
     { label: '총 걸음', value: (profile?.steps ?? 0).toLocaleString() },
   ];
@@ -83,6 +89,7 @@ export default function MyPageScreen() {
           </Pressable>
         </View>
 
+        <EquippedMedal showcase={showcase} />
         <View style={[styles.stats, { borderColor: colors.border }]}>
           {stats.map((stat, index) => (
             <View
@@ -95,6 +102,7 @@ export default function MyPageScreen() {
         </View>
       </View>
 
+      <BondCard />
       <View style={styles.wallet}>
         {wallet.map((item) => (
           <View key={item.label} style={[styles.walletCard, { backgroundColor: colors.surface }]}>
@@ -109,6 +117,16 @@ export default function MyPageScreen() {
         ))}
       </View>
 
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.navigate({ pathname: '/collection', params: { section: 'medals' } })}
+        style={({ pressed }) => [styles.menu, styles.row, { backgroundColor: colors.surface }, pressed && { opacity: 0.6 }]}>
+        <View style={[styles.rowIcon, { backgroundColor: '#F59E0B' }]}>
+          <Icon name={ICONS.grade} size={17} color="#fff" />
+        </View>
+        <Text style={[styles.rowLabel, { color: colors.text }]}>훈장 장착하러 가기</Text>
+        <Icon name={ICONS.chevron} size={16} color={colors.secondary} />
+      </Pressable>
       <View style={[styles.menu, { backgroundColor: colors.surface }]}>
         {MENU.map((item, index) => (
           <Pressable

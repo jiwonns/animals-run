@@ -1,6 +1,8 @@
-import { router } from "expo-router";
+import { useCatalog } from '@/providers/catalog-provider';
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { MedalCabinet } from '@/components/medal-cabinet';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CharacterCard } from "@/components/character-card";
@@ -19,6 +21,7 @@ import { SALE_PRICES } from "@/lib/inventory";
 import { useColors } from "@/hooks/use-colors";
 import { useConfirmExit } from "@/hooks/use-confirm-exit";
 import { useGridCellWidth } from "@/hooks/use-grid-cell-width";
+import { useListWindow } from '@/hooks/use-list-window';
 import { useSession } from "@/providers/session-provider";
 
 const COLUMNS = 3;
@@ -43,10 +46,16 @@ const GRADE_FILTERS: SelectOption<Grade | null>[] = [
 ];
 
 export default function CollectionScreen() {
+  useCatalog();
   const colors = useColors();
   useConfirmExit();
   const cellWidth = useGridCellWidth(COLUMNS, PADDING, GAP);
-  const { profile } = useSession();
+  const { user, profile } = useSession();
+  const { section: sectionParam } = useLocalSearchParams<{ section?: string }>();
+  const section = sectionParam === 'medals' ? '훈장' : sectionParam === 'other' ? '기타' : '동물';
+  function setSection(tab: '동물' | '훈장' | '기타') {
+    router.setParams({ section: tab === '훈장' ? 'medals' : tab === '기타' ? 'other' : 'animals' });
+  }
   const [grade, setGrade] = useState<Grade | null>(null);
   const [sort, setSort] = useState<Sort>("grade");
   const [selling, setSelling] = useState(false);
@@ -55,7 +64,6 @@ export default function CollectionScreen() {
   const owned = profile?.characters ?? {};
   const countOf = (id: keyof typeof owned) => owned[id] ?? 0;
   const mine = CHARACTERS.filter((c) => countOf(c.id) > 0);
-  const total = mine.reduce((sum, c) => sum + countOf(c.id), 0);
 
   const shown = mine
     .filter((c) => grade === null || c.grade === grade)
@@ -74,6 +82,7 @@ export default function CollectionScreen() {
     })
     .map(({ character }) => character);
 
+  const page = useListWindow(shown, `${user?.uid}:${grade}:${sort}`);
   return (
     <SafeAreaView
       edges={["top"]}
@@ -83,10 +92,11 @@ export default function CollectionScreen() {
         <View>
           <Text style={[styles.title, { color: colors.text }]}>보관함</Text>
           <Text style={[styles.summary, { color: colors.secondary }]}>
-            {mine.length}종 · 총 {total}마리
+            보유 동물 {mine.length}종
           </Text>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {section === '동물' && (
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ selected: selling }}
@@ -105,6 +115,7 @@ export default function CollectionScreen() {
               {selling ? "완료" : "판매"}
             </Text>
           </Pressable>
+          )}
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push("/collection/dex")}
@@ -119,7 +130,13 @@ export default function CollectionScreen() {
         </View>
       </View>
 
-      {!profile ? (
+      <View style={{ flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 12, gap: 8 }}>
+        {(['동물', '훈장', '기타'] as const).map(tab => <Pressable key={tab} accessibilityRole="tab" accessibilityState={{ selected: tab === section }} onPress={() => { setSection(tab); setSelling(false); }} style={{ flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: section === tab ? colors.primary : colors.surface }}><Text style={{ color: section === tab ? '#fff' : colors.text, fontWeight: '800' }}>{tab}</Text></Pressable>)}
+      </View>
+      {section === '훈장' && user ? <MedalCabinet uid={user.uid} /> : section === '기타' ? <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
+        <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800' }}>소지품</Text>
+        <View style={{ padding: 20, gap: 12, borderRadius: 16, backgroundColor: colors.surface }}><Text style={{ color: colors.text }}>🪙 코인 · {(profile?.coins ?? 0).toLocaleString()}</Text><Text style={{ color: colors.text }}>🎟 뽑기권 · {(profile?.tickets ?? 0).toLocaleString()}장</Text><Text style={{ color: colors.secondary }}>걸음과 업적으로 모은 보상을 보관해요.</Text></View>
+      </ScrollView> : !profile ? (
         <RunningLoader label="보관함을 여는 중" style={styles.loading} />
       ) : mine.length === 0 ? (
         <View style={styles.empty}>
@@ -178,7 +195,10 @@ export default function CollectionScreen() {
           </View>
 
           <FlatList
-            data={shown}
+            data={page.data}
+            onEndReached={page.loadMore}
+            onEndReachedThreshold={0.4}
+            maxToRenderPerBatch={12}
             numColumns={COLUMNS}
             keyExtractor={(character) => character.id}
             renderItem={({ item }) =>
@@ -209,7 +229,6 @@ export default function CollectionScreen() {
                 <CharacterCard
                   character={item}
                   width={cellWidth}
-                  count={countOf(item.id)}
                 />
               )
             }

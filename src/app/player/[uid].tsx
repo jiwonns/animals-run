@@ -1,25 +1,38 @@
-import { Image } from "expo-image";
+import { useCatalog } from '@/providers/catalog-provider';
+import { Image } from '@/components/gacha-image';
 import { Stack, useLocalSearchParams } from "expo-router";
 import { getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { AvatarFace } from "@/components/avatar-face";
+import { FriendActions } from '@/components/friend-actions';
+import { EquippedMedal, MedalShowcaseList } from '@/components/medal-showcase';
+import { MoreButton } from '@/components/more-button';
+import { PagedListSheet } from '@/components/paged-list-sheet';
+import { CharacterCard } from '@/components/character-card';
+import { useGridCellWidth } from '@/hooks/use-grid-cell-width';
+import { useMedalShowcase } from '@/hooks/use-medal-showcase';
 import { CommunityEmpty } from "@/components/community-ui";
 import { Icon, ICONS } from "@/components/icon";
 import { RunningLoader } from "@/components/running-loader";
 import {
-  CHARACTERS,
   CHARACTER_BY_ID,
   GRADES,
   GRADE_ORDER,
 } from "@/constants/characters";
 import { useColors } from "@/hooks/use-colors";
 import { locationRef, displayName } from "@/lib/profile";
-import { ownedByGrade, rankingRef, type RankingEntry } from "@/lib/ranking";
+import { rankingRef, type RankingEntry } from "@/lib/ranking";
+import { kindsByGrade, profileAnimals } from '@/lib/inventory';
 
 export default function PlayerScreen() {
+  useCatalog();
   const { uid } = useLocalSearchParams<{ uid: string }>();
   const c = useColors();
+  const showcase = useMedalShowcase(uid);
+  const [expandedAnimalsFor, setExpandedAnimalsFor] = useState<string | null>(null);
+  const expandedAnimals = expandedAnimalsFor === uid;
+  const cellWidth = useGridCellWidth(3, 16, 12);
   const [entry, setEntry] = useState<RankingEntry | null | undefined>();
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -55,8 +68,8 @@ export default function PlayerScreen() {
       live = false;
     };
   }, [uid, retry]);
-  const owned = CHARACTERS.filter((a) => (entry?.characters?.[a.id] ?? 0) > 0);
-  const grades = ownedByGrade(entry?.characters ?? {});
+  const owned = profileAnimals(entry?.characters ?? {});
+  const grades = kindsByGrade(entry?.characters ?? {});
   const avatar = entry?.avatar ? CHARACTER_BY_ID[entry.avatar] : null;
   return (
     <View style={{ flex: 1, backgroundColor: c.background }}>
@@ -105,6 +118,8 @@ export default function PlayerScreen() {
             <Text style={{ color: c.text, fontSize: 25, fontWeight: "900" }}>
               {displayName(entry)}
             </Text>
+            <EquippedMedal showcase={showcase} />
+            <FriendActions targetUid={uid} target={entry} />
             <View
               style={{
                 flexDirection: "row",
@@ -126,8 +141,8 @@ export default function PlayerScreen() {
           </View>
           <View style={{ flexDirection: "row", gap: 12 }}>
             {[
-              { label: "누적 걸음", value: entry.steps ?? 0, icon: ICONS.walk },
-              { label: "발견한 동물", value: owned.length, icon: ICONS.dex },
+              { label: "누적 걸음", value: entry.steps ?? 0, unit: '걸음', icon: ICONS.walk },
+              { label: "보유 동물", value: owned.length, unit: '종', icon: ICONS.dex },
             ].map((stat) => (
               <View
                 key={stat.label}
@@ -143,7 +158,7 @@ export default function PlayerScreen() {
                 <Text
                   style={{ color: c.text, fontSize: 25, fontWeight: "900" }}
                 >
-                  {stat.value.toLocaleString()}
+                  {stat.value.toLocaleString()}<Text style={{ fontSize: 13 }}> {stat.unit}</Text>
                 </Text>
                 <Text style={{ color: c.secondary, fontSize: 12 }}>
                   {stat.label}
@@ -197,21 +212,21 @@ export default function PlayerScreen() {
                     fontWeight: "800",
                   }}
                 >
-                  {GRADES[g].label} {grades[g]}마리
+                  {GRADES[g].label} {grades[g]}종
                 </Text>
               </View>
             ))}
           </View>
           <Text style={{ color: c.text, fontWeight: "800", fontSize: 19 }}>
             함께하는 동물{" "}
-            <Text style={{ color: c.primary }}>{owned.length}</Text>
+            <Text style={{ color: c.primary }}>{owned.length}종</Text>
           </Text>
           {owned.length ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
-              {owned.map((animal) => (
-                <Pressable
+              {owned.slice(0, 6).map((animal) => (
+                <View
                   key={animal.id}
-                  accessibilityLabel={`${animal.name}, ${entry.characters[animal.id]}마리`}
+                  accessibilityLabel={`${animal.name}, ${GRADES[animal.grade].label} 등급`}
                   style={{
                     width: "30.5%",
                     flexGrow: 0,
@@ -233,10 +248,10 @@ export default function PlayerScreen() {
                   >
                     {animal.name}
                   </Text>
-                  <Text style={{ color: c.secondary, fontSize: 10 }}>
-                    ×{entry.characters[animal.id]}
+                  <Text style={{ color: GRADES[animal.grade].color, fontSize: 10, fontWeight: '700' }}>
+                    {GRADES[animal.grade].label}
                   </Text>
-                </Pressable>
+                </View>
               ))}
             </View>
           ) : (
@@ -244,6 +259,9 @@ export default function PlayerScreen() {
               아직 공개된 동물이 없어요.
             </Text>
           )}
+          {owned.length > 6 && <MoreButton expanded={expandedAnimals} onPress={() => setExpandedAnimalsFor(expandedAnimals ? null : uid)} remaining={owned.length - 6} label="동물 더보기" unit="종" />}
+          {expandedAnimals && <PagedListSheet key={uid} title={`함께하는 동물 ${owned.length}종`} data={owned} keyExtractor={a => a.id} columns={3} renderItem={({ item }) => <CharacterCard character={item} width={cellWidth} />} onClose={() => setExpandedAnimalsFor(null)} />}
+          <MedalShowcaseList key={uid} showcase={showcase} />
         </ScrollView>
       )}
     </View>

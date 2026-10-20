@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image } from '@/components/gacha-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { CHARACTER_BY_ID, type CharacterId } from '@/constants/characters';

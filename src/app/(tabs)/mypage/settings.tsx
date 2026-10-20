@@ -5,11 +5,13 @@ import { Icon, ICONS } from '@/components/icon';
 import { useColors } from '@/hooks/use-colors';
 import { useSession } from '@/providers/session-provider';
 import { useWalk } from '@/providers/walk-provider';
+import { useAdministrator } from '@/lib/admin-catalog';
 
 export default function SettingsScreen() {
   const colors = useColors();
   const { profile } = useSession();
-  const { foregroundOnly, setForegroundOnly } = useWalk();
+  const administrator = useAdministrator();
+  const { foregroundOnly, setForegroundOnly, backgroundSupported } = useWalk();
 
   const accountRows: { label: string; value?: string; href: Href; icon: keyof typeof ICONS; tint: string }[] = [
     { label: '닉네임 변경', value: profile?.nickname, href: '/mypage/change-nickname', icon: 'nickname', tint: '#F97316' },
@@ -28,20 +30,23 @@ export default function SettingsScreen() {
           <View style={[styles.rowIcon, { backgroundColor: '#22C55E' }]}>
             <Icon name={ICONS.walk} size={17} color="#fff" />
           </View>
-          <Text style={[styles.rowLabel, { color: colors.text }]}>앱이 켜져 있을 때만 걸음 세기</Text>
+          <Text style={[styles.rowLabel, { color: colors.text }]}>앱을 닫아도 걸음 기록</Text>
           <Switch
-            value={foregroundOnly}
-            onValueChange={setForegroundOnly}
+            value={backgroundSupported && !foregroundOnly}
+            disabled={!backgroundSupported}
+            onValueChange={on => setForegroundOnly(!on)}
             trackColor={{ true: colors.primary }}
             thumbColor={Platform.OS === 'android' ? '#fff' : undefined}
           />
         </View>
       </View>
       <Text style={[styles.caption, { color: colors.secondary }]}>
-        켜면 앱을 보고 있는 동안 걸은 걸음만 코인으로 바뀌어요. 끄면 앱이 꺼져 있던 동안 걸은 걸음도 다음에 열 때 함께
-        세요. 다시 끌 때는 켜 둔 동안 앱 밖에서 걸은 걸음은 세지 않아요.
+        {backgroundSupported
+          ? '앱을 닫거나 화면을 꺼도 걸음을 기록해요. 다음에 앱을 열면 자동 로그인하고 걸음과 코인을 반영해요. Android에서는 걸음 기록 알림이 표시돼요. 끄면 앱을 보고 있을 때만 기록해요.'
+          : '이 기기에서는 앱을 열어둔 동안의 걸음만 기록할 수 있어요.'}
       </Text>
 
+      {administrator.allowed && <Pressable accessibilityRole="button" onPress={() => router.push('/admin')} style={[styles.group, { backgroundColor: colors.surface, padding: 18, minHeight: 52 }]}><Text style={{ color: colors.primary, fontWeight: '800' }}>뽑기 관리자 페이지</Text></Pressable>}
       <Text style={[styles.sectionLabel, { color: colors.secondary }]}>계정</Text>
       <View style={[styles.group, { backgroundColor: colors.surface }]}>
         {accountRows.map((row, index) => (

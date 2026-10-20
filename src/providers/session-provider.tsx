@@ -6,7 +6,7 @@ import { isLeaving } from '@/lib/account';
 import { pendingSignUpFor, usernameFromEmail } from '@/lib/auth';
 import { auth } from '@/lib/firebase-auth';
 import { claimsRef, createProfile, profileRef, type Profile } from '@/lib/profile';
-import { activateSession, forgetSession, isSessionChanging, isSessionSigningOut, sessionRef, waitForSessionLogin } from '@/lib/session-lease';
+import { activateSession, forgetSession, isExpiredSessionError, isSessionChanging, isSessionSigningOut, sessionRef, waitForSessionLogin } from '@/lib/session-lease';
 
 type SessionContextValue = {
   user: User | null;
@@ -42,8 +42,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let revision = 0; let cancelled = false; let readyUid: string | null = null;
     let detach = () => {};
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     const off = onIdTokenChanged(auth, next => {
       const currentRevision = ++revision;
+      clearTimeout(retryTimer);
       detach(); detach = () => {};
       if (!next) {
         readyUid = null; forgetSession(); setUser(null); setProfileState(null); setClaimedState(null); setLoading(false);
@@ -57,7 +59,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         readyUid = null; setUser(null); setProfileState(null); setClaimedState(null); setLoading(false);
         void firebaseSignOut(auth).catch(() => {});
       };
-      void (async () => {
+      const restore = async () => {
         try {
           await waitForSessionLogin();
           if (!valid()) return;
@@ -69,12 +71,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             if (!snapshot.exists() || !data?.active || data.sessionId !== lease.sessionId || data.authTime !== lease.authTime) {
               expire('다른 기기에서 로그인해 이 기기의 접속이 종료됐어요. 다시 로그인해주세요.');
             }
-          }, () => expire('로그인 세션을 확인하지 못했어요. 연결을 확인하고 다시 로그인해주세요.'));
+          }, error => {
+            if (error.code === 'permission-denied' || error.code === 'unauthenticated') expire('로그인 정보가 만료됐어요. 다시 로그인해주세요.');
+            else if (valid()) retryTimer = setTimeout(() => { void restore(); }, 5000);
+          });
           readyUid = next.uid; setNotice(null); setUser(next); setSessionEpoch(value => value + 1); setLoading(false);
-        } catch { expire('로그인 세션을 확인하지 못했어요. 연결을 확인하고 다시 로그인해주세요.'); }
-      })();
+        } catch (error) {
+          if (isExpiredSessionError(error)) {
+            expire('로그인 정보가 만료되었거나 다른 기기에서 로그인했어요. 다시 로그인해주세요.');
+          } else if (valid()) {
+            setNotice('로그인을 복원하고 있어요. 인터넷 연결을 확인해주세요.');
+            retryTimer = setTimeout(() => { void restore(); }, 5000);
+          }
+        }
+      };
+      void restore();
     });
-    return () => { cancelled = true; revision++; off(); detach(); };
+    return () => { cancelled = true; revision++; clearTimeout(retryTimer); off(); detach(); };
   }, []);
 
   useEffect(() => {
@@ -95,8 +108,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           void firebaseSignOut(auth).catch(() => {});
         });
       }
-    }, () => {
+    }, error => {
       if (isLeaving() || isSessionSigningOut() || isSessionChanging()) return;
+      if (error.code !== 'permission-denied' && error.code !== 'unauthenticated') return;
       setNotice('로그인이 만료되었거나 다른 기기에서 접속했어요. 다시 로그인해주세요.');
       void firebaseSignOut(auth).catch(() => {});
     });

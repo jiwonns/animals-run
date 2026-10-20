@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image } from '@/components/gacha-image';
 import { StyleSheet, View } from 'react-native';
 
 import type { Banner } from '@/constants/banners';

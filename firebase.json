@@ -8,6 +8,10 @@
     "rewrites": [{ "source": "**", "destination": "/index.html" }],
     "headers": [
       {
+        "source": "/gacha-assets/**",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }, { "key": "Access-Control-Allow-Origin", "value": "*" }]
+      },
+      {
         "source": "/_expo/**",
         "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
       },

@@ -1,5 +1,5 @@
 import { COLLECTION_DATA, type CharacterId, type CollectionId } from './gacha.generated';
-import type { Grade } from './gacha-types';
+import type { Grade, GachaImage } from './gacha-types';
 
 export type { CharacterId, CollectionId, Grade };
 
@@ -23,9 +23,9 @@ export const GRADE_ORDER = (Object.keys(GRADES) as Grade[]).filter((g) => COLLEC
 export type Character = {
   id: CharacterId;
   name: string;
-  image: number;
+  image: GachaImage;
   /** A small copy of `image` for grids and lists. */
-  thumb: number;
+  thumb: GachaImage;
   collection: CollectionId;
   grade: Grade;
 };
@@ -47,4 +47,13 @@ export const CHARACTER_BY_ID = Object.fromEntries(CHARACTERS.map((c) => [c.id, c
 
 export function charactersIn(collection: CollectionId): Character[] {
   return CHARACTERS.filter((c) => c.collection === collection);
+}
+
+/** Keep imported array/object identities stable when a published catalog is loaded. */
+export function rebuildCharacters() {
+  COLLECTIONS.splice(0, COLLECTIONS.length, ...COLLECTION_DATA.map(({ id, name, grade }) => ({ id, name, grade })));
+  CHARACTERS.splice(0, CHARACTERS.length, ...COLLECTION_DATA.flatMap(c => c.characters.map(ch => ({ ...ch, collection: c.id, grade: c.grade }))));
+  for (const key of Object.keys(CHARACTER_BY_ID)) delete CHARACTER_BY_ID[key as CharacterId];
+  Object.assign(CHARACTER_BY_ID, Object.fromEntries(CHARACTERS.map(ch => [ch.id, ch])));
+  GRADE_ORDER.splice(0, GRADE_ORDER.length, ...(Object.keys(GRADES) as Grade[]).filter(g => COLLECTION_DATA.some(c => c.grade === g)));
 }

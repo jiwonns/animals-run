@@ -1,4 +1,5 @@
-import { deleteDoc, increment, runTransaction, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { deleteDoc, increment, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
+import { selectCompanion } from './bond';
 
 import type { CharacterId } from '@/constants/characters';
 import { REWARDS } from '@/constants/gacha.generated';
@@ -27,7 +28,7 @@ export async function creditSteps(uid: string, steps: number) {
 }
 
 export function setAvatar(uid: string, avatar: CharacterId | null) {
-  return updateDoc(profileRef(uid), { avatar });
+  return selectCompanion(uid, avatar);
 }
 
 /** firestore.rules requires the username, nickname and avatar to match the player's profile. */
@@ -37,6 +38,7 @@ export function shareLocation(
   avatar: CharacterId | null,
   lat: number,
   lng: number,
+  audience: 'public' | 'friends' = 'public',
 ) {
   return setDoc(locationRef(uid), {
     username: name.username,
@@ -44,6 +46,7 @@ export function shareLocation(
     avatar,
     lat,
     lng,
+    audience,
     updatedAt: serverTimestamp(),
   });
 }

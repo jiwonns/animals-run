@@ -1,4 +1,4 @@
-import { Image } from "expo-image";
+import { Image } from 'expo-image';
 import { useEffect, useState } from "react";
 import { Modal, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

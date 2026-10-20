@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, FadeInDown, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { Icon, ICONS } from './icon';
 
-export function BrandSplash() {
+export function BrandSplash({ notice }: { notice?: string | null } = {}) {
   const lift = useSharedValue(0);
   useEffect(() => { lift.set(withRepeat(withSequence(withTiming(-7, { duration: 850, easing: Easing.inOut(Easing.quad) }), withTiming(0, { duration: 850, easing: Easing.inOut(Easing.quad) })), -1)); return () => cancelAnimation(lift); }, [lift]);
   const motion = useAnimatedStyle(() => ({ transform: [{ translateY: lift.get() }] }));
@@ -14,7 +14,7 @@ export function BrandSplash() {
       <View style={s.seal}><View style={s.innerSeal} /><Animated.View style={motion}><Image source={require('../../assets/images/splash-icon.png')} style={{ width: 205, height: 205 }} contentFit="contain" /></Animated.View></View>
       <Animated.View entering={FadeInDown.duration(500)} style={{ alignItems: 'center', gap: 10 }}><Text style={s.eyebrow}>EVERY STEP, A NEW FRIEND</Text><Text style={s.title}>Animals Run</Text><Text style={s.caption}>작은 발걸음이 새로운 친구로</Text></Animated.View>
       <View style={s.paws}>{[0, 1, 2].map(i => <View key={i} style={{ opacity: .28 + i * .25, transform: [{ rotate: `${i % 2 ? 15 : -15}deg` }] }}><Icon name={ICONS.character} color="#DB8950" size={15} /></View>)}</View>
-    </View><Text style={s.bottom}>걷고, 만나고, 함께 자라요.</Text>
+    </View><Text style={[s.bottom, { paddingHorizontal: 24, textAlign: 'center' }]}>{notice || '걷고, 만나고, 함께 자라요.'}</Text>
   </View>;
 }
 const s = StyleSheet.create({

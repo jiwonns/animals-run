@@ -1,0 +1,73 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+const {initializeApp,deleteApp}=require('firebase/app');
+const {getAuth,connectAuthEmulator,createUserWithEmailAndPassword}=require('firebase/auth');
+const fire=require('firebase/firestore');
+const schema=require('../shared/gacha/catalog');
+const seed=require('../shared/gacha/seed-catalog.json');
+const host=process.env.FIRESTORE_EMULATOR_HOST,authHost=process.env.FIREBASE_AUTH_EMULATOR_HOST,project='demo-animalsrun';
+if(!host?.startsWith('127.0.0.1:')||!authHost?.startsWith('127.0.0.1:'))throw new Error('Local emulators required');
+fire.setLogLevel('silent');
+const clone=v=>JSON.parse(JSON.stringify(v));
+const value=v=>v===null?{nullValue:null}:v instanceof Date?{timestampValue:v.toISOString()}:Array.isArray(v)?{arrayValue:{values:v.map(value)}}:typeof v==='object'?{mapValue:{fields:fields(v)}}:typeof v==='number'?{integerValue:String(v)}:typeof v==='boolean'?{booleanValue:v}:{stringValue:v};
+const fields=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,value(v)]));
+async function put(path,data){const r=await fetch(`http://${host}/v1/projects/${project}/databases/(default)/documents/${path}`,{method:'PATCH',headers:{Authorization:'Bearer owner','Content-Type':'application/json'},body:JSON.stringify({fields:fields(data)})});assert.equal(r.status,200,await r.text());}
+function load(file,mocks){const module={exports:{}};const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(id=>mocks[id]??require(id),module,module.exports);return module.exports;}
+async function client(name){
+ const app=initializeApp({apiKey:'fake',projectId:project},name),auth=getAuth(app);connectAuthEmulator(auth,`http://${authHost}`,{disableWarnings:true});const db=fire.getFirestore(app);fire.connectFirestoreEmulator(db,'127.0.0.1',Number(host.split(':')[1]));
+ const {user}=await createUserWithEmailAndPassword(auth,`${name}@users.animalsrun.local`,'local-password');const token=await user.getIdTokenResult();
+ await put(`activeSessions/${user.uid}`,{active:true,authTime:token.claims.auth_time,sessionId:'a'.repeat(20)});
+ const catalog=load('src/lib/remote-catalog.ts',{'firebase/firestore':fire,'@react-native-async-storage/async-storage':{__esModule:true,default:{getItem:async()=>null,setItem:async()=>{}}},'./firebase':{db},'@/constants/gacha.generated':{COLLECTION_DATA:clone(seed.collections)},'@/constants/characters':{rebuildCharacters(){}},'@/constants/banners':{rebuildBanners(){}},'./medals':{rebuildCollectionMedals(){}},'../../shared/gacha/catalog':schema});
+ return{app,db,user,catalog};
+}
+(async()=>{
+ const admin=await client('catalog_admin'),player=await client('catalog_player');
+ try{
+  await put(`administrators/${admin.user.uid}`,{enabled:true});
+  await assert.rejects(player.catalog.publishCatalog(clone(seed),player.user.uid));
+  assert.equal(await admin.catalog.publishCatalog(clone(seed),admin.user.uid),1);
+  const live=(await fire.getDoc(fire.doc(player.db,'gachaCatalog','live'))).data();assert.equal(live.version,1);
+  await assert.rejects(fire.setDoc(fire.doc(player.db,'administrators',player.user.uid),{enabled:true}));
+  await assert.rejects(fire.getDocs(fire.collection(player.db,'administrators')));
+  await assert.rejects(fire.updateDoc(fire.doc(player.db,'gachaBanners',seed.collections.find(c=>c.banner).id),{cost1:0}));
+  const changed=clone(live),image={uri:'https://example.com/animal.png'};
+  changed.collections.push({id:'new_event',name:'새 이벤트',grade:'R',base:false,hidden:false,characters:[{id:'new_event_animal',name:'새 동물',image,thumb:image}],banner:{enabled:true,title:'새 뽑기',tagline:'테스트',cost:{1:10,10:90},hero:'new_event_animal',rates:[{collection:'new_event',rate:1,hidden:false}],colors:{background:'#FFFFFF',accent:'#FF5500',text:'#111111'},poster:null}});
+  assert.equal(await admin.catalog.publishCatalog(changed,admin.user.uid),2);
+  await assert.rejects(admin.catalog.publishCatalog(changed,admin.user.uid),/먼저 게시/);
+  const bad=clone(changed);bad.collections.at(-1).banner.rates[0].rate=0.9;assert.throws(()=>schema.validateCatalog(bad),/100%/);
+  const deleted=clone(changed);deleted.collections.shift();assert.throws(()=>schema.assertCompatible(changed,deleted));
+  console.log('PASS admin-only atomic publication, live catalog, existing-data compatibility, version conflict, 100% validation, immutable privileges');
+  const profile={username:'catalog_player',coins:1000,tickets:20,characters:{},drawCount:0,gradeCounts:{},createdAt:fire.Timestamp.now()};
+  await put(`users/${player.user.uid}`,{...profile,createdAt:'seed'});
+  const chars=Object.fromEntries(changed.collections.flatMap(c=>c.characters.map(ch=>[ch.id,{...ch,grade:c.grade,collection:c.id}])));
+  const before={characters:{},gradeCounts:{},drawCount:0};
+  const gacha=load('src/lib/gacha.ts',{'firebase/firestore':fire,'@/constants/banners':{BANNERS:[],pickFromBanner:()=>chars.new_event_animal},'@/constants/gacha.generated':{REWARDS:require('../shared/gacha/rewards.json')},'./firebase':{db:player.db},'./profile':{profileRef:uid=>fire.doc(player.db,'users',uid),drawLogRef:(uid,n)=>fire.doc(player.db,'users',uid,'draws',String(n))},'./remote-catalog':{currentCatalog:()=>null,loadRemoteCatalog:async()=>null},'./rewards':{gradeCountsAfter:(counts,picks)=>({...counts,R:(counts.R??0)+picks.length}),newRewards:()=>[]}});
+  const banner={id:'new_event',cost:{1:10,10:90},rates:[{collection:'new_event',rate:1,hidden:false}]};
+  const outcome=await gacha.drawCharacters(player.user.uid,banner,10,'coins');assert.equal(outcome.results.length,10);
+  let p=(await fire.getDoc(fire.doc(player.db,'users',player.user.uid))).data();assert.equal(p.coins,910);assert.equal(p.characters.new_event_animal,10);
+  await gacha.drawCharacters(player.user.uid,banner,1,'tickets');p=(await fire.getDoc(fire.doc(player.db,'users',player.user.uid))).data();assert.equal(p.tickets,19);assert.equal(p.characters.new_event_animal,11);
+  await assert.rejects(gacha.drawCharacters(player.user.uid,{...banner,cost:{1:1,10:1}},1,'coins'));
+  await assert.rejects(fire.updateDoc(fire.doc(player.db,'users',player.user.uid),{coins:p.coins+100}));
+  const rewards=load('src/lib/rewards.ts',{'firebase/firestore':fire,'@/constants/characters':{CHARACTER_BY_ID:chars,CHARACTERS:Object.values(chars),COLLECTIONS:changed.collections,GRADE_ORDER:[],GRADES:{}},'@/constants/gacha.generated':{REWARDS:require('../shared/gacha/rewards.json')},'./firebase':{db:player.db},'./profile':{profileRef:uid=>fire.doc(player.db,'users',uid),claimRef:(uid,id)=>fire.doc(player.db,'users',uid,'claims',id)}});
+  const amounts=require('../shared/gacha/rewards.json').character;const first={...amounts.default,...amounts.R}.first;
+  await rewards.claimReward(player.user.uid,{id:'char_first:new_event_animal',tickets:first,label:'새 동물 첫 획득'});
+  await assert.rejects(rewards.claimReward(player.user.uid,{id:'char_first:new_event_animal',tickets:first,label:'duplicate'}));
+  const collectionReward=require('../shared/gacha/rewards.json').collectionComplete;
+  await rewards.claimReward(player.user.uid,{id:'collection_complete:new_event',tickets:collectionReward,label:'새 이벤트 완성'});
+  const gradeAmounts=require('../shared/gacha/rewards.json').grade;
+  await rewards.claimReward(player.user.uid,{id:'grade_first:R',tickets:{...gradeAmounts.default,...gradeAmounts.R}.first,label:'첫 레어'});
+  await fire.setDoc(fire.doc(player.db,'users',player.user.uid,'medals','collection_complete:new_event'),{createdAt:fire.serverTimestamp()});
+  const id='A'.repeat(20),data='data:image/png;base64,iVBORw0KGgo=';
+  await fire.setDoc(fire.doc(admin.db,'gachaImages',id),{data,createdAt:fire.serverTimestamp()});
+  assert.equal((await fire.getDoc(fire.doc(player.db,'gachaImages',id))).data().data,data);
+  await assert.rejects(fire.setDoc(fire.doc(player.db,'gachaImages','B'.repeat(20)),{data,createdAt:fire.serverTimestamp()}));
+  await assert.rejects(fire.setDoc(fire.doc(admin.db,'gachaImages',id),{data,createdAt:fire.serverTimestamp()}));
+  console.log('PASS newly added collection: 10 coin draws, ticket draw, wrong price rejected, atomic inventory, unique character reward, collection reward/medal, admin-only immutable PNG uploads');
+  await Promise.all(Array.from({length:32},(_,i)=>put(`users/${player.user.uid}/draws/archive_${i}`,{createdAt:new Date('2020-01-01T00:00:00Z'),picks:[],banner:'archive',coins:0,tickets:0,rewards:[]})));
+  const source=fire.query(fire.collection(player.db,'users',player.user.uid,'draws'),fire.orderBy('createdAt','desc'));
+  const firstPage=await fire.getDocs(fire.query(source,fire.limit(24)));
+  const nextPage=await fire.getDocs(fire.query(source,fire.startAfter(firstPage.docs.at(-1)),fire.limit(24)));
+  assert.equal(firstPage.size,24);assert.equal(nextPage.size,10);
+  assert.equal(new Set([...firstPage.docs,...nextPage.docs].map(d=>d.id)).size,34);
+  console.log('PASS server-side history pagination: 24 + 10 records, identical timestamps, no duplicates or missing rows');
+ }finally{await Promise.all([deleteApp(admin.app),deleteApp(player.app)]);}
+})().catch(e=>{console.error(e);process.exitCode=1;});

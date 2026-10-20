@@ -2,6 +2,7 @@ import { Asset } from 'expo-asset';
 
 import { FACE_CROP } from '@/components/avatar-face';
 import { CHARACTER_BY_ID, type CharacterId } from '@/constants/characters';
+import { loadGachaImage } from './gacha-images';
 
 const FACE_SIZE = 128;
 const cache = new Map<CharacterId, Promise<string>>();
@@ -9,6 +10,7 @@ const cache = new Map<CharacterId, Promise<string>>();
 function loadImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new window.Image();
+    image.crossOrigin = 'anonymous';
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error(`Could not load ${src}`));
     image.src = src;
@@ -22,7 +24,7 @@ export function avatarDataUri(id: CharacterId): Promise<string> {
     uri = (async () => {
       const character = CHARACTER_BY_ID[id];
       if (!character) throw new Error(`Unknown character ${id}`);
-      const image = await loadImage(Asset.fromModule(character.thumb).uri);
+      const image = await loadImage(typeof character.thumb === 'number' ? Asset.fromModule(character.thumb).uri : await loadGachaImage(character.thumb.uri));
       const side = image.naturalWidth * FACE_CROP.size;
       const canvas = document.createElement('canvas');
       canvas.width = canvas.height = FACE_SIZE;

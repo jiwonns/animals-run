@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, limit, query, serverTimestamp, setDoc, type Timestamp } from 'firebase/firestore';
+import { collection, doc, getDocs, serverTimestamp, setDoc, type Timestamp } from 'firebase/firestore';
 
 import { CHARACTER_BY_ID, GRADES, type CharacterId, type Grade } from '@/constants/characters';
 
@@ -22,8 +22,6 @@ export type RankingEntry = {
 const countsOf = (profile: Profile) =>
   Object.fromEntries(RANKING_COUNTS.map((key) => [key, profile[key] ?? 0])) as Record<RankingCount, number>;
 
-/** Leaderboards read at most this many players. */
-const MAX_PLAYERS = 500;
 
 export const rankingRef = (uid: string) => doc(db, 'rankings', uid);
 export const rankingsRef = () => collection(db, 'rankings');
@@ -54,7 +52,7 @@ export function syncRanking(uid: string, profile: Profile) {
 
 /** Entries written before a counter existed read it as 0. */
 export async function fetchRankings(): Promise<(RankingEntry & { uid: string })[]> {
-  const snapshot = await getDocs(query(rankingsRef(), limit(MAX_PLAYERS)));
+  const snapshot = await getDocs(rankingsRef());
   return snapshot.docs.map((d) => {
     const data = d.data() as Partial<RankingEntry>;
     return {

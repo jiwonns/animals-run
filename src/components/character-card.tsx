@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image } from '@/components/gacha-image';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { GradeBadge } from '@/components/grade-badge';

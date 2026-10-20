@@ -1,10 +1,16 @@
 import type { User } from 'firebase/auth';
 import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
+import { readSession, writeSession, removeSession } from './session-storage';
 
 export type SessionLease = { uid: string; sessionId: string; authTime: number };
 export class SessionCollision extends Error {}
 export class SessionExpired extends Error {}
+export function isExpiredSessionError(error: unknown) {
+  const code = (error as { code?: string })?.code;
+  return error instanceof SessionCollision || error instanceof SessionExpired
+    || ['auth/user-disabled', 'auth/user-token-expired', 'auth/invalid-user-token', 'permission-denied', 'unauthenticated'].includes(code ?? '');
+}
 export const sessionRef = (uid: string) => doc(db, 'activeSessions', uid);
 let local: SessionLease | null = null;
 let pendingLogin: Promise<void> | null = null;
@@ -22,18 +28,27 @@ export const waitForSessionLogin = () => pendingLogin ?? Promise.resolve();
 export const isSessionSigningOut = () => signingOut;
 export const isSessionChanging = () => pendingLogin !== null || inflight.size > 0;
 export const setSessionSigningOut = (value: boolean) => { signingOut = value; };
-export const forgetSession = () => { local = null; };
+export const forgetSession = () => {
+  const uid = local?.uid;
+  local = null;
+  if (uid) void removeSession(uid).catch(() => {});
+};
 
 export async function activateSession(user: User): Promise<SessionLease> {
   const token = await user.getIdTokenResult();
   const authTime = Number(token.claims.auth_time);
   if (!Number.isSafeInteger(authTime) || authTime <= 0) throw new Error('로그인 정보를 확인하지 못했어요.');
-  if (local?.uid !== user.uid) local = { uid: user.uid, authTime, sessionId: doc(collection(db, 'activeSessions')).id };
+  if (local?.uid !== user.uid) {
+    const stored = await readSession(user.uid);
+    // Another activation may have completed while storage was being read.
+    if (local?.uid !== user.uid) local = stored ?? { uid: user.uid, authTime, sessionId: doc(collection(db, 'activeSessions')).id };
+  }
   const lease = { ...local, authTime };
   const key = `${lease.uid}:${authTime}:${lease.sessionId}`;
   const existing = inflight.get(key);
   if (existing) return existing;
-  const operation = runTransaction(db, async tx => {
+  // Save before the server write: termination after commit must not lose this device's lease.
+  const operation = writeSession(lease).then(() => runTransaction(db, async tx => {
     const ref = sessionRef(user.uid);
     const snapshot = await tx.get(ref);
     if (snapshot.exists()) {
@@ -46,7 +61,7 @@ export async function activateSession(user: User): Promise<SessionLease> {
     }
     tx.set(ref, { sessionId: lease.sessionId, authTime, active: true, updatedAt: serverTimestamp() });
     return lease;
-  }).then(result => { if (local?.sessionId === result.sessionId) local = result; return result; });
+  })).then(result => { if (local?.sessionId === result.sessionId) local = result; return result; });
   inflight.set(key, operation);
   try { return await operation; }
   finally { if (inflight.get(key) === operation) inflight.delete(key); }

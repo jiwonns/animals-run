@@ -19,21 +19,20 @@
 
 ## 최신 업데이트 · 2026년 10월 20일
 
-- **커뮤니티 오픈** — 홈 → 커뮤니티에서 자유·자랑·질문·산책 이야기를 나눠요. 글쓰기, 보유 동물 첨부, 댓글, 좋아요를 사용할 수 있어요.
-- **친구 프로필** — 랭킹·지도에서 프로필 사진을 누르거나 커뮤니티 작성자를 누르면 대표 동물, 누적 걸음, 보유 동물과 활동 기록을 볼 수 있어요.
-- **포스터 수정** — 십이지신 노말 컬렉션 토끼의 여분 귀를 제거하고 오른쪽 귀를 접힌 모양으로 다듬었어요.
-- **고양이 컬렉션** — 실제 품종을 모티브로 한 고양이 10종을 노말부터 히든까지 6등급으로 모아요. 부모 고양이를 교배해 같은 품종의 아기 고양이를 만날 수 있고, 고양이들이 정원에서 노는 새 포스터도 추가했어요.
-- **보관함과 랭킹** — 동물을 등급별로 판매하고, 랭킹은 중복 수가 아닌 보유 종류 수로 비교해요. 합성·재활용 조건과 버튼 상태도 다듬었어요.
-- **부화와 로그인 화면** — 알과 부화 연출, 시작 화면과 로그인·회원가입 화면을 보기 좋게 정리했어요.
-- **로그인 보안** — 같은 계정은 한 기기에서만 로그인돼요. 다른 기기에서 접속하면 이전 기기는 로그아웃되고, 앱을 다시 열거나 웹에 재접속하면 다시 로그인해요. 게임 데이터는 계정에 저장돼요.
-- **커뮤니티** — 사진을 곁들인 자유·자랑·질문 글, 걸음 자랑, 댓글·답글·좋아요를 이용하고 다른 사람 프로필도 볼 수 있어요.
+- **친밀도** — 함께 걸은 걸음과 대표 동물로 함께한 시간에 따라 5단계로 가까워져요. 동물 이름과 내 닉네임을 넣은 문구가 프로필에 표시돼요.
+- **훈장과 보관함** — 컬렉션 완성과 활동으로 영구 훈장을 모으고, 현재 랭킹 1위는 왕관 훈장을 가져요. 동물·훈장·기타 탭을 나눴고, 보관함에서 장착한 훈장은 대표 훈장으로 프로필에 보여요.
+- **친구와 알림** — 프로필에서 친구 신청·수락·거절·취소, 친구 목록, 홈의 알림 벨과 읽지 않은 표시를 사용할 수 있어요. 지도에서는 친구에게만 위치를 공유할 수도 있어요.
+- **짧고 가벼운 목록** — 친구 프로필은 동물 6종과 훈장 6개를 먼저 보여줘요. 더보기 목록은 24개씩 확장하고 화면에 필요한 항목을 렌더링해요. 뽑기 기록은 서버에서 24건씩 불러와요.
+- **자동 로그인과 걸음 기록** — 앱을 다시 열어도 로그인을 유지해요. 지원 기기에서는 앱을 닫은 동안의 걸음을 기록하고, 다시 열면 코인을 중복 없이 반영해요. Android는 기록 중 알림을 표시해요.
+- **원격 이미지와 관리자** — 뽑기 이미지를 원격으로 불러오고 캐시해요. 권한이 있는 계정은 [관리자 페이지](https://animalsrun-2571c.web.app/admin)에서 뽑기·동물을 추가하고 이미지·가격·확률을 수정한 뒤 검토·게시할 수 있어요. Firebase 무료 요금제를 유지해요.
+- **커뮤니티와 고양이 컬렉션** — 글·사진·댓글·답글·좋아요로 이야기를 나누고, 10가지 고양이 품종을 6등급으로 모아요.
 
-웹과 갤럭시 APK에 반영됐어요. **웹은 새로고침**, **갤럭시는 아래 APK를 다시 받아 기존 앱 위에 설치**해주세요. 기존 다운로드 주소와 QR은 그대로예요.
+웹에는 최신 변경이 배포되어 있어요. **웹은 새로고침**해주세요. 아래 공개 APK는 해당 릴리스의 기능을 제공하며, 새 백그라운드 걸음 서비스는 최신 네이티브 빌드가 필요해요. 공개 APK 다운로드 주소와 QR은 그대로 유지해요.
 
 | 바로 이용하기 | 링크 |
 | --- | --- |
 | 웹 · 아이폰에서도 설치 없이 이용 | [Animals Run 웹](https://animalsrun-2571c.web.app) |
-| 갤럭시 APK · 최신 베타 | [AnimalsRun-beta.apk](https://github.com/jiwonns/animals-run/releases/download/v1.0.0-beta/AnimalsRun-beta.apk) |
+| 갤럭시 APK · 공개 베타 릴리스 | [AnimalsRun-beta.apk](https://github.com/jiwonns/animals-run/releases/download/v1.0.0-beta/AnimalsRun-beta.apk) |
 | 친구에게 공유할 APK QR | [APK 다운로드 QR 이미지](https://github.com/jiwonns/animals-run/releases/download/v1.0.0-beta/AnimalsRun-beta-QR.png) |
 
 | 내 폰 | 설치 방법 |
@@ -99,14 +98,19 @@
 - **뽑기** — 코인이나 티켓으로 동물을 뽑아요. 배너마다 나오는 동물이 달라요.
 - **홈** — 알 부화, 합성, 진화, 교배, 재활용으로 더 높은 등급의 동물을 만들어요. 커뮤니티도 홈에서 들어갈 수 있어요.
 - **커뮤니티** — 글에 보유 동물을 첨부하고 댓글·좋아요로 친구들과 이야기해요. 내가 쓴 글과 댓글은 삭제할 수 있어요.
-- **보관함** — 모은 동물과 도감을 볼 수 있어요.
-- **지도·랭킹** — 친구의 프로필 사진을 누르면 대표 동물, 걸음, 보유 동물과 활동 기록을 볼 수 있어요.
-- **마이페이지** — 닉네임·대표 동물 변경, 업적 보상, 랭킹, 뽑기 기록.
+- **보관함** — 동물·훈장·기타를 나눠 보고, 도감에서 컬렉션을 완성하면 훈장을 받아요. 훈장 탭에서 대표 훈장을 장착해요.
+- **친밀도** — 대표 동물과 함께 걷고 시간을 보내면 5단계 문구가 달라져요.
+- **친구·알림** — 다른 사람 프로필에서 친구 신청을 보내고, 홈 오른쪽 알림 벨에서 받은 신청과 수락 알림을 확인해요.
+- **지도·랭킹** — 친구의 프로필 사진을 누르면 대표 동물, 장착 훈장, 보유 동물 종류와 활동 기록을 볼 수 있어요. 지도에서 위치 공개 범위를 설정해요.
+- **마이페이지** — 닉네임·대표 동물 변경, 업적 보상, 랭킹, 뽑기 기록과 설정을 이용해요. 훈장은 장착하러 가기를 눌러 보관함에서 골라요.
 
 ## 6. 테스트하면서 봐주면 좋은 것
 
 - 앱이 멈추거나 꺼지는 곳, 버벅이는 화면
 - 걸음 수가 제대로 쌓이는지, 지도에 위치·동물 얼굴이 잘 뜨는지
+- 앱을 닫았다 다시 열어도 로그인이 유지되는지, 닫은 동안 기록한 걸음과 코인이 중복 없이 반영되는지
+- 친구 신청·알림 읽음 표시·친구에게만 위치 공유가 잘 작동하는지
+- 동물·훈장 더보기에서 스크롤할 때 항목이 추가되고, 훈장 장착이 프로필에 반영되는지
 - 커뮤니티 글쓰기·댓글·좋아요가 잘 반영되는지, 프로필 사진을 눌렀을 때 해당 친구 정보가 뜨는지
 - 확률이나 보상이 너무 짜거나 후한 부분
 - 헷갈리는 문구나 버튼, "이런 게 있으면 좋겠다" 싶은 것
@@ -130,9 +134,55 @@ npm install
 cp .env.example .env               # Firebase 웹 앱 설정값 입력
 cp .firebaserc.example .firebaserc # Firebase 프로젝트 ID 입력
 npm run gacha                      # 이미지 최적화 + firestore.rules / 뽑기 상수 생성
+node scripts/prepare-remote-gacha.cjs # 배포할 이미지와 초기 원격 카탈로그 생성
 npx expo start
 ```
 
-- 뽑기 데이터: `assets/gacha/` → `npm run gacha`로 `firestore.rules`와 `src/constants/gacha.generated.ts` 생성
-- 규칙 배포: `npx firebase-tools deploy --only firestore:rules`
-- 웹 배포: `npx expo export -p web --output-dir web-build && npx firebase-tools deploy --only hosting`
+Android 백그라운드 걸음 기록은 로컬 `modules/step-counter`를 포함하는 개발 빌드가 필요해요. Expo Go와 웹에서는 이 네이티브 서비스를 실행하지 않아요. 센서가 있는 실제 휴대폰에서 장시간 기록·재부팅·배터리 제한 동작을 확인해주세요.
+
+### 뽑기와 무료 서버 운영
+
+- 초기 데이터: `assets/gacha/`에서 상수·규칙·원격 이미지 URL을 생성해요. 이미지 원본은 저장소에 남기고, 생성된 `public/gacha-assets/`와 빌드 결과는 Git에서 제외해요.
+- 운영 중 수정: 관리자 계정으로 로그인한 뒤 **마이페이지 → 설정 → 뽑기 관리자 페이지**를 열어요. 확률 합계 100%, 가격, 기존 동물 ID 보존을 확인한 뒤 게시해요.
+- 게시 시 현재 카탈로그, 검증용 데이터와 변경 이력을 원자적으로 저장해요. 다른 변경이 먼저 게시되면 이전 초안으로 덮어쓰지 못해요.
+- Firebase Spark 요금제로 Hosting과 Firestore를 사용해요. Cloud Functions·Cloud Storage를 사용하지 않으며, 서비스의 무료 사용량 한도가 적용돼요.
+- 추첨 결과는 앱에서 확률대로 정하고, Firestore 규칙이 비용·허용 동물·보유량·업적 보상을 검증해요.
+
+```bash
+npx expo export --platform web --output-dir web-build
+npx firebase-tools deploy --only hosting,firestore:rules
+
+# 새 프로젝트에서 최초 카탈로그를 게시할 때만 실행: 기존 게시본은 덮어쓰지 않음
+node scripts/publish-initial-catalog.cjs
+
+# Firebase CLI 프로젝트 관리자 권한으로 실행
+node scripts/setup-gacha-admin.cjs <로그인아이디>
+```
+
+초기 배포·관리자 스크립트는 이 저장소의 Firebase 프로젝트를 대상으로 해요. 다른 프로젝트에서 사용할 때는 `.env`, `.firebaserc`와 스크립트의 프로젝트 ID·이미지 기본 URL을 함께 변경해주세요. 로그인 비밀번호·서비스 계정 키·개인 Firebase CLI 인증 파일은 저장소에 올리지 않아요.
+
+### 검사
+
+```bash
+npm run lint
+npm run typecheck
+node scripts/test-profile-display.cjs
+node scripts/test-inventory.cjs
+node scripts/test-bond-medals.cjs
+```
+
+서버 규칙 테스트는 Java와 Firebase Auth·Firestore 에뮬레이터가 필요해요. 테스트 전용 `demo-animalsrun` 프로젝트에서 실행해요.
+
+```bash
+npx firebase-tools emulators:exec --project demo-animalsrun --config firebase.community-test.json --only auth,firestore "node scripts/test-catalog-rules.cjs"
+```
+
+같은 방식으로 `test-login-sessions.cjs`, `test-inventory-rules.cjs`, `test-friends-rules.cjs`, `test-bond-medals-rules.cjs`도 검증할 수 있어요. 카탈로그 테스트는 관리자 권한, 게시 충돌, 신규 뽑기·보상·이미지 등록, 같은 시각의 기록을 포함한 페이지네이션을 확인해요.
+
+### 기능별 문서
+
+- [친밀도와 훈장](docs/bond-medals.md)
+- [친구·알림·위치 공유](docs/friends.md)
+- [앱 종료 중 걸음 기록](docs/background-steps.md)
+- [로그인 세션과 부화](docs/sessions-and-hatching.md)
+- [무료 카탈로그와 관리자 운영](docs/catalog-admin.md)

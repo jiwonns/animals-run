@@ -1,3 +1,4 @@
+import { useListWindow } from '@/hooks/use-list-window';
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/lib/ranking";
 import { useSession } from "@/providers/session-provider";
 import { kindsByGrade } from "@/lib/inventory";
+import { RANKING_MEDALS, rankingMedalHolder } from '@/lib/medals';
 
 type Board = "steps" | RankingCount | "grade";
 type Row = {
@@ -33,7 +35,6 @@ type Row = {
   rank: number;
 };
 
-const SHOWN = 100;
 const MEDALS = ["#F5B300", "#A3A3A3", "#C67C3E"];
 
 const BOARDS: { id: Board; label: string; caption: string; unit: string }[] = [
@@ -131,9 +132,12 @@ export default function RankingScreen() {
   }
 
   const rows = entries ? rank(entries, board, grade) : [];
+  const page = useListWindow(rows, board + ':' + grade);
   const mine = rows.find((r) => r.uid === user?.uid);
   const current = BOARDS.find((b) => b.id === board)!;
   const unit = current.unit;
+  const crown = RANKING_MEDALS.find(m => m.id === (board === 'grade' ? `ranking:grade:${grade}` : `ranking:${board}`));
+  const crownUid = entries && crown ? rankingMedalHolder(entries, crown) : null;
 
   function renderRow(row: Row, pinned = false) {
     const me = row.uid === user?.uid;
@@ -174,6 +178,7 @@ export default function RankingScreen() {
           numberOfLines={1}
         >
           {row.username}
+          {row.uid === crownUid && <Text style={{ color: colors.primary }}> 👑</Text>}
           {me && <Text style={{ color: colors.primary }}> (나)</Text>}
         </Text>
         <Text style={[styles.value, { color: colors.text }]}>
@@ -190,7 +195,12 @@ export default function RankingScreen() {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <FlatList
-        data={rows.slice(0, SHOWN)}
+        data={page.data}
+        onEndReached={page.loadMore}
+        onEndReachedThreshold={0.4}
+        initialNumToRender={16}
+        maxToRenderPerBatch={16}
+        windowSize={5}
         keyExtractor={(row) => row.uid}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
@@ -262,7 +272,7 @@ export default function RankingScreen() {
           </View>
         }
       />
-      {mine && mine.rank > SHOWN && renderRow(mine, true)}
+      {mine && mine.rank > page.data.length && renderRow(mine, true)}
     </View>
   );
 }

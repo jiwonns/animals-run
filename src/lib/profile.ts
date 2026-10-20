@@ -54,6 +54,7 @@ export type Profile = {
 
 /** locations/{uid}: a player sharing their position on the map. */
 export type PlayerLocation = {
+  audience?: 'public' | 'friends';
   username: string;
   nickname?: string;
   avatar: CharacterId | null;

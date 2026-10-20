@@ -12,9 +12,7 @@ import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
-// The step counter sensor counts every step since the phone booted, even while the app isn't running,
-// so comparing two readings gives the steps walked in between. Readings restart from 0 after a reboot,
-// which bootCount tells apart.
+// The foreground health service keeps this sensor activated when the JavaScript app is closed.
 class StepCounterModule : Module() {
   private val context: Context?
     get() = appContext.reactContext
@@ -28,8 +26,21 @@ class StepCounterModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("StepCounter")
 
+    AsyncFunction("startAsync") {
+      context?.let { StepCounterService.start(it.applicationContext) } ?: false
+    }
+    AsyncFunction("stopAsync") {
+      context?.let { StepCounterService.stop(it.applicationContext) }
+    }
+    AsyncFunction("addForegroundAsync") { steps: Double ->
+      context?.let { StepCounterStorage.addForeground(it.applicationContext, steps.toLong()) }
+    }
+
     Function("isAvailable") {
       sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) != null
+    }
+    Function("getTotalSteps") {
+      (context?.let { StepCounterStorage.total(it) } ?: 0L).toDouble()
     }
 
     // Resolves { steps, bootCount }, or null when the sensor doesn't answer in time
@@ -48,7 +59,9 @@ class StepCounterModule : Module() {
             done = true
             manager.unregisterListener(this)
             handler.removeCallbacksAndMessages(null)
-            promise.resolve(mapOf("steps" to event.values[0].toDouble(), "bootCount" to bootCount()))
+            promise.resolve(mapOf("steps" to event.values[0].toDouble(), "bootCount" to bootCount(),
+              "todaySteps" to (context?.let { StepCounterStorage.today(it) } ?: 0L).toDouble(),
+              "totalSteps" to (context?.let { StepCounterStorage.total(it) } ?: 0L).toDouble()))
           }
 
           override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit

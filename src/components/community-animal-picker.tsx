@@ -1,4 +1,4 @@
-import { Image } from "expo-image";
+import { Image } from '@/components/gacha-image';
 import { useMemo, useState } from "react";
 import {
   FlatList,

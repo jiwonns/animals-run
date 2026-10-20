@@ -1,4 +1,4 @@
-import { Image } from "expo-image";
+import { Image } from '@/components/gacha-image';
 import { memo, useCallback, useLayoutEffect, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 

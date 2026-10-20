@@ -1,7 +1,9 @@
-import { Image } from 'expo-image';
+import { useListWindow } from '@/hooks/use-list-window';
+import { useCatalog } from '@/providers/catalog-provider';
+import { Image } from '@/components/gacha-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AvatarFace } from '@/components/avatar-face';
 import { GradeBadge } from '@/components/grade-badge';
@@ -19,6 +21,7 @@ const GAP = 10;
 const INSET = 13;
 
 export default function AvatarScreen() {
+  useCatalog();
   const colors = useColors();
   const cellWidth = useGridCellWidth(COLUMNS, PADDING + INSET, GAP);
   const { user, profile } = useSession();
@@ -41,78 +44,13 @@ export default function AvatarScreen() {
     }
   }
 
-  return (
-    <ScrollView
-      style={{ backgroundColor: colors.background }}
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.content}>
-      <View style={styles.preview}>
-        <AvatarFace avatar={current} size={112} fallback={profile ? displayName(profile) : ''} borderColor={colors.primary} />
-        <Text style={[styles.previewName, { color: colors.text }]}>{profile && displayName(profile)}</Text>
-        <Text style={[styles.previewHint, { color: colors.secondary }]}>
-          고른 동물의 얼굴이 지도에서 내 위치에 표시돼요
-        </Text>
-      </View>
-
-      {owned.length === 0 ? (
-        <View style={[styles.empty, { borderColor: colors.border }]}>
-          <Text style={[styles.emptyText, { color: colors.secondary }]}>아직 가진 동물이 없어요</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.navigate('/gacha')}
-            style={({ pressed }) => [styles.button, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.buttonLabel}>뽑으러 가기</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <View style={[styles.section, { borderColor: colors.border }]}>
-          <View style={[styles.sectionHeader, { borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>내 동물 {owned.length}종</Text>
-            {current && (
-              <Pressable accessibilityRole="button" onPress={() => choose(null)} hitSlop={8}>
-                <Text style={[styles.clear, { color: colors.secondary }]}>선택 해제</Text>
-              </Pressable>
-            )}
-          </View>
-          <View style={styles.grid}>
-            {owned.map((character) => {
-              const selected = character.id === current;
-              return (
-                <Pressable
-                  key={character.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={character.name}
-                  accessibilityState={{ selected }}
-                  onPress={() => choose(character.id)}
-                  style={({ pressed }) => [
-                    styles.cell,
-                    {
-                      width: cellWidth,
-                      backgroundColor: colors.surface,
-                      borderColor: selected ? colors.primary : 'transparent',
-                    },
-                    pressed && styles.pressed,
-                  ]}>
-                  <Image source={character.thumb} style={styles.image} contentFit="contain" />
-                  <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
-                    {character.name}
-                  </Text>
-                  <View style={styles.badge}>
-                    <GradeBadge grade={character.grade} />
-                  </View>
-                  {selected && (
-                    <View style={[styles.check, { backgroundColor: colors.primary }]}>
-                      <Text style={styles.checkMark}>✓</Text>
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-      )}
-    </ScrollView>
-  );
+  const page=useListWindow(owned,user?.uid??'');
+  return <FlatList style={{backgroundColor:colors.background}} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{padding:PADDING,gap:GAP}}
+    data={page.data} numColumns={COLUMNS} keyExtractor={v=>v.id} columnWrapperStyle={{gap:GAP}}
+    initialNumToRender={16} maxToRenderPerBatch={16} windowSize={5} onEndReached={page.loadMore} onEndReachedThreshold={0.4}
+    ListHeaderComponent={<View style={{gap:16,paddingBottom:12}}><View style={styles.preview}><AvatarFace avatar={current} size={112} fallback={profile?displayName(profile):''} borderColor={colors.primary}/><Text style={[styles.previewName,{color:colors.text}]}>{profile&&displayName(profile)}</Text><Text style={{color:colors.secondary}}>?? ??? ??? ??? ????</Text></View><View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={[styles.sectionTitle,{color:colors.text}]}>? ?? {owned.length}?</Text><Pressable disabled={saving} onPress={()=>choose(null)} style={{minHeight:44,justifyContent:'center'}}><Text style={{color:colors.primary}}>?? ??</Text></Pressable></View></View>}
+    ListEmptyComponent={<Pressable onPress={()=>router.navigate('/gacha')} style={{padding:20}}><Text style={{color:colors.primary}}>?? ?? ??? ??? ? ??? ??</Text></Pressable>}
+    renderItem={({item:character})=><Pressable accessibilityRole="button" accessibilityLabel={character.name} accessibilityState={{selected:character.id===current,disabled:saving}} disabled={saving} onPress={()=>choose(character.id)} style={[styles.cell,{width:cellWidth,backgroundColor:colors.surface,borderColor:character.id===current?colors.primary:'transparent'}]}><Image source={character.thumb} style={styles.image} contentFit="contain"/><Text style={[styles.name,{color:colors.text}]} numberOfLines={1}>{character.name}</Text><GradeBadge grade={character.grade}/></Pressable>}/>;
 }
 
 const styles = StyleSheet.create({

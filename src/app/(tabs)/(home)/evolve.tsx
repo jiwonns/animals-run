@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+import { Image } from '@/components/gacha-image';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';

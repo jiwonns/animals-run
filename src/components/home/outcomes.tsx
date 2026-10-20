@@ -1,4 +1,4 @@
-import { Image, type ImageStyle } from 'expo-image';
+import { Image, type ImageStyle } from '@/components/gacha-image';
 import { memo } from 'react';
 import { StyleSheet, View, type StyleProp } from 'react-native';
 

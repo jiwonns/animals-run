@@ -1,0 +1,55 @@
+    function friendshipKey(a, b) { return a < b ? a + ':' + b : b + ':' + a; }
+    function areFriends(a, b) {
+      let path = /databases/$(database)/documents/friendships/$(friendshipKey(a, b));
+      return exists(path) && get(path).data.status == 'accepted';
+    }
+    match /friendships/{id} {
+      function identity(uid, name, avatar) {
+        let p = get(/databases/$(database)/documents/users/$(uid)).data;
+        return name == p.get('nickname', p.username) && avatar == p.get('avatar', null);
+      }
+      function validRequest() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['members', 'sender', 'recipient', 'status', 'senderName', 'senderAvatar', 'recipientName', 'recipientAvatar', 'createdAt', 'updatedAt', 'requestReadAt', 'acceptedReadAt'])
+          && d.keys().hasOnly(['members', 'sender', 'recipient', 'status', 'senderName', 'senderAvatar', 'recipientName', 'recipientAvatar', 'createdAt', 'updatedAt', 'requestReadAt', 'acceptedReadAt'])
+          && d.sender == request.auth.uid && d.sender != d.recipient && d.recipient is string
+          && d.members is list && d.members.size() == 2 && d.members[0] < d.members[1] && d.members.hasAll([d.sender, d.recipient])
+          && id == friendshipKey(d.sender, d.recipient) && d.status == 'pending'
+          && d.createdAt == request.time && d.updatedAt == request.time && d.requestReadAt == null && d.acceptedReadAt == null
+          && identity(d.sender, d.senderName, d.senderAvatar) && identity(d.recipient, d.recipientName, d.recipientAvatar);
+      }
+      function validUpdate() {
+        let b = resource.data;
+        let d = request.resource.data;
+        let changed = d.diff(b).affectedKeys();
+        return (request.auth.uid == b.recipient && b.status == 'pending' && d.status == 'accepted'
+            && changed.hasOnly(['status', 'recipientName', 'recipientAvatar', 'updatedAt', 'requestReadAt'])
+            && d.updatedAt == request.time && d.requestReadAt == request.time && identity(b.recipient, d.recipientName, d.recipientAvatar))
+          || (request.auth.uid == b.recipient && changed.hasOnly(['requestReadAt']) && d.requestReadAt == request.time)
+          || (request.auth.uid == b.sender && b.status == 'accepted' && changed.hasOnly(['acceptedReadAt']) && d.acceptedReadAt == request.time);
+      }
+      allow get: if isSignedIn() && (resource == null || request.auth.uid in resource.data.members);
+      allow list: if isSignedIn() && request.auth.uid in resource.data.members;
+      allow create: if isSignedIn() && validRequest();
+      allow update: if isSignedIn() && validUpdate();
+      allow delete: if isSignedIn() && request.auth.uid in resource.data.members;
+    }
+    match /mapPreferences/{uid} {
+      function validPreference() {
+        let d = request.resource.data;
+        let path = /databases/$(database)/documents/locations/$(uid);
+        return d.keys().hasAll(['sharing', 'audience', 'updatedAt']) && d.keys().hasOnly(['sharing', 'audience', 'updatedAt'])
+          && d.sharing is bool && d.audience in ['public', 'friends'] && d.updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(uid))
+          && (!existsAfter(path) || (d.sharing && getAfter(path).data.get('audience', 'public') == d.audience));
+      }
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && validPreference();
+      allow delete: if isOwner(uid) && isGone(uid);
+    }
+    function mayShareLocation(uid) {
+      let path = /databases/$(database)/documents/mapPreferences/$(uid);
+      let p = existsAfter(path) ? getAfter(path).data : {'sharing': true, 'audience': 'public'};
+      let d = request.resource.data;
+      return p.sharing && d.get('audience', 'public') == p.audience;
+    }

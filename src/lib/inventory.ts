@@ -1,6 +1,7 @@
 import {
   CHARACTER_BY_ID,
   GRADES,
+  CHARACTERS,
   type CharacterId,
   type Grade,
 } from "@/constants/characters";
@@ -8,6 +9,14 @@ import { REWARDS } from "@/constants/gacha.generated";
 import type { Profile } from "./profile";
 
 export const SALE_PRICES: Record<Grade, number> = REWARDS.sale;
+
+const PROFILE_GRADE_PRIORITY: Record<Grade, number> = { H: 6, L: 5, U: 4, EP: 3, E: 2, R: 1, N: 0 };
+
+/** Profile previews count unique kinds and show the highest grades first. */
+export function profileAnimals(characters: Profile['characters']) {
+  return CHARACTERS.filter(c => (characters[c.id] ?? 0) > 0).sort((a, b) =>
+    PROFILE_GRADE_PRIORITY[b.grade] - PROFILE_GRADE_PRIORITY[a.grade] || a.name.localeCompare(b.name, 'ko') || a.id.localeCompare(b.id));
+}
 
 /** All inventory actions keep one copy of the current companion. */
 export function availableCopies(

@@ -1,3 +1,4 @@
+import { useCatalog } from '@/providers/catalog-provider';
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -27,6 +28,7 @@ import { useWalk } from "@/providers/walk-provider";
 const WALK_COLOR = "#10B981";
 
 export default function MapScreen() {
+  useCatalog();
   const colors = useColors();
   useConfirmExit();
   const { user, profile } = useSession();
@@ -152,6 +154,7 @@ export default function MapScreen() {
             <Pressable
               accessibilityRole="switch"
               accessibilityState={{ checked: walk.sharing }}
+              disabled={walk.sharingBusy}
               onPress={() => walk.setSharing(!walk.sharing)}
               hitSlop={6}
               style={({ pressed }) => [
@@ -179,6 +182,15 @@ export default function MapScreen() {
                 {walk.sharing ? "내 위치 공유 중" : "내 위치 숨김"}
               </Text>
             </Pressable>
+            <View style={{ width: '100%', alignItems: 'flex-end' }}>
+            <Pressable accessibilityRole="switch" accessibilityLabel="친구에게만 내 위치 공유" accessibilityState={{ checked: walk.friendsOnly, disabled: walk.sharingBusy }} disabled={walk.sharingBusy}
+              onPress={() => walk.setFriendsOnly(!walk.friendsOnly)} style={({ pressed }) => [styles.chip, { backgroundColor: walk.friendsOnly ? WALK_COLOR : colors.background, borderColor: walk.friendsOnly ? WALK_COLOR : colors.border, minHeight: 44, opacity: pressed || walk.sharingBusy ? 0.6 : 1 }]}>
+              <Icon name={ICONS.people} size={15} color={walk.friendsOnly ? '#fff' : colors.secondary} />
+              <Text style={[styles.chipLabel, { color: walk.friendsOnly ? '#fff' : colors.secondary }]}>친구에게만 위치 공유{walk.friendsOnly ? ' · 켜짐' : ''}</Text>
+            </Pressable>
+            {walk.friendsOnly && !walk.sharing && <Text style={{ color: colors.secondary, fontSize: 12, marginTop: 6 }}>공유를 켜면 친구에게만 보여요.</Text>}
+            </View>
+            {walk.sharingError && <Text style={{ color: colors.secondary }}>위치 공유 설정을 확인하지 못했어요.</Text>}
           </View>
         )}
       </SafeAreaView>
@@ -325,6 +337,8 @@ const styles = StyleSheet.create({
   },
   chips: {
     flexDirection: "row",
+    flexWrap: 'wrap',
+    gap: 10,
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 10,

@@ -1,4 +1,5 @@
 export type Grade = 'N' | 'R' | 'EP' | 'U' | 'L' | 'E' | 'H';
+export type GachaImage = number | { uri: string };
 
 export type CollectionData<C extends string = string, Id extends string = string> = {
   id: C;
@@ -8,6 +9,7 @@ export type CollectionData<C extends string = string, Id extends string = string
   base: boolean;
   /** Null for collections without their own banner (hidden in others, or only obtainable by crafting). */
   banner: {
+    enabled?: boolean;
     title: string;
     tagline: string;
     cost: { 1: number; 10: number };
@@ -15,12 +17,12 @@ export type CollectionData<C extends string = string, Id extends string = string
     rates: { collection: C; rate: number; hidden: boolean }[];
     hero: Id;
     colors: { background: string; accent: string; text: string };
-    poster: number | null;
+    poster: GachaImage | null;
   } | null;
   /** A secret collection, only drawn inside other banners. */
   hidden: boolean;
   /** `thumb` is a small copy of `image` for grids and lists. */
-  characters: { id: Id; name: string; image: number; thumb: number }[];
+  characters: { id: Id; name: string; image: GachaImage; thumb: GachaImage }[];
 };
 
 type GradeOverrides<T> = { default: T } & Partial<Record<Grade, Partial<T>>>;

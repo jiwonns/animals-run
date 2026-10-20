@@ -1,4 +1,5 @@
-import { router, type Href } from 'expo-router';
+import { Stack, router, type Href } from 'expo-router';
+import { NotificationBell } from '@/components/notification-bell';
 import { useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -36,6 +37,7 @@ const SHORTCUTS: { label: string; icon: keyof typeof ICONS; tint: string; href: 
   { label: '뽑기', icon: 'gift', tint: '#FF5A1F', href: '/gacha' },
   { label: '도감', icon: 'dex', tint: '#3B82F6', href: '/collection/dex' },
   { label: '보관함', icon: 'archive', tint: '#F59E0B', href: '/collection' },
+  { label: '친구', icon: 'people', tint: '#10B981', href: '/friends' },
 ];
 
 function formatLeft(ms: number) {
@@ -103,6 +105,7 @@ export default function HomeScreen() {
       style={{ backgroundColor: colors.background }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}>
+      <Stack.Screen options={{ headerRight: () => <NotificationBell /> }} />
       <View style={styles.shortcuts}>
         {SHORTCUTS.map((item) => (
           <Pressable

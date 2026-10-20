@@ -20,6 +20,7 @@ export function Icon({ name, size = 20, color }: { name: SymbolName; size?: numb
 }
 
 export const ICONS = {
+  bell: { ios: 'bell.fill', android: 'notifications' },
   trophy: { ios: 'trophy.fill', android: 'emoji_events' },
   gift: { ios: 'gift.fill', android: 'redeem' },
   grade: { ios: 'rosette', android: 'military_tech' },

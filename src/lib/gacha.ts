@@ -1,4 +1,4 @@
-import { runTransaction, serverTimestamp } from 'firebase/firestore';
+import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 
 import { pickFromBanner, type Banner, type DrawCount } from '@/constants/banners';
 import type { Character } from '@/constants/characters';
@@ -7,6 +7,8 @@ import { REWARDS } from '@/constants/gacha.generated';
 import { db } from './firebase';
 import { drawLogRef, profileRef, type Profile } from './profile';
 import { gradeCountsAfter, newRewards, type Reward } from './rewards';
+import { BANNERS } from '@/constants/banners';
+import { currentCatalog, loadRemoteCatalog } from './remote-catalog';
 
 export type DrawResult = {
   character: Character;
@@ -36,7 +38,20 @@ export async function drawCharacters(
   count: DrawCount,
   payment: Payment,
 ): Promise<DrawOutcome> {
+  // Fetch before every payment: prices/odds shown by the app and used by the server share a version.
+  const displayedVersion = currentCatalog()?.version;
+  const catalog = await loadRemoteCatalog();
+  if (displayedVersion !== catalog?.version) throw new DrawError('뽑기 정보가 업데이트됐어요. 새 가격과 확률을 확인한 뒤 다시 눌러주세요.');
+  if (catalog) {
+    const live = BANNERS.find(b=>b.id===banner.id);
+    if (!live || JSON.stringify(live)!==JSON.stringify(banner)) throw new DrawError('판매 중인 뽑기 정보가 바뀌었어요. 화면을 다시 열어주세요.');
+  }
   return runTransaction(db, async (transaction) => {
+    // Reading the version inside the payment transaction retries/rejects an admin update mid-draw.
+    if (catalog) {
+      const live = await transaction.get(doc(db,'gachaCatalog','live'));
+      if (live.data()?.version !== catalog.version) throw new DrawError('뽑기 정보가 바뀌었어요. 다시 시도해주세요.');
+    }
     const snapshot = await transaction.get(profileRef(uid));
     if (!snapshot.exists()) throw new DrawError('프로필을 찾을 수 없어요.');
     const profile = snapshot.data() as Profile;

@@ -1,3 +1,4 @@
+import { useCatalog } from '@/providers/catalog-provider';
 import { useState, type ReactNode } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -31,6 +32,7 @@ const MAX_POSTER_RATIO = 1.65;
 type Show = { key: number; banner: Banner; count: DrawCount; payment: Payment };
 
 export default function GachaScreen() {
+  const { refresh:refreshCatalog } = useCatalog();
   const colors = useColors();
   useConfirmExit();
   const { width } = useWindowDimensions();
@@ -65,6 +67,7 @@ export default function GachaScreen() {
       setRewards(outcome.rewards);
     } catch (error) {
       setShow(null);
+      void refreshCatalog().catch(()=>{});
       Alert.alert('뽑기 실패', error instanceof DrawError ? error.message : '잠시 후 다시 시도해주세요.');
     }
   }
@@ -94,13 +97,19 @@ export default function GachaScreen() {
 
       <View style={styles.pager} onLayout={(e) => setPagerHeight(e.nativeEvent.layout.height)}>
         {pagerHeight > 0 && (
-          <Animated.ScrollView
+          <Animated.FlatList
+            data={BANNERS}
+            keyExtractor={banner=>banner.id}
+            initialNumToRender={1}
+            maxToRenderPerBatch={2}
+            windowSize={3}
+            getItemLayout={(_,index)=>({length:width,offset:width*index,index})}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             scrollEventThrottle={16}
-            onScroll={onScroll}>
-            {BANNERS.map((banner) => {
+            onScroll={onScroll}
+            renderItem={({item:banner}) => {
               const payment: Payment = acceptsTickets(banner) ? paymentChoice : 'coins';
               return (
                 <BannerPage key={banner.id} banner={banner} width={width} height={pagerHeight}>
@@ -157,8 +166,8 @@ export default function GachaScreen() {
                   </View>
                 </BannerPage>
               );
-            })}
-          </Animated.ScrollView>
+            }}
+          />
         )}
       </View>
 

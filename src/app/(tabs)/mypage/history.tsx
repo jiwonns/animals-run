@@ -1,7 +1,9 @@
-import { Image } from 'expo-image';
-import { limit, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useCatalog } from '@/providers/catalog-provider';
+import { Image } from '@/components/gacha-image';
+import { orderBy, query } from 'firebase/firestore';
+import { useMemo } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useFirestorePage } from '@/hooks/use-firestore-page';
 
 import { RunningLoader } from '@/components/running-loader';
 import { TICKET_COLOR } from '@/components/ticket-badge';
@@ -11,39 +13,30 @@ import { useColors } from '@/hooks/use-colors';
 import { drawLogsRef, type DrawLog } from '@/lib/profile';
 import { useSession } from '@/providers/session-provider';
 
-const PAGE_SIZE = 50;
 
 type Entry = DrawLog & { id: string };
 
 export default function HistoryScreen() {
+  useCatalog();
   const colors = useColors();
   const { user } = useSession();
   const uid = user?.uid;
-  const [entries, setEntries] = useState<{ uid: string; list: Entry[] | null } | null>(null);
-  const current = entries && entries.uid === uid ? entries : null;
-  const list = current?.list;
+  const source = useMemo(()=>uid?query(drawLogsRef(uid),orderBy('createdAt','desc')):null,[uid]);
+  const page = useFirestorePage(source,uid??'');
+  const list = page.docs.map(d=>({id:d.id,...d.data() as DrawLog}));
 
-  useEffect(() => {
-    if (!uid) return;
-    const recent = query(drawLogsRef(uid), orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
-    return onSnapshot(
-      recent,
-      (snapshot) => setEntries({ uid, list: snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as DrawLog) })) }),
-      () => setEntries({ uid, list: null }),
-    );
-  }, [uid]);
-
-  if (current && !list) {
+  if (page.failed && !list.length) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <Text style={[styles.failed, { color: colors.secondary }]}>
-          뽑기 기록을 불러오지 못했어요.{'\n'}Firebase 콘솔에 최신 firestore.rules가 게시됐는지 확인해주세요.
+          뽑기 기록을 불러오지 못했어요.
         </Text>
+        <Pressable onPress={page.refresh} accessibilityRole="button" style={{minHeight:44,justifyContent:'center'}}><Text style={{color:colors.primary}}>다시 시도</Text></Pressable>
       </View>
     );
   }
 
-  if (!list) {
+  if (page.loading && !list.length) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <RunningLoader label="기록을 불러오는 중" />
@@ -57,14 +50,19 @@ export default function HistoryScreen() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
       data={list}
+      onEndReached={page.loadMore}
+      onEndReachedThreshold={0.4}
+      initialNumToRender={8}
+      maxToRenderPerBatch={8}
+      windowSize={5}
+      onRefresh={page.refresh}
+      refreshing={page.loading && !list.length}
       keyExtractor={(entry) => entry.id}
       ListEmptyComponent={
         <Text style={[styles.empty, { color: colors.secondary }]}>아직 뽑기 기록이 없어요.</Text>
       }
       ListFooterComponent={
-        list.length === PAGE_SIZE ? (
-          <Text style={[styles.empty, { color: colors.secondary }]}>최근 {PAGE_SIZE}번까지 보여드려요.</Text>
-        ) : undefined
+        page.failed ? <Pressable onPress={page.loadMore} accessibilityRole="button" style={{minHeight:48,justifyContent:'center'}}><Text style={{color:colors.primary,textAlign:'center'}}>불러오지 못했어요 · 다시 시도</Text></Pressable> : page.loading ? <Text style={[styles.empty,{color:colors.secondary}]}>더 불러오는 중…</Text> : undefined
       }
       renderItem={({ item }) => <HistoryRow entry={item} />}
     />

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { View } from 'react-native';
-import { Image } from 'expo-image';
+import { Image } from '@/components/gacha-image';
 import Animated, {
   cancelAnimation,
   Easing,

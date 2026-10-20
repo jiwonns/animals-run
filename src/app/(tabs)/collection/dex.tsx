@@ -1,6 +1,11 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useListWindow } from '@/hooks/use-list-window';
+import { useCatalog } from '@/providers/catalog-provider';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { CharacterCard } from '@/components/character-card';
+import { MedalClaim } from '@/components/medal-claim';
+import { useMedals } from '@/hooks/use-medals';
+import { COLLECTION_MEDALS } from '@/lib/medals';
 import { GradeBadge } from '@/components/grade-badge';
 import { RunningLoader } from '@/components/running-loader';
 import { CHARACTERS, charactersIn, COLLECTIONS, GRADE_ORDER, GRADES } from '@/constants/characters';
@@ -13,60 +18,37 @@ const PADDING = 20;
 const GAP = 12;
 
 export default function DexScreen() {
+  useCatalog();
   const colors = useColors();
   const cellWidth = useGridCellWidth(COLUMNS, PADDING, GAP);
-  const { profile } = useSession();
+  const { user, profile } = useSession();
+  const { claimed, failed } = useMedals(user?.uid);
   const owned = profile?.characters ?? {};
   const isOwned = (id: keyof typeof owned) => (owned[id] ?? 0) > 0;
   const progress = (list: typeof CHARACTERS) => `${list.filter((c) => isOwned(c.id)).length} / ${list.length}`;
 
-  if (!profile) return <RunningLoader label="도감을 펼치는 중" style={styles.loading} />;
-
-  return (
-    <ScrollView
-      style={{ backgroundColor: colors.background }}
-      contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={styles.content}>
-      <Text style={[styles.total, { color: colors.secondary }]}>전체 {progress(CHARACTERS)}</Text>
-
-      {GRADE_ORDER.map((grade) => {
-        const collections = COLLECTIONS.filter((c) => c.grade === grade);
-        if (collections.length === 0) return null;
-        const members = CHARACTERS.filter((c) => c.grade === grade);
-        return (
-          <View key={grade} style={styles.gradeSection}>
-            <View style={[styles.gradeHeader, { borderColor: GRADES[grade].color }]}>
-              <GradeBadge grade={grade} />
-              <Text style={[styles.gradeTitle, { color: colors.text }]}>{GRADES[grade].label}</Text>
-              <Text style={[styles.progress, { color: colors.secondary }]}>{progress(members)}</Text>
-            </View>
-
-            {collections.map((collection) => {
-              const characters = charactersIn(collection.id);
-              return (
-                <View key={collection.id} style={styles.collection}>
-                  <View style={styles.collectionHeader}>
-                    <Text style={[styles.collectionTitle, { color: colors.text }]}>{collection.name}</Text>
-                    <Text style={[styles.progress, { color: colors.secondary }]}>{progress(characters)}</Text>
-                  </View>
-                  <View style={styles.grid}>
-                    {characters.map((character) => (
-                      <CharacterCard
-                        key={character.id}
-                        character={character}
-                        width={cellWidth}
-                        owned={isOwned(character.id)}
-                      />
-                    ))}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        );
-      })}
-    </ScrollView>
-  );
+  type Row = { key:string; render:()=>React.ReactElement };
+  const rows:Row[]=[];
+  for(const grade of GRADE_ORDER){
+    const members=CHARACTERS.filter(c=>c.grade===grade);
+    rows.push({key:'grade:'+grade,render:()=> <View style={[styles.gradeHeader,{borderColor:GRADES[grade].color}]}><GradeBadge grade={grade}/><Text style={[styles.gradeTitle,{color:colors.text}]}>{GRADES[grade].label}</Text><Text style={{color:colors.secondary}}>{progress(members)}</Text></View>});
+    for(const collection of COLLECTIONS.filter(c=>c.grade===grade)){
+      const characters=charactersIn(collection.id);
+      rows.push({key:'collection:'+collection.id,render:()=> <View style={styles.collectionHeader}><Text style={[styles.collectionTitle,{color:colors.text}]}>{collection.name}</Text><Text style={{color:colors.secondary}}>{progress(characters)}</Text></View>});
+      for(let i=0;i<characters.length;i+=COLUMNS){
+        const group=characters.slice(i,i+COLUMNS);
+        rows.push({key:collection.id+':'+i,render:()=> <View style={{flexDirection:'row',gap:GAP}}>{group.map(character=><CharacterCard key={character.id} character={character} width={cellWidth} owned={isOwned(character.id)}/>)}</View>});
+      }
+      const medal=COLLECTION_MEDALS.find(m=>m.id==='collection_complete:'+collection.id);
+      if(medal)rows.push({key:'medal:'+collection.id,render:()=> <MedalClaim medal={medal} claimed={claimed}/>});
+    }
+  }
+  const page=useListWindow(rows,user?.uid??'');
+  if (!profile) return <RunningLoader label="??? ??? ?" style={styles.loading}/>;
+  return <FlatList style={{backgroundColor:colors.background}} data={page.data} keyExtractor={r=>r.key} renderItem={({item})=>item.render()}
+    contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{padding:PADDING,gap:14,paddingBottom:32}}
+    initialNumToRender={8} maxToRenderPerBatch={8} windowSize={5} onEndReachedThreshold={0.4} onEndReached={page.loadMore}
+    ListHeaderComponent={<View style={{gap:10}}><Text style={[styles.total,{color:colors.secondary}]}>?? {progress(CHARACTERS)}</Text>{failed&&<Text style={{color:colors.secondary}}>??? ???? ????. ??? ??????.</Text>}</View>}/>;
 }
 
 const styles = StyleSheet.create({

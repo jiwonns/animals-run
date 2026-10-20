@@ -1,0 +1,72 @@
+    function isMedalCollection(id, chars) {
+      return exists(/databases/$(database)/documents/gachaCollections/$(id))
+        ? chars.keys().hasAll(get(/databases/$(database)/documents/gachaCollections/$(id)).data.characterIds) && !chars.values().hasAny([0])
+        : (__MEDAL_COLLECTION_CONDITIONS__);
+    }
+    // Permanent medals are independent from ticket achievements and cannot be overwritten.
+    match /users/{uid}/medals/{medalId} {
+      function earned() {
+        let p = get(/databases/$(database)/documents/users/$(uid)).data;
+        let parts = medalId.split(':');
+        return parts.size() == 2 && (
+          (parts[0] == 'collection_complete' && isMedalCollection(parts[1], p.characters))
+          || (medalId == 'steps:10000' && p.get('steps', 0) >= 10000)
+          || (medalId == 'steps:100000' && p.get('steps', 0) >= 100000)
+          || (medalId == 'draws:100' && p.drawCount >= 100)
+          || (parts[0] in ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount'] && parts[1] == '10' && p.get(parts[0], 0) >= 10));
+      }
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid) && earned() && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;
+      allow delete: if isOwner(uid) && isGone(uid);
+    }
+
+    // A display preference does not award a medal. Live rankings determine crown ownership.
+    match /medalDisplays/{uid} {
+      function validDisplay() {
+        let d = request.resource.data;
+        let id = d.medalId;
+        return d.keys().hasAll(['medalId', 'updatedAt']) && d.keys().hasOnly(['medalId', 'updatedAt'])
+          && d.updatedAt == request.time && exists(/databases/$(database)/documents/users/$(uid))
+          && (id == null || (id is string && (id in __RANKING_MEDAL_IDS__ || exists(/databases/$(database)/documents/users/$(uid)/medals/$(id)))));
+      }
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(uid) && validDisplay();
+      allow delete: if isOwner(uid);
+    }
+
+    match /bonds/{uid} {
+      function validRecord(r) {
+        return r.keys().hasAll(['seconds', 'steps', 'since', 'stepStart']) && r.keys().hasOnly(['seconds', 'steps', 'since', 'stepStart'])
+          && r.seconds is int && r.seconds >= 0 && r.steps is int && r.steps >= 0 && r.stepStart is int && r.stepStart >= 0;
+      }
+      function validClose(before, after, old, total) {
+        let b = before.get(old, {'seconds': 0, 'steps': 0, 'since': null, 'stepStart': 0});
+        let a = after[old];
+        return validRecord(a) && a.since == null && a.stepStart == b.stepStart
+          && a.steps == b.steps + (total - b.stepStart >= 0 ? total - b.stepStart : 0)
+          && a.seconds >= b.seconds && a.seconds <= b.seconds + (request.time - b.since).seconds() + 5
+          && a.seconds >= b.seconds + (request.time - b.since).seconds() - 5;
+      }
+      function validOpen(before, after, active, total) {
+        let b = before.get(active, {'seconds': 0, 'steps': 0});
+        let a = after[active];
+        return validRecord(a) && a.seconds == b.seconds && a.steps == b.steps && a.since == request.time && a.stepStart == total;
+      }
+      function validBond() {
+        let b = resource == null ? {'animals': {}, 'active': null} : resource.data;
+        let a = request.resource.data;
+        let p = get(/databases/$(database)/documents/users/$(uid)).data;
+        let next = getAfter(/databases/$(database)/documents/users/$(uid)).data.get('avatar', null);
+        let old = b.active;
+        let total = p.get('steps', 0);
+        return a.keys().hasAll(['animals', 'active', 'updatedAt']) && a.keys().hasOnly(['animals', 'active', 'updatedAt'])
+          && a.animals is map && a.active == next && a.updatedAt == request.time
+          && (next == null || p.characters.get(next, 0) > 0)
+          && a.animals.diff(b.animals).affectedKeys().hasOnly([old, next])
+          && (old == null || (old != next && validClose(b.animals, a.animals, old, total)))
+          && (next == null || validOpen(b.animals, a.animals, next, total));
+      }
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && validBond();
+      allow delete: if isOwner(uid) && isGone(uid);
+    }

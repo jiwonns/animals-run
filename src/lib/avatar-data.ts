@@ -3,6 +3,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import { FACE_CROP } from '@/components/avatar-face';
 import { CHARACTER_BY_ID, type CharacterId } from '@/constants/characters';
+import { loadGachaImage } from './gacha-images';
 
 const FACE_SIZE = 128;
 const cache = new Map<CharacterId, Promise<string>>();
@@ -17,7 +18,7 @@ export function avatarDataUri(id: CharacterId): Promise<string> {
     uri = (async () => {
       const character = CHARACTER_BY_ID[id];
       if (!character) throw new Error(`Unknown character ${id}`);
-      const source = await Image.loadAsync(character.thumb);
+      const source = await Image.loadAsync(typeof character.thumb === 'number' ? character.thumb : { uri:await loadGachaImage(character.thumb.uri) });
       const side = Math.floor(source.width * FACE_CROP.size);
       const face = await ImageManipulator.manipulate(source)
         .crop({

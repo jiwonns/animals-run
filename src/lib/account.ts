@@ -7,10 +7,16 @@ import {
   updatePassword,
   type User,
 } from 'firebase/auth';
-import { deleteDoc, getDocs, updateDoc, writeBatch, type CollectionReference } from 'firebase/firestore';
+import { deleteDoc, getDocs, query, where, updateDoc, writeBatch, type Query } from 'firebase/firestore';
+import { friendshipsRef } from './friends';
+import { mapPreferencesRef } from './map-sharing';
+import { stepSyncsRef } from './step-progress';
 
 import { normalize, toEmail, toMessage, validatePassword, validateUsername } from './auth';
 import { db } from './firebase';
+import { bondRef } from './bond';
+import { medalsRef } from './medals';
+import { medalDisplayRef } from './medal-display';
 import { auth } from './firebase-auth';
 import { companionRef, eggsRef } from './home';
 import { claimsRef, drawLogsRef, locationRef, profileRef } from './profile';
@@ -75,7 +81,7 @@ export async function changeUsername(next: string, password: string): Promise<st
   }
 }
 
-async function deleteAll(ref: CollectionReference) {
+async function deleteAll(ref: Query) {
   const docs = (await getDocs(ref)).docs;
   for (let i = 0; i < docs.length; i += 400) {
     const batch = writeBatch(db);
@@ -97,9 +103,15 @@ export async function deleteAccount(password: string): Promise<string | null> {
     await Promise.all([
       deleteAll(drawLogsRef(uid)),
       deleteAll(claimsRef(uid)),
+      deleteAll(stepSyncsRef(uid)),
+      deleteAll(medalsRef(uid)),
+      deleteDoc(medalDisplayRef(uid)),
+      deleteDoc(bondRef(uid)),
       deleteAll(eggsRef(uid)),
       deleteDoc(companionRef(uid)),
       deleteDoc(locationRef(uid)),
+      deleteDoc(mapPreferencesRef(uid)),
+      deleteAll(query(friendshipsRef(), where('members', 'array-contains', uid))),
       deleteDoc(rankingRef(uid)),
     ]);
     await deleteDoc(sessionRef(uid));

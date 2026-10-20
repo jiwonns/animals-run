@@ -57,3 +57,7 @@ modules/**/android/.gradle/
 
 # Firebase deploy cache
 .firebase/
+public/gacha-assets/
+firebase-debug*.log
+firestore-debug.log
+ui-debug.log

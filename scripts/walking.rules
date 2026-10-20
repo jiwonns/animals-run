@@ -1,0 +1,17 @@
+    match /users/{uid}/stepSync/{device} {
+      function validCursor() {
+        let b = resource == null ? {'epoch': '', 'count': 0, 'credited': 0} : resource.data;
+        let d = request.resource.data;
+        let before = get(/databases/$(database)/documents/users/$(uid)).data;
+        let after = getAfter(/databases/$(database)/documents/users/$(uid)).data;
+        let added = d.credited - b.credited;
+        return d.keys().hasAll(['epoch', 'count', 'credited', 'updatedAt']) && d.keys().hasOnly(['epoch', 'count', 'credited', 'updatedAt'])
+          && d.epoch is string && d.epoch.size() > 0 && d.epoch.size() <= 100
+          && d.count is int && d.count >= 0 && d.credited is int && added >= 0
+          && (d.epoch == b.epoch ? d.count >= b.count && added <= d.count - b.count : added <= d.count)
+          && d.updatedAt == request.time && added == after.get('steps', 0) - before.get('steps', 0);
+      }
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && validCursor();
+      allow delete: if isOwner(uid) && isGone(uid);
+    }
