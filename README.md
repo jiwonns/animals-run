@@ -17,7 +17,7 @@
   <a href="docs/beta-guide.pdf"><b>📄 안내서 PDF</b></a>
 </p>
 
-## 최신 업데이트 · 2026년 10월 20일
+## 최신 업데이트 · 2026년 10월 21일 · APK 1.0.1
 
 - **친밀도** — 함께 걸은 걸음과 대표 동물로 함께한 시간에 따라 5단계로 가까워져요. 동물 이름과 내 닉네임을 넣은 문구가 프로필에 표시돼요.
 - **훈장과 보관함** — 컬렉션 완성과 활동으로 영구 훈장을 모으고, 현재 랭킹 1위는 왕관 훈장을 가져요. 동물·훈장·기타 탭을 나눴고, 보관함에서 장착한 훈장은 대표 훈장으로 프로필에 보여요.
@@ -27,12 +27,12 @@
 - **원격 이미지와 관리자** — 뽑기 이미지를 원격으로 불러오고 캐시해요. 권한이 있는 계정은 [관리자 페이지](https://animalsrun-2571c.web.app/admin)에서 뽑기·동물을 추가하고 이미지·가격·확률을 수정한 뒤 검토·게시할 수 있어요. Firebase 무료 요금제를 유지해요.
 - **커뮤니티와 고양이 컬렉션** — 글·사진·댓글·답글·좋아요로 이야기를 나누고, 10가지 고양이 품종을 6등급으로 모아요.
 
-웹에는 최신 변경이 배포되어 있어요. **웹은 새로고침**해주세요. 아래 공개 APK는 해당 릴리스의 기능을 제공하며, 새 백그라운드 걸음 서비스는 최신 네이티브 빌드가 필요해요. 공개 APK 다운로드 주소와 QR은 그대로 유지해요.
+**공개 APK를 1.0.1로 교체했어요.** 훈장·친밀도·친구·알림·목록 개선·원격 이미지·관리자 기능과 백그라운드 걸음 서비스가 포함돼요. **아래 APK를 다시 받아 기존 앱 위에 설치**해주세요. 앱을 삭제할 필요가 없고, 다운로드 주소와 QR도 그대로예요. 웹은 새로고침하면 최신 기능을 이용할 수 있어요.
 
 | 바로 이용하기 | 링크 |
 | --- | --- |
 | 웹 · 아이폰에서도 설치 없이 이용 | [Animals Run 웹](https://animalsrun-2571c.web.app) |
-| 갤럭시 APK · 공개 베타 릴리스 | [AnimalsRun-beta.apk](https://github.com/jiwonns/animals-run/releases/download/v1.0.0-beta/AnimalsRun-beta.apk) |
+| 갤럭시 APK · 1.0.1 (설치 버전 2) | [AnimalsRun-beta.apk](https://github.com/jiwonns/animals-run/releases/download/v1.0.0-beta/AnimalsRun-beta.apk) |
 | 친구에게 공유할 APK QR | [APK 다운로드 QR 이미지](https://github.com/jiwonns/animals-run/releases/download/v1.0.0-beta/AnimalsRun-beta-QR.png) |
 
 | 내 폰 | 설치 방법 |
@@ -186,3 +186,4 @@ npx firebase-tools emulators:exec --project demo-animalsrun --config firebase.co
 - [앱 종료 중 걸음 기록](docs/background-steps.md)
 - [로그인 세션과 부화](docs/sessions-and-hatching.md)
 - [무료 카탈로그와 관리자 운영](docs/catalog-admin.md)
+- [APK 빌드·검증·교체 절차](docs/releases.md)
