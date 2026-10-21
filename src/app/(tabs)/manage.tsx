@@ -208,7 +208,7 @@ export default function MapScreen() {
               <AvatarFace avatar={profile.avatar} size={28} fallback={displayName(profile)} />
               <Text style={[styles.pillLabel, { color: colors.text }]}>내 프로필</Text>
             </Pressable>}
-            {!profile?.avatar && (
+            {!profile && (
               <Pressable
                 accessibilityRole="button"
                 onPress={() => router.navigate("/mypage/avatar")}
