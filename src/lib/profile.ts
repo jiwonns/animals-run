@@ -15,6 +15,8 @@ import { zodiacOf } from "./zodiac";
 export const STARTING_COINS = 100;
 
 export type Profile = {
+  /** Receipt for an atomic, server-validated arena payout. */
+  lastArenaReward?: string;
   /** Receipt checked against current inventory and grade prices by Firestore rules. */
   lastSale?: { character: CharacterId; quantity: number };
   /** Login id; also the shown name for accounts without a nickname. */

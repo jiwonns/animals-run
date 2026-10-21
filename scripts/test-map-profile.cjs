@@ -31,5 +31,19 @@ for (const native of [true, false]) {
   context.window.app.setPlayers([{ id: 'other-player', name: 'updated', avatar: null, lat: 38, lng: 128, me: false }]);
   markers[0].handlers.click();
   assert.equal((native ? JSON.parse(messages.at(-1)) : messages.at(-1)).uid, 'other-player');
+  context.window.app.setPlayers([{ id: 'self-player', name: '나', avatar: null, lat: 37, lng: 127, me: true }]);
+  markers[1].handlers.click();
+  assert.equal((native ? JSON.parse(messages.at(-1)) : messages.at(-1)).uid, 'self-player');
+  assert.equal(markers[1].options.title, '내 프로필 열기');
+  context.window.app.setPlayers([{ id: 'self-player', name: '새 이름', avatar: 'cat', lat: 38, lng: 128, me: true }]);
+  context.window.app.setFace('cat','data:image/png;base64,test');
+  markers[1].handlers.click();
+  assert.equal((native ? JSON.parse(messages.at(-1)) : messages.at(-1)).uid, 'self-player');
   console.log(`PASS ${native ? 'native' : 'web'} map marker opens the selected profile, including after updates`);
 }
+const ts = require('typescript');
+const route = { exports: {} };
+new Function('exports','module',ts.transpileModule(fs.readFileSync('src/lib/map-profile-route.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(route.exports,route);
+assert.equal(route.exports.mapProfileRoute('self','self'),'/mypage');
+assert.deepEqual(route.exports.mapProfileRoute('friend','self'),{pathname:'/player/[uid]',params:{uid:'friend'}});
+console.log('PASS self marker routes to live mypage, others to public profile, face refresh retains clicks');

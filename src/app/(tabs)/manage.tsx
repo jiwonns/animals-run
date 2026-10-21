@@ -22,6 +22,8 @@ import { useActivePlayers } from "@/hooks/use-active-players";
 import { useColors } from "@/hooks/use-colors";
 import { useConfirmExit } from "@/hooks/use-confirm-exit";
 import { displayName } from "@/lib/profile";
+import { mapProfileRoute } from '@/lib/map-profile-route';
+import { AvatarFace } from '@/components/avatar-face';
 import { useSession } from "@/providers/session-provider";
 import { useWalk } from "@/providers/walk-provider";
 
@@ -100,7 +102,7 @@ export default function MapScreen() {
           focusKey={focusKey}
           color={colors.primary}
           onPlayerPress={(uid) =>
-            router.push({ pathname: "/player/[uid]", params: { uid } })
+            router.navigate(mapProfileRoute(uid, user?.uid))
           }
         />
       )}
@@ -182,7 +184,7 @@ export default function MapScreen() {
                 {walk.sharing ? "내 위치 공유 중" : "내 위치 숨김"}
               </Text>
             </Pressable>
-            <View style={{ width: '100%', alignItems: 'flex-end' }}>
+            <View pointerEvents="box-none" style={{ width: '100%', alignItems: 'flex-end' }}>
             <Pressable accessibilityRole="switch" accessibilityLabel="친구에게만 내 위치 공유" accessibilityState={{ checked: walk.friendsOnly, disabled: walk.sharingBusy }} disabled={walk.sharingBusy}
               onPress={() => walk.setFriendsOnly(!walk.friendsOnly)} style={({ pressed }) => [styles.chip, { backgroundColor: walk.friendsOnly ? WALK_COLOR : colors.background, borderColor: walk.friendsOnly ? WALK_COLOR : colors.border, minHeight: 44, opacity: pressed || walk.sharingBusy ? 0.6 : 1 }]}>
               <Icon name={ICONS.people} size={15} color={walk.friendsOnly ? '#fff' : colors.secondary} />
@@ -201,6 +203,11 @@ export default function MapScreen() {
           pointerEvents="box-none"
         >
           <View style={styles.row} pointerEvents="box-none">
+            {profile && <Pressable accessibilityRole="button" accessibilityLabel="내 프로필 열기" onPress={() => router.navigate('/mypage')}
+              style={({ pressed }) => [styles.pill, { backgroundColor: colors.background, borderColor: colors.border, gap: 8 }, pressed && styles.pressed]}>
+              <AvatarFace avatar={profile.avatar} size={28} fallback={displayName(profile)} />
+              <Text style={[styles.pillLabel, { color: colors.text }]}>내 프로필</Text>
+            </Pressable>}
             {!profile?.avatar && (
               <Pressable
                 accessibilityRole="button"
@@ -216,7 +223,7 @@ export default function MapScreen() {
                 </Text>
               </Pressable>
             )}
-            <View style={styles.spacer} />
+            <View style={styles.spacer} pointerEvents="none" />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="내 위치로 이동"

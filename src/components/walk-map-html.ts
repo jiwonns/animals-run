@@ -18,7 +18,7 @@ export const mapHtml = (color: string) => `<!DOCTYPE html>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   html, body, #map { margin: 0; height: 100%; background: #eef1f4; }
-  .pin { display: flex; flex-direction: column; align-items: center; }
+  .pin { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
   .face {
     width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: #fff;
     border: 3px solid #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, .3);
@@ -73,7 +73,7 @@ export const mapHtml = (color: string) => `<!DOCTYPE html>
       const key = p.name + '|' + p.avatar + '|' + p.me + '|' + !!(p.avatar && faces[p.avatar]);
       const marker = markers[p.id];
       if (!marker) {
-        markers[p.id] = L.marker([p.lat, p.lng], { icon: icon(p), zIndexOffset: p.me ? 1000 : 0 }).addTo(map);
+        markers[p.id] = L.marker([p.lat, p.lng], { icon: icon(p), zIndexOffset: p.me ? 1000 : 0, keyboard: true, title: p.me ? '내 프로필 열기' : p.name + ' 프로필 열기' }).addTo(map);
         markers[p.id].key = key;
         markers[p.id].on('click', () => {
           const message = { type: 'walk-map:player', uid: p.id };

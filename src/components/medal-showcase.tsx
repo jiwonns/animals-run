@@ -9,9 +9,10 @@ export function EquippedMedal({ showcase }: { showcase: MedalShowcase }) {
   const c = useColors();
   const medal = showcase.equipped;
   if (!medal) return null;
-  return <View accessibilityLabel={`장착한 훈장: ${medal.name}`} style={{ alignSelf: 'center', maxWidth: '100%', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: `${c.primary}16`, gap: 3 }}>
+  return <View accessibilityLabel={`장착한 훈장: ${medal.name}. ${medal.description}`} style={{ alignSelf: 'stretch', width: '100%', minWidth: 0, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: `${c.primary}16`, gap: 6 }}>
     <Text style={{ color: c.primary, fontSize: 11, fontWeight: '700', textAlign: 'center' }}>대표 훈장{medal.temporary ? ' · 랭킹 1위' : ''}</Text>
-    <Text style={{ color: c.text, fontWeight: '800', textAlign: 'center' }}>{medal.temporary ? '👑' : '🏅'} {medal.name}</Text>
+    <Text style={{ color: c.text, fontSize: 16, lineHeight: 24, fontWeight: '800', textAlign: 'center', flexShrink: 1 }}>{medal.temporary ? '👑' : '🏅'} {medal.name}</Text>
+    <Text style={{ color: c.secondary, fontSize: 12, lineHeight: 19, textAlign: 'center', flexShrink: 1 }}>{medal.description}</Text>
   </View>;
 }
 

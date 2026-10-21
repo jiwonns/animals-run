@@ -302,6 +302,113 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    function arenaStats(g) {
+      return {'N': [100,18,0], 'R': [104,19,1], 'EP': [109,20,2], 'U': [114,21,3], 'L': [120,22,4], 'E': [104,19,1], 'H': [126,23,5]}[g];
+    }
+    function arenaStart(p, r) {
+      return {'pHp': arenaStats(p)[0], 'rHp': arenaStats(r)[0], 'pEnergy': 1, 'rEnergy': 1,
+        'pGuard': false, 'rGuard': false, 'turn': 0, 'winner': 'none'};
+    }
+    function arenaAI(s, d) {
+      return s.rEnergy >= 3 ? 'burst' : d != 'rookie' && !s.rGuard && s.pEnergy >= 3 ? 'guard'
+        : (d == 'rookie' ? ['focus','attack','guard','attack'] : ['attack','focus','attack','focus'])[int(math.floor(s.turn / 2.0)) % 4];
+    }
+    function arenaHit(m, own, target, guarded) {
+      let value = int(math.floor((own[1] * (m == 'burst' ? 2 : 1) - target[2]) * (guarded ? (m == 'burst' ? 0.65 : 0.35) : 1)));
+      return m in ['attack','burst'] ? (value < 4 ? 4 : value) : 0;
+    }
+    function arenaRaw(s, m, p, r) {
+      let isP = s.turn % 2 == 0;
+      let own = arenaStats(isP ? p : r);
+      let target = arenaStats(isP ? r : p);
+      let hp = (isP ? s.pHp : s.rHp) + (m == 'focus' ? 8 : 0);
+      let targetHp = (isP ? s.rHp : s.pHp) - arenaHit(m, own, target, isP ? s.rGuard : s.pGuard);
+      let energy = (isP ? s.pEnergy : s.rEnergy) + (m == 'focus' ? 2 : m == 'guard' ? 1 : m == 'burst' ? -3 : 0);
+      return {'pHp': isP ? (hp > own[0] ? own[0] : hp) : (targetHp < 0 ? 0 : targetHp),
+        'rHp': isP ? (targetHp < 0 ? 0 : targetHp) : (hp > own[0] ? own[0] : hp),
+        'pEnergy': isP ? (energy > 5 ? 5 : energy) : s.pEnergy, 'rEnergy': isP ? s.rEnergy : (energy > 5 ? 5 : energy),
+        'pGuard': isP ? m == 'guard' : m in ['attack','burst'] ? false : s.pGuard,
+        'rGuard': isP ? (m in ['attack','burst'] ? false : s.rGuard) : m == 'guard', 'turn': s.turn + 1, 'winner': 'none'};
+    }
+    function arenaFinish(s, p, r) {
+      let delta = s.pHp * arenaStats(r)[0] - s.rHp * arenaStats(p)[0];
+      return {'pHp': s.pHp, 'rHp': s.rHp, 'pEnergy': s.pEnergy, 'rEnergy': s.rEnergy,
+        'pGuard': s.pGuard, 'rGuard': s.rGuard, 'turn': s.turn,
+        'winner': s.pHp == 0 || s.rHp == 0 || s.turn >= 30 ? (delta > 0 ? 'player' : delta < 0 ? 'rival' : 'draw') : 'none'};
+    }
+    function arenaCoins(d, uid) {
+      let tier = d.mode == 'friend' ? 1 : d.difficulty == 'rookie' ? 0 : d.difficulty == 'veteran' ? 1 : 2;
+      return d.state.winner == 'draw' ? [3,4,5][tier]
+        : (d.state.winner == 'player' ? d.owner == uid : d.recipient == uid && d.mode == 'friend') ? [6,10,14][tier] : [1,2,3][tier];
+    }
+    function validArenaClaim(uid, id) {
+      let d = get(/databases/$(database)/documents/arenaDuels/$(id)).data;
+      let after = getAfter(/databases/$(database)/documents/arenaDuels/$(id)).data;
+      let wallet = getAfter(/databases/$(database)/documents/arenaWallets/$(uid)).data;
+      let oldWallet = exists(/databases/$(database)/documents/arenaWallets/$(uid)) ? get(/databases/$(database)/documents/arenaWallets/$(uid)).data : {'day': -1, 'count': 0};
+      let profile = get(/databases/$(database)/documents/users/$(uid)).data;
+      let paid = getAfter(/databases/$(database)/documents/users/$(uid)).data;
+      let day = int(math.floor(request.time.toMillis() / 86400000.0));
+      return isOwner(uid) && uid in d.members && d.status == 'finished' && d.state.winner != 'none' && !(uid in d.claimed)
+        && after.diff(d).affectedKeys().hasOnly(['claimed','updatedAt']) && after.claimed == d.claimed.concat([uid]) && after.updatedAt == request.time
+        && wallet.keys().hasOnly(['day','count','lastDuel','updatedAt']) && wallet.day == day && wallet.lastDuel == id && wallet.updatedAt == request.time
+        && wallet.count == (oldWallet.day == day ? oldWallet.count + 1 : 1) && wallet.count <= 5
+        && paid.diff(profile).affectedKeys().hasOnly(['coins','lastArenaReward']) && paid.lastArenaReward == id
+        && paid.coins == profile.coins + arenaCoins(d, uid);
+    }
+    match /arenaWallets/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && validArenaClaim(uid, request.resource.data.lastDuel);
+      allow delete: if isOwner(uid) && isGone(uid);
+    }
+    match /arenaDuels/{id} {
+      function owns(uid, ch) { return ch is string && gradeOf(ch) in ['N','R','EP','U','L','E','H'] && get(/databases/$(database)/documents/users/$(uid)).data.characters.get(ch, 0) > 0; }
+      function friends(a, b) {
+        return (exists(/databases/$(database)/documents/friendships/$(a + ':' + b)) && get(/databases/$(database)/documents/friendships/$(a + ':' + b)).data.status == 'accepted')
+          || (exists(/databases/$(database)/documents/friendships/$(b + ':' + a)) && get(/databases/$(database)/documents/friendships/$(b + ':' + a)).data.status == 'accepted');
+      }
+      function soloGrade(d) {
+        let ranks = {'N':0,'R':1,'E':1,'EP':2,'U':3,'L':4,'H':5};
+        let tier = ranks[gradeOf(d.playerId)] + (d.difficulty == 'rookie' ? -1 : d.difficulty == 'master' ? 1 : 0);
+        return gradeOf(d.rivalId) == ['N','R','EP','U','L','H'][tier < 0 ? 0 : tier > 5 ? 5 : tier];
+      }
+      function validCreate() {
+        let d = request.resource.data;
+        return d.keys().hasAll(['mode','members','owner','recipient','playerId','rivalId','difficulty','status','state','lastMove','claimed','createdAt','updatedAt'])
+          && d.keys().hasOnly(['mode','members','owner','recipient','playerId','rivalId','difficulty','status','state','lastMove','claimed','createdAt','updatedAt'])
+          && d.owner == request.auth.uid && owns(d.owner, d.playerId) && d.claimed == [] && d.lastMove == null
+          && d.difficulty in ['rookie','veteran','master'] && d.createdAt == request.time && d.updatedAt == request.time
+          && (d.mode == 'solo' ? d.members == [d.owner] && d.recipient == d.owner && d.status == 'active' && soloGrade(d)
+            && d.state == arenaStart(gradeOf(d.playerId), gradeOf(d.rivalId))
+            : d.mode == 'friend' && d.members == [d.owner, d.recipient] && d.owner != d.recipient && friends(d.owner, d.recipient)
+            && d.status == 'pending' && d.rivalId == null && d.state == null);
+      }
+      function validAccept() {
+        let d = request.resource.data;
+        return resource.data.mode == 'friend' && resource.data.status == 'pending' && request.auth.uid == resource.data.recipient
+          && d.diff(resource.data).affectedKeys().hasOnly(['rivalId','status','state','updatedAt']) && d.status == 'active'
+          && owns(request.auth.uid, d.rivalId) && friends(d.owner, d.recipient)
+          && d.state == arenaStart(gradeOf(d.playerId), gradeOf(d.rivalId));
+      }
+      function validTurn() {
+        let b = resource.data; let d = request.resource.data;
+        let m = d.lastMove; let isP = b.state.turn % 2 == 0;
+        let next = arenaFinish(arenaRaw(b.state, m, gradeOf(b.playerId), gradeOf(b.rivalId)), gradeOf(b.playerId), gradeOf(b.rivalId));
+        return b.status == 'active' && b.state.winner == 'none'
+          && (b.mode == 'solo' ? request.auth.uid == b.owner && (isP || m == arenaAI(b.state, b.difficulty)) : request.auth.uid == (isP ? b.owner : b.recipient))
+          && m in ['attack','guard','focus','burst'] && (m != 'burst' || (isP ? b.state.pEnergy : b.state.rEnergy) >= 3)
+          && d.diff(b).affectedKeys().hasOnly(['state','lastMove','status','updatedAt']) && d.state == next
+          && d.status == (next.winner == 'none' ? 'active' : 'finished');
+      }
+      allow read: if isSignedIn() && request.auth.uid in resource.data.members;
+      allow create: if isSignedIn() && validCreate();
+      allow update: if isSignedIn() && request.auth.uid in resource.data.members && request.resource.data.updatedAt == request.time && (
+        (resource.data.status == 'pending' && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']))
+        || (resource.data.status == 'pending' && request.resource.data.status == 'active' && validAccept())
+        || (resource.data.status == 'active' && validTurn())
+        || (resource.data.status == 'finished' && validArenaClaim(request.auth.uid, id)));
+    }
+
     match /users/{uid} {
       allow read: if isOwner(uid);
       allow create: if isOwner(uid) && isNewProfile();
@@ -329,6 +436,7 @@ service cloud.firestore {
     function isProfileUpdate(uid) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return (changed.hasAny(['drawCount']) && isLegalDraw())
+        || (changed.hasAny(['lastArenaReward']) && validArenaClaim(uid, request.resource.data.lastArenaReward))
         || (changed.hasAny(['lastClaim']) && isClaim(uid))
         || (changed.hasAny(['steps']) && isStepReward())
         || (changed.hasAny(['hatchCount']) && isHatch(uid))

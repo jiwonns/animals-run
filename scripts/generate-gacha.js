@@ -359,7 +359,8 @@ function renderRules(collections, rewards) {
   const friends = fs.readFileSync(path.join(__dirname, 'friends.rules'), 'utf8');
   const walking = fs.readFileSync(path.join(__dirname, 'walking.rules'), 'utf8');
   const catalog = fs.readFileSync(path.join(__dirname, 'catalog.rules'), 'utf8');
-  return renderBaseRules(collections, rewards).replace('    match /users/{uid} {', () => extra + '\n' + friends + '\n' + walking + '\n' + catalog + '\n    match /users/{uid} {');
+  const arena = fs.readFileSync(path.join(__dirname, 'arena.rules'), 'utf8');
+  return renderBaseRules(collections, rewards).replace('    match /users/{uid} {', () => extra + '\n' + friends + '\n' + walking + '\n' + catalog + '\n' + arena + '\n    match /users/{uid} {');
 }
 
 function renderBaseRules(collections, rewards) {
@@ -458,6 +459,7 @@ ${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
     function isProfileUpdate(uid) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return (changed.hasAny(['drawCount']) && isLegalDraw())
+        || (changed.hasAny(['lastArenaReward']) && validArenaClaim(uid, request.resource.data.lastArenaReward))
         || (changed.hasAny(['lastClaim']) && isClaim(uid))
         || (changed.hasAny(['steps']) && isStepReward())
         || (changed.hasAny(['hatchCount']) && isHatch(uid))
