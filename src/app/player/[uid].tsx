@@ -24,19 +24,24 @@ import { useColors } from "@/hooks/use-colors";
 import { locationRef, displayName } from "@/lib/profile";
 import { rankingRef, type RankingEntry } from "@/lib/ranking";
 import { kindsByGrade, profileAnimals } from '@/lib/inventory';
+import { useSession } from '@/providers/session-provider';
 
 export default function PlayerScreen() {
   useCatalog();
   const { uid } = useLocalSearchParams<{ uid: string }>();
+  const {user,profile}=useSession();
+  const isSelf=uid===user?.uid;
   const c = useColors();
   const showcase = useMedalShowcase(uid);
   const [expandedAnimalsFor, setExpandedAnimalsFor] = useState<string | null>(null);
   const expandedAnimals = expandedAnimalsFor === uid;
   const cellWidth = useGridCellWidth(3, 16, 12);
-  const [entry, setEntry] = useState<RankingEntry | null | undefined>();
-  const [failed, setFailed] = useState(false);
+  const [remoteEntry, setEntry] = useState<RankingEntry | null | undefined>();
+  const [loadedUid,setLoadedUid]=useState<string|null>(null);
+  const [loadFailed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
+    if(!uid||isSelf)return;
     let live = true;
     async function load() {
       try {
@@ -57,17 +62,20 @@ export default function PlayerScreen() {
         }
         if (live) {
           setEntry(data);
+          setLoadedUid(uid);
           setFailed(false);
         }
       } catch {
-        if (live) setFailed(true);
+        if (live) {setFailed(true);setLoadedUid(uid);}
       }
     }
     if (uid) void load();
     return () => {
       live = false;
     };
-  }, [uid, retry]);
+  }, [uid, retry,isSelf]);
+  const entry:RankingEntry|null|undefined=isSelf ? profile ? {username:profile.username,nickname:profile.nickname,avatar:profile.avatar??null,steps:profile.steps??0,characters:profile.characters,hatchCount:profile.hatchCount??0,evolveCount:profile.evolveCount??0,fuseCount:profile.fuseCount??0,recycleCount:profile.recycleCount??0,updatedAt:null} : undefined : loadedUid===uid ? remoteEntry : undefined;
+  const failed=!isSelf&&loadedUid===uid&&loadFailed;
   const owned = profileAnimals(entry?.characters ?? {});
   const grades = kindsByGrade(entry?.characters ?? {});
   const avatar = entry?.avatar ? CHARACTER_BY_ID[entry.avatar] : null;
@@ -75,7 +83,7 @@ export default function PlayerScreen() {
     <View style={{ flex: 1, backgroundColor: c.background }}>
       <Stack.Screen
         options={{
-          title: "친구 프로필",
+          title: isSelf ? '내 프로필' : '친구 프로필',
           headerShown: true,
           headerTintColor: c.text,
           headerStyle: { backgroundColor: c.background },
@@ -90,7 +98,7 @@ export default function PlayerScreen() {
           onPress={() => setRetry((v) => v + 1)}
         />
       ) : entry === undefined ? (
-        <RunningLoader label="친구를 만나러 가는 중" />
+        <RunningLoader label="프로필을 불러오는 중" />
       ) : !entry ? (
         <CommunityEmpty
           title="아직 공개 프로필이 없어요"
@@ -143,7 +151,7 @@ export default function PlayerScreen() {
             {[
               { label: "누적 걸음", value: entry.steps ?? 0, unit: '걸음', icon: ICONS.walk },
               { label: "보유 동물", value: owned.length, unit: '종', icon: ICONS.dex },
-            ].map((stat) => (
+            ].filter(stat=>stat.unit!=='종'||stat.value>0).map((stat) => (
               <View
                 key={stat.label}
                 style={{
@@ -167,7 +175,7 @@ export default function PlayerScreen() {
             ))}
           </View>
           <Text style={{ color: c.text, fontWeight: "800", fontSize: 19 }}>
-            친구의 발자취
+            {isSelf?'나의 발자취':'친구의 발자취'}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             {[
@@ -219,7 +227,7 @@ export default function PlayerScreen() {
           </View>
           <Text style={{ color: c.text, fontWeight: "800", fontSize: 19 }}>
             함께하는 동물{" "}
-            <Text style={{ color: c.primary }}>{owned.length}종</Text>
+            {owned.length>0&&<Text style={{ color: c.primary }}>{owned.length}종</Text>}
           </Text>
           {owned.length ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>

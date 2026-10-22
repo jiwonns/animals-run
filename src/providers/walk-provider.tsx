@@ -61,9 +61,10 @@ export function WalkProvider({ children }: { children: ReactNode }) {
   const uid = user?.uid;
   const [pedometer, setPedometer] = useState<Status>(Platform.OS === 'web' ? 'unavailable' : 'checking');
   const [todaySteps, setTodaySteps] = useState(0);
-  // Browsers can't report a permission without prompting, so web starts out asking.
+  // Query saved browser permission before asking for a new location.
   const [location, setLocation] = useState<Status>(Platform.OS === 'web' ? 'denied' : 'checking');
   const [position, setPosition] = useState<Position | null>(null);
+  const freshPosition = useRef(false);
   const [mapState, setMapState] = useState<(MapSharing & { uid: string }) | null>(null);
   const [sharingBusy, setSharingBusy] = useState(false);
   const [sharingError, setSharingError] = useState(false);
@@ -320,19 +321,38 @@ export function WalkProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(FOREGROUND_ONLY_KEY).then((value) => setForegroundOnlyState(value === 'on')).catch(() => setForegroundOnlyState(false));
-    if (Platform.OS === 'web') return;
-    Location.getForegroundPermissionsAsync().then(({ granted }) => setLocation(granted ? 'ready' : 'denied'));
+    if (Platform.OS === 'web') {
+      if (!navigator.permissions?.query) return;
+      void navigator.permissions.query({name:'geolocation'}).then(permission=>setLocation(permission.state==='granted'?'ready':'denied')).catch(()=>setLocation('denied'));
+      return;
+    }
+    Location.getForegroundPermissionsAsync().then(({ granted }) => setLocation(granted ? 'ready' : 'denied')).catch(()=>setLocation('denied'));
   }, []);
 
   useEffect(() => {
     if (location !== 'ready') return;
     let removed = false;
     let subscription: { remove: () => void } | undefined;
+    freshPosition.current=false;
     const update = ({ coords }: Location.LocationObject) => {
-      if (!removed) setPosition({ lat: coords.latitude, lng: coords.longitude });
+      if (!removed) {
+        const next={lat:coords.latitude,lng:coords.longitude};
+        freshPosition.current=true;setPosition(next);
+        void AsyncStorage.setItem('walk:lastPosition',JSON.stringify({...next,at:Date.now()})).catch(()=>{});
+      }
     };
+    void AsyncStorage.getItem('walk:lastPosition').then(raw=>{
+      if (!raw || removed || freshPosition.current) return;
+      const saved=JSON.parse(raw);
+      if (Number.isFinite(saved.lat) && Math.abs(saved.lat)<=90 && Number.isFinite(saved.lng) && Math.abs(saved.lng)<=180 && Date.now()-saved.at>=0 && Date.now()-saved.at<10*60_000) setPosition({lat:saved.lat,lng:saved.lng});
+    }).catch(()=>{});
+    if (Platform.OS === 'web') {
+      if (!navigator.geolocation) { setTimeout(()=>{if(!removed)setLocation('denied');},0);return; }
+      const watch=navigator.geolocation.watchPosition(update,()=>{if(!removed)setLocation('denied');},{enableHighAccuracy:false,maximumAge:60_000,timeout:15_000});
+      return ()=>{removed=true;freshPosition.current=false;navigator.geolocation.clearWatch(watch);};
+    }
     Location.getLastKnownPositionAsync()
-      .then((last) => last && update(last))
+      .then((last) => last && Date.now()-last.timestamp<60_000 && update(last))
       .catch(() => {});
     Location.watchPositionAsync(
       { accuracy: Location.Accuracy.High, distanceInterval: 10, timeInterval: 10_000 },
@@ -340,9 +360,10 @@ export function WalkProvider({ children }: { children: ReactNode }) {
     ).then((sub) => {
       if (removed) sub.remove();
       else subscription = sub;
-    });
+    }).catch(() => { if (!removed) setLocation('denied'); });
     return () => {
       removed = true;
+      freshPosition.current=false;
       subscription?.remove();
     };
   }, [location]);
@@ -351,7 +372,7 @@ export function WalkProvider({ children }: { children: ReactNode }) {
   const nickname = profile?.nickname;
   const avatar = profile?.avatar ?? null;
   useEffect(() => {
-    if (!uid || !username || !position || !sharing) return;
+    if (!uid || !username || !position || !sharing || !freshPosition.current) return;
     const last = lastShare.current;
     if (last && last.uid === uid && last.audience === audience && last.avatar === avatar && last.nickname === nickname && Date.now() - last.at < SHARE_INTERVAL_MS) return;
     lastShare.current = { uid, audience, at: Date.now(), avatar, nickname };
@@ -361,8 +382,17 @@ export function WalkProvider({ children }: { children: ReactNode }) {
   }, [uid, username, nickname, avatar, position, sharing, audience, shareTick]);
 
   async function requestLocation() {
-    const { granted } = await Location.requestForegroundPermissionsAsync();
-    setLocation(granted ? 'ready' : 'denied');
+    if (Platform.OS === 'web') {
+      if (!navigator.geolocation) { setLocation('denied');return; }
+      await new Promise<void>(resolve=>navigator.geolocation.getCurrentPosition(({coords})=>{
+        setPosition({lat:coords.latitude,lng:coords.longitude});setLocation('ready');resolve();
+      },()=>{setLocation('denied');resolve();},{enableHighAccuracy:false,maximumAge:60_000,timeout:15_000}));
+      return;
+    }
+    try {
+      const { granted } = await Location.requestForegroundPermissionsAsync();
+      setLocation(granted ? 'ready' : 'denied');
+    } catch { setLocation('denied'); }
   }
 
   async function updateSharing(next: MapSharing) {

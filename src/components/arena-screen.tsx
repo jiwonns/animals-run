@@ -85,7 +85,7 @@ function ArenaContent() {
         {match.recipient === uid ? <><Text style={s.subtitle}>출전 동물: {selected?.name ?? '동물을 먼저 선택해주세요'}</Text><Button label="출전 동물 변경" quiet onPress={() => setPicker(true)} /><Button label="도전 수락" disabled={busy || !selected} onPress={() => { if (selected) void perform(() => acceptDuel(uid, match.id, selected.id)); }} /></> : <Text style={s.subtitle}>친구가 수락하면 대전이 시작돼요. 로비로 나가도 도전장은 유지돼요.</Text>}
         <Button label={match.owner === uid ? '도전 취소' : '거절하기'} quiet disabled={busy} onPress={() => { void perform(() => cancelDuel(uid, match.id)); }} />
       </View> : match.status === 'cancelled' ? <Text style={s.subtitle}>취소된 도전이에요. 로비에서 새 대전을 시작해보세요.</Text> : state && match.rivalId && <>
-        <DuelStage duel={match} before={previous[match.id]} viewer={uid} />
+        <DuelStage key={match.id} duel={match} before={previous[match.id]} viewer={uid} />
         {state.winner === 'none' ? <>
           <View style={s.sectionRow}><Text style={s.section}>{busy ? '전투 진행 중…' : myTurn ? '다음 행동을 선택하세요' : '상대의 차례예요'}</Text><Text style={s.reset}>기력 {energy} / 5</Text></View>
           {match.mode === 'solo' && <Text style={s.tip}>상대 전술: {DUEL_MOVES[aiMove({ ...state, turn: state.turn % 2 ? state.turn : state.turn + 1 }, match.difficulty)].title} · 가드는 일반 공격에 특히 강해요.</Text>}

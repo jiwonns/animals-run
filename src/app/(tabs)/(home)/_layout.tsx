@@ -6,7 +6,7 @@ export const unstable_settings = {
 
 export default function HomeLayout() {
   return (
-    <Stack>
+    <Stack screenOptions={{title:'홈',headerBackTitle:'뒤로',headerBackButtonDisplayMode:'minimal'}}>
       <Stack.Screen name="index" options={{ title: '홈' }} />
       <Stack.Screen name="arena" options={{ title: '결투장' }} />
       <Stack.Screen name="breed" options={{ title: '교배하기' }} />

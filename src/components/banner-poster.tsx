@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { GradeBadge } from '@/components/grade-badge';
 import type { Banner } from '@/constants/banners';
 import { COLLECTIONS } from '@/constants/characters';
+import { drawGrade } from '../../shared/gacha/draw-pools';
 
 export function BannerPoster({ banner, width, height }: { banner: Banner; width: number; height: number }) {
   const { background, accent, text, image } = banner.poster;
@@ -35,7 +36,7 @@ export function BannerPoster({ banner, width, height }: { banner: Banner; width:
         <View style={styles.badges}>
           {[
             ...new Set(
-              banner.rates.filter((r) => !r.hidden).map(({ collection }) => COLLECTIONS.find((c) => c.id === collection)!.grade),
+              banner.rates.filter((r) => !r.hidden).map(({ collection }) => drawGrade(COLLECTIONS.find((c) => c.id === collection)!.grade)),
             ),
           ].map((grade) => (
             <GradeBadge key={grade} grade={grade} showLabel />

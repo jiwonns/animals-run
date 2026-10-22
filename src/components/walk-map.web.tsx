@@ -17,7 +17,7 @@ type Props = {
 
 type MapApp = {
   setPlayers(list: MapPlayer[]): void;
-  setFace(id: CharacterId, uri: string): void;
+  setFace(id: CharacterId, uri: string, thumbnail?: boolean): void;
   focusMe(): void;
 };
 
@@ -57,7 +57,7 @@ export function WalkMap({ players, focusKey, color, onPlayerPress }: Props) {
       if (!avatar || sentFaces.current.has(avatar)) continue;
       sentFaces.current.add(avatar);
       avatarDataUri(avatar)
-        .then((uri) => app()?.setFace(avatar, uri))
+        .then((uri) => app()?.setFace(avatar, uri, true))
         .catch(() => sentFaces.current.delete(avatar));
     }
   }, [loads, players]);
@@ -71,6 +71,7 @@ export function WalkMap({ players, focusKey, color, onPlayerPress }: Props) {
       <iframe
         ref={frame}
         srcDoc={html}
+        onLoad={() => { if (app()) { sentFaces.current.clear(); setLoads(n=>n+1); } }}
         title="지도"
         style={{ border: 0, width: "100%", height: "100%" }}
       />

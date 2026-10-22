@@ -5,8 +5,9 @@ import {
   CHARACTERS,
   type Character,
   type CharacterId,
+  speciesOf,
 } from "@/constants/characters";
-import { COLLECTION_DATA, REWARDS } from "@/constants/gacha.generated";
+import { REWARDS } from "@/constants/gacha.generated";
 
 import { db } from "./firebase";
 import { companionRef, HomeError, type Companion } from "./home";
@@ -14,7 +15,6 @@ import { profileRef, type Profile } from "./profile";
 import { availablePicks } from "./inventory";
 
 const { crafting, breeding, evolution, fusion, recycle } = REWARDS;
-const BASE = COLLECTION_DATA.find((c) => c.base)!.id;
 
 export const RECYCLE_COUNT = recycle.count;
 
@@ -23,8 +23,6 @@ export const tierOf = (id: CharacterId) =>
   crafting.tiers.indexOf(CHARACTER_BY_ID[id].grade) + 1;
 
 /** The animal behind an id: 'tiger' for both 'tiger' and 'sea_tiger'. */
-const speciesOf = (c: Character) =>
-  c.collection === BASE ? c.id : c.id.slice(c.collection.length + 1);
 const find = (collection: string, species: string) =>
   CHARACTERS.find(
     (c) => c.collection === collection && speciesOf(c) === species,

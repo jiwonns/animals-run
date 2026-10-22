@@ -6,7 +6,7 @@ export const unstable_settings = {
 
 export default function MyPageLayout() {
   return (
-    <Stack>
+    <Stack screenOptions={{title:'마이페이지',headerBackTitle:'뒤로',headerBackButtonDisplayMode:'minimal'}}>
       <Stack.Screen name="index" options={{ title: '마이페이지' }} />
       <Stack.Screen name="avatar" options={{ title: '대표 동물' }} />
       <Stack.Screen name="achievements" options={{ title: '업적' }} />

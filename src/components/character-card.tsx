@@ -4,13 +4,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import { GradeBadge } from '@/components/grade-badge';
 import { GRADES, type Character } from '@/constants/characters';
 import { useColors } from '@/hooks/use-colors';
+import { COLLECTION_DATA } from '@/constants/gacha.generated';
 
 type Props = {
   character: Character;
   width: number;
-  /** Unowned characters render as a silhouette named "???". */
+  /** Unowned characters render as a silhouette with a clear undiscovered label. */
   owned?: boolean;
-  /** Shows a ×N badge when above 1. */
+  /** Shows a ×N ownership badge when supplied. */
   count?: number;
 };
 
@@ -18,6 +19,7 @@ export function CharacterCard({ character, width, owned = true, count = 0 }: Pro
   const colors = useColors();
   const { color } = GRADES[character.grade];
   const rare = owned && character.grade !== 'N';
+  const evolved = COLLECTION_DATA.find(c=>c.id===character.collection)?.acquisition==='evolution';
   return (
     <View
       style={[
@@ -25,6 +27,7 @@ export function CharacterCard({ character, width, owned = true, count = 0 }: Pro
         { width, backgroundColor: colors.surface },
         rare && { borderWidth: 1.5, borderColor: `${color}66` },
       ]}>
+      {evolved && owned && <View pointerEvents="none" style={{position:'absolute',width:'82%',aspectRatio:1,borderRadius:999,borderWidth:2,borderColor:`${color}88`,backgroundColor:`${color}14`}}/>}
       <Image
         source={character.thumb}
         style={styles.image}
@@ -32,12 +35,13 @@ export function CharacterCard({ character, width, owned = true, count = 0 }: Pro
         tintColor={owned ? undefined : colors.silhouette}
       />
       <Text style={[styles.name, { color: owned ? colors.text : colors.secondary }]} numberOfLines={1}>
-        {owned ? character.name : '???'}
+        {owned ? character.name : '미발견'}
       </Text>
       <View style={styles.gradeBadge}>
         <GradeBadge grade={character.grade} />
       </View>
-      {count > 1 && (
+      {evolved && <Text style={{position:'absolute',bottom:4,fontSize:9,fontWeight:'800',color}}>✦ 진화 전용</Text>}
+      {count > 0 && (
         <View style={[styles.countBadge, { backgroundColor: colors.primary }]}>
           <Text style={styles.countLabel}>×{count}</Text>
         </View>
@@ -60,6 +64,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 14,
+    lineHeight: 20,
     fontWeight: '700',
     marginTop: 4,
   },

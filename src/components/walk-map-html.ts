@@ -27,6 +27,8 @@ export const mapHtml = (color: string) => `<!DOCTYPE html>
   }
   .me .face { width: 58px; height: 58px; border-color: ${color}; }
   .face img { width: 100%; height: 100%; }
+  .face { position: relative; }
+  .face img.thumb { position: absolute; max-width: none; width: 142.857%; height: 142.857%; left: -21.429%; top: -7.143%; }
   .name {
     margin-top: 4px; padding: 2px 8px; border-radius: 999px; white-space: nowrap;
     background: rgba(255, 255, 255, .96); color: #1c1c1e; font: 700 12px sans-serif;
@@ -39,15 +41,20 @@ export const mapHtml = (color: string) => `<!DOCTYPE html>
 <body>
 <div id="map"></div>
 <script>
-  const map = L.map('map', { zoomControl: false }).setView([37.5665, 126.978], 16);
+  let savedView = null;
+  try { const saved = JSON.parse(sessionStorage.getItem('walk-map:view') || 'null'); if (saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lng) && Number.isFinite(saved.zoom)) savedView = saved; } catch {}
+  const map = L.map('map', { zoomControl: false }).setView(savedView ? [savedView.lat, savedView.lng] : [37.5665, 126.978], savedView ? savedView.zoom : 16);
+  map.on('moveend', () => { try { const center = map.getCenter(); sessionStorage.setItem('walk-map:view', JSON.stringify({lat:center.lat,lng:center.lng,zoom:map.getZoom()})); } catch {} });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, attribution: '&copy; OpenStreetMap',
   }).addTo(map);
   const faces = {};
+  const thumbnails = {};
   const markers = {};
   let players = [];
   let me = null;
-  let centered = false;
+  let centered = !!savedView;
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => map.invalidateSize({pan:false})).observe(document.getElementById('map'));
 
   function escape(text) {
     return text.replace(/[&<>"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
@@ -55,7 +62,7 @@ export const mapHtml = (color: string) => `<!DOCTYPE html>
 
   function icon(p) {
     const face = p.avatar && faces[p.avatar]
-      ? '<img src="' + faces[p.avatar] + '">'
+      ? '<img' + (thumbnails[p.avatar] ? ' class="thumb"' : '') + ' src="' + escape(faces[p.avatar]) + '">'
       : escape(p.name.charAt(0).toUpperCase());
     const size = p.me ? 64 : 54;
     return L.divIcon({
@@ -107,8 +114,9 @@ export const mapHtml = (color: string) => `<!DOCTYPE html>
       }
       draw();
     },
-    setFace(id, uri) {
+    setFace(id, uri, thumbnail = false) {
       faces[id] = uri;
+      thumbnails[id] = thumbnail;
       draw();
     },
     focusMe() {

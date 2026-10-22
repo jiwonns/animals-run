@@ -20,6 +20,7 @@ export function WalkMap({ players, focusKey, color, onPlayerPress }: Props) {
   const web = useRef<WebView<object>>(null);
   const sentFaces = useRef(new Set<CharacterId>());
   const [loads, setLoads] = useState(0);
+  const [source] = useState(() => ({ html: mapHtml(color), baseUrl: 'https://animalsrun.app/' }));
 
   const run = (script: string) =>
     web.current?.injectJavaScript(`${script};true;`);
@@ -47,7 +48,8 @@ export function WalkMap({ players, focusKey, color, onPlayerPress }: Props) {
       ref={web}
       style={styles.map}
       originWhitelist={["*"]}
-      source={{ html: mapHtml(color), baseUrl: "https://animalsrun.app/" }}
+      source={source}
+      cacheEnabled
       onMessage={(event) => {
         if (event.nativeEvent.data !== "ready") {
           try {

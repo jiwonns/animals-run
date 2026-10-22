@@ -16,6 +16,8 @@ import {
   GRADES,
   type Grade,
   type Character,
+  speciesOf,
+  speciesGroups,
 } from "@/constants/characters";
 import { SALE_PRICES } from "@/lib/inventory";
 import { useColors } from "@/hooks/use-colors";
@@ -23,6 +25,7 @@ import { useConfirmExit } from "@/hooks/use-confirm-exit";
 import { useGridCellWidth } from "@/hooks/use-grid-cell-width";
 import { useListWindow } from '@/hooks/use-list-window';
 import { useSession } from "@/providers/session-provider";
+import { DRAW_GRADES, drawGrade } from '../../../../shared/gacha/draw-pools';
 
 const COLUMNS = 3;
 const PADDING = 20;
@@ -38,7 +41,7 @@ const SORTS: SelectOption<Sort>[] = [
 
 const GRADE_FILTERS: SelectOption<Grade | null>[] = [
   { value: null, label: "전체" },
-  ...GRADE_ORDER.map((g) => ({
+  ...DRAW_GRADES.map((g) => ({
     value: g,
     label: GRADES[g].label,
     color: GRADES[g].color,
@@ -57,6 +60,7 @@ export default function CollectionScreen() {
     router.setParams({ section: tab === '훈장' ? 'medals' : tab === '기타' ? 'other' : 'animals' });
   }
   const [grade, setGrade] = useState<Grade | null>(null);
+  const [species, setSpecies] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("grade");
   const [selling, setSelling] = useState(false);
   const [sellTarget, setSellTarget] = useState<Character | null>(null);
@@ -66,7 +70,8 @@ export default function CollectionScreen() {
   const mine = CHARACTERS.filter((c) => countOf(c.id) > 0);
 
   const shown = mine
-    .filter((c) => grade === null || c.grade === grade)
+    .filter(c => species === null || speciesOf(c) === species)
+    .filter((c) => grade === null || drawGrade(c.grade) === grade)
     .map((c, index) => ({ character: c, index }))
     .sort((a, b) => {
       if (sort === "count")
@@ -76,13 +81,14 @@ export default function CollectionScreen() {
       if (sort === "name")
         return a.character.name.localeCompare(b.character.name, "ko");
       return (
+        speciesOf(a.character).localeCompare(speciesOf(b.character), 'ko') ||
         GRADE_ORDER.indexOf(a.character.grade) -
           GRADE_ORDER.indexOf(b.character.grade) || a.index - b.index
       );
     })
     .map(({ character }) => character);
 
-  const page = useListWindow(shown, `${user?.uid}:${grade}:${sort}`);
+  const page = useListWindow(shown, `${user?.uid}:${species}:${grade}:${sort}`);
   return (
     <SafeAreaView
       edges={["top"]}
@@ -93,6 +99,7 @@ export default function CollectionScreen() {
           <Text style={[styles.title, { color: colors.text }]}>보관함</Text>
           <Text style={[styles.summary, { color: colors.secondary }]}>
             보유 동물 {mine.length}종
+            {' · '}{mine.reduce((sum,ch)=>sum+countOf(ch.id),0).toLocaleString()}마리
           </Text>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -180,6 +187,7 @@ export default function CollectionScreen() {
             </View>
           )}
           <View style={styles.selectors}>
+            <Select label="동물" value={species} options={[{value:null,label:'모든 동물'},...speciesGroups().map(s=>({value:s.id,label:s.name}))]} onChange={setSpecies}/>
             <Select
               label="등급"
               value={grade}
@@ -229,6 +237,7 @@ export default function CollectionScreen() {
                 <CharacterCard
                   character={item}
                   width={cellWidth}
+                  count={countOf(item.id)}
                 />
               )
             }
@@ -289,6 +298,7 @@ const styles = StyleSheet.create({
   },
   selectors: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     paddingHorizontal: PADDING,
     paddingBottom: 12,

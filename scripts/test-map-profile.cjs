@@ -7,7 +7,7 @@ const script = source.match(/<script>([\s\S]*?)<\/script>/)[1];
 for (const native of [true, false]) {
   const messages = [];
   const markers = [];
-  const map = { setView() { return this; }, invalidateSize() {}, flyTo() {}, getZoom() { return 17; }, removeLayer() {} };
+  const map = { setView() { return this; }, on() {}, invalidateSize() {}, flyTo() {}, getZoom() { return 17; }, removeLayer() {} };
   const context = {
     L: {
       map: () => map,
@@ -44,6 +44,6 @@ for (const native of [true, false]) {
 const ts = require('typescript');
 const route = { exports: {} };
 new Function('exports','module',ts.transpileModule(fs.readFileSync('src/lib/map-profile-route.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(route.exports,route);
-assert.equal(route.exports.mapProfileRoute('self','self'),'/mypage');
+assert.deepEqual(route.exports.mapProfileRoute('self','self'),{pathname:'/player/[uid]',params:{uid:'self'}});
 assert.deepEqual(route.exports.mapProfileRoute('friend','self'),{pathname:'/player/[uid]',params:{uid:'friend'}});
-console.log('PASS self marker routes to live mypage, others to public profile, face refresh retains clicks');
+console.log('PASS self and friend markers share the same profile screen, face refresh retains clicks');

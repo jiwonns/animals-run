@@ -109,14 +109,20 @@
   },
   "evolution": {
     "paths": {
-      "normal": "rare",
-      "rare": "epic",
-      "epic": "unique",
-      "unique": "legendary",
-      "cats": "cats_rare",
-      "cats_rare": "cats_epic",
-      "cats_epic": "cats_unique",
-      "cats_unique": "cats_legendary"
+      "normal": "evolution_rare",
+      "rare": "evolution_epic",
+      "epic": "evolution_unique",
+      "unique": "evolution_legendary",
+      "cats": "evolution_cats_rare",
+      "cats_rare": "evolution_cats_epic",
+      "cats_epic": "evolution_cats_unique",
+      "cats_unique": "evolution_cats_legendary",
+      "evolution_rare": "evolution_epic",
+      "evolution_epic": "evolution_unique",
+      "evolution_unique": "evolution_legendary",
+      "evolution_cats_rare": "evolution_cats_epic",
+      "evolution_cats_epic": "evolution_cats_unique",
+      "evolution_cats_unique": "evolution_cats_legendary"
     },
     "steps": {
       "N": 3000,

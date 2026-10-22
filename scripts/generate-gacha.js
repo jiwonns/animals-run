@@ -282,6 +282,20 @@ function readCollections() {
       name: names[key] ?? `${namePrefix}${base.config.names?.[key] ?? key}`,
     }));
   }
+  // Preserve original banners, costs and artwork. Evolution keeps separate IDs.
+  const labels = { N:'노말', R:'레어', EP:'에픽', U:'유니크', L:'레전더리' };
+  const grades = ['N','R','EP','U','L'];
+  for (const c of collections) c.config.acquisition=c.id==='baby'?'breeding':'draw';
+  for (const family of ['', 'cats_']) {
+    for (const [index, suffix] of ['rare','epic','unique','legendary'].entries()) {
+      const source=collections.find(c=>c.id===(family ? 'cats_'+suffix : suffix));
+      const id='evolution_'+family+suffix;
+      collections.push({ ...source,id,assetCollection:source.id,poster:null,rates:undefined,
+        config:{name:labels[grades[index+1]]+' 진화',grade:grades[index+1],acquisition:'evolution'},
+        characters:source.characters.map(ch=>({...ch,id:id+'_'+ch.key,name:'진화한 '+ch.name})),
+      });
+    }
+  }
   return collections;
 }
 
@@ -295,7 +309,7 @@ function renderTs(collections, rewards) {
       const characters = c.characters
         .map(
           (ch) =>
-            `      { id: ${q(ch.id)}, name: ${q(ch.name)}, image: ${q(require('./prepare-remote-gacha.cjs').remoteImage(c.id, 'characters', `${ch.key}.png`))}, thumb: ${q(require('./prepare-remote-gacha.cjs').remoteImage(c.id, 'thumbs', `${ch.key}.png`))} },`,
+            `      { id: ${q(ch.id)}, name: ${q(ch.name)}, species: ${q(ch.key)}, image: ${q(require('./prepare-remote-gacha.cjs').remoteImage(c.assetCollection ?? c.id, 'characters', `${ch.key}.png`))}, thumb: ${q(require('./prepare-remote-gacha.cjs').remoteImage(c.assetCollection ?? c.id, 'thumbs', `${ch.key}.png`))} },`,
         )
         .join('\n');
       const hero = banner?.hero ?? c.keys[0];
@@ -307,13 +321,14 @@ function renderTs(collections, rewards) {
       rates: ${q(c.rates)},
       hero: ${q(c.characters.find((ch) => ch.key === hero).id)},
       colors: ${q({ background: '#FFE4D2', accent: '#FF5A1F', text: '#3A1A0A', ...banner.colors })},
-      poster: ${c.poster ? q(require('./prepare-remote-gacha.cjs').remoteImage(c.id, c.poster)) : 'null'},
+      poster: ${c.poster ? q(require('./prepare-remote-gacha.cjs').remoteImage(c.posterCollection ?? c.id, c.poster)) : 'null'},
     }`
         : 'null';
       return `  {
     id: ${q(c.id)},
     name: ${q(config.name)},
     grade: ${q(config.grade)},
+    acquisition: ${q(config.acquisition)},
     base: ${!!config.base},
     banner: ${bannerTs},
     hidden: ${!!config.hidden},
@@ -920,7 +935,7 @@ ${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
     let b = get(/databases/$(database)/documents/gachaBanners/$(id)).data;
     return b.enabled && b.version == get(/databases/$(database)/documents/gachaCatalog/live).data.version
       && pay(draws, cost, b.cost1, b.cost10, b.ticketable)
-      && picks.join(',').matches(b.poolRegex);
+      && (b.get('characterIds', null) is list ? picks.hasOnly(b.characterIds) : picks.join(',').matches(b.poolRegex));
   }
 
   // Only picked characters change, and each grows by exactly how many times it was picked.

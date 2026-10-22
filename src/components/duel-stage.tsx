@@ -8,10 +8,15 @@ import type { Duel } from '@/lib/duel-service';
 function Health({ id, hp, energy, guarded, enemy }: { id: CharacterId; hp: number; energy: number; guarded: boolean; enemy?: boolean }) {
   const ch = CHARACTER_BY_ID[id];
   const stats = DUEL_STATS[ch.grade];
+  const [bar]=useState(()=>new Animated.Value(hp/stats.hp));
+  useEffect(()=>{
+    const animation=Animated.timing(bar,{toValue:Math.max(0,Math.min(1,hp/stats.hp)),duration:350,useNativeDriver:false});
+    animation.start();return ()=>animation.stop();
+  },[bar,hp,stats.hp]);
   return <View style={s.health}>
     <View style={s.healthTop}><Text style={[s.grade, { color: GRADES[ch.grade].color }]}>{ch.grade}</Text><Text style={s.name}>{ch.name}</Text></View>
     <View accessibilityRole="progressbar" accessibilityLabel={`${ch.name} 체력`} accessibilityValue={{ min: 0, max: stats.hp, now: hp }} style={s.track}>
-      <View style={{ height: '100%', width: `${hp / stats.hp * 100}%`, borderRadius: 8, backgroundColor: hp < stats.hp * 0.25 ? '#FF737D' : enemy ? '#B59BFF' : '#5ED7C8' }} />
+      <Animated.View style={{ height: '100%', width: bar.interpolate({inputRange:[0,1],outputRange:['0%','100%']}), borderRadius: 8, backgroundColor: hp < stats.hp * 0.25 ? '#FF737D' : enemy ? '#B59BFF' : '#5ED7C8' }} />
     </View>
     <View style={s.healthTop}><Text style={s.hp}>{hp}<Text style={{ color: '#797E97' }}> / {stats.hp}</Text></Text><Text style={s.hp}>{guarded ? '가드 ON' : '기력'}</Text></View>
     <View style={s.energy}>{[0,1,2,3,4].map(n => <View key={n} style={[s.pip, { backgroundColor: n < energy ? '#FFD28A' : '#35394E' }]} />)}</View>
@@ -46,12 +51,17 @@ export function DuelStage({ duel, before, viewer }: { duel: Duel; before?: DuelS
   const attacks = duel.lastMove === 'attack' || duel.lastMove === 'burst';
   const pDamage = before ? Math.max(0, before.pHp - state.pHp) : 0;
   const rDamage = before ? Math.max(0, before.rHp - state.rHp) : 0;
+  const heal = before ? Math.max(0,state.pHp-before.pHp,state.rHp-before.rHp) : 0;
+  const actionText = duel.lastMove ? `${isPlayerAction?player.name:rival.name} · ${DUEL_MOVES[duel.lastMove].title}${pDamage+rDamage ? ' · '+(pDamage+rDamage)+' 피해' : heal ? ' · +'+heal+' 회복' : ''}` : '선택한 행동으로 승부를 만들어보세요';
+  const [events,setEvents]=useState<{turn:number;text:string}[]>([]);
+  if (state.turn > (events[0]?.turn ?? 0)) setEvents([{turn:state.turn,text:actionText},...events].slice(0,5));
   const actorId = turnSide(state) === 'player' ? duel.owner : duel.recipient;
   const label = state.winner !== 'none' ? 'MATCH COMPLETE' : duel.mode === 'solo' && turnSide(state) === 'rival' ? '상대의 행동' : actorId === viewer ? '당신의 차례' : '친구의 차례를 기다리는 중';
   return <View style={s.stage}>
     <View style={s.scoreboard}><Health id={player.id} hp={state.pHp} energy={state.pEnergy} guarded={state.pGuard} /><Text style={s.vs}>VS</Text><Health id={rival.id} hp={state.rHp} energy={state.rEnergy} guarded={state.rGuard} enemy /></View>
     <View style={s.scene}>
       <View style={s.moon} /><View style={s.horizon} />
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:duel.lastMove==='burst'?'#FFD28A':'#A5B8FF',opacity:attacks?impact.interpolate({inputRange:[0,1],outputRange:[0,0.16]}):0}]}/>
       <View style={[s.platform, { left: '3%', borderColor: '#5ED7C85C' }]} /><View style={[s.platform, { right: '3%', borderColor: '#BAA0FF5C' }]} />
       <View style={s.characters}>
         {[player, rival].map((ch, i) => {
@@ -59,7 +69,9 @@ export function DuelStage({ duel, before, viewer }: { duel: Duel; before?: DuelS
           const damage = i === 0 ? pDamage : rDamage;
           const offset = acting && attacks ? action.interpolate({ inputRange: [0, 1], outputRange: [0, i === 0 ? 32 : -32] }) : damage > 0 ? impact.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, i === 0 ? -7 : 7, 0] }) : 0;
           return <Animated.View key={`${ch.id}:${i}`} style={[s.character, { transform: [{ translateX: offset }, { scale: acting && duel.lastMove === 'burst' ? action.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) : 1 }] }]}>
+            {ch.id.startsWith('evolution_') && <View pointerEvents="none" style={{position:'absolute',width:150,height:150,borderRadius:75,borderWidth:2,borderColor:`${GRADES[ch.grade].color}77`,backgroundColor:`${GRADES[ch.grade].color}15`}}/>}
             <Image source={ch.image} contentFit="contain" style={s.animal} />
+            {acting && duel.lastMove==='focus' && <Animated.Text style={[s.damage,{color:'#82EDBC',opacity:impact,transform:[{translateY:impact.interpolate({inputRange:[0,1],outputRange:[0,-25]})}]}]}>+{heal}</Animated.Text>}
             {damage > 0 && <Animated.Text style={[s.damage, { opacity: impact.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 1, 1] }), transform: [{ translateY: impact.interpolate({ inputRange: [0, 1], outputRange: [0, -25] }) }] }]}>−{damage}</Animated.Text>}
             {(i === 0 ? state.pGuard : state.rGuard) && <View style={s.shield}><Text style={{ color: '#BCD7FF', fontWeight: '900' }}>GUARD</Text></View>}
           </Animated.View>;
@@ -68,6 +80,7 @@ export function DuelStage({ duel, before, viewer }: { duel: Duel; before?: DuelS
       <Text style={s.round}>ROUND {Math.min(15, Math.floor(state.turn / 2) + 1)} <Text style={{ color: '#676D88' }}>/ 15</Text></Text>
     </View>
     <View accessibilityLiveRegion="polite" style={s.ticker}><View style={s.dot} /><Text style={s.tickerText}>{label}</Text>{duel.lastMove && <Text style={s.last}>{DUEL_MOVES[duel.lastMove].title}</Text>}</View>
+    <View style={{padding:14,gap:7,borderTopWidth:1,borderTopColor:'#30354C'}}><Text style={{color:'#9399B6',fontSize:10,fontWeight:'800'}}>전투 기록</Text>{events.length?events.map(e=><Text key={e.turn} style={{color:e.turn===state.turn?'#E8E4F5':'#878EA9',fontSize:11,lineHeight:17}}>{e.turn}턴 · {e.text}</Text>):<Text style={s.last}>{actionText}</Text>}</View>
   </View>;
 }
 const s = StyleSheet.create({

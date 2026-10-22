@@ -20,6 +20,7 @@ import { OddsButton } from '@/components/odds-info';
 import { TICKET_COLOR, TicketBadge, TicketToken } from '@/components/ticket-badge';
 import { BANNERS, type Banner, type DrawCount } from '@/constants/banners';
 import { charactersIn, COLLECTIONS, GRADES } from '@/constants/characters';
+import { DRAW_GRADES, drawGrade } from '../../../shared/gacha/draw-pools';
 import { useColors } from '@/hooks/use-colors';
 import { useConfirmExit } from '@/hooks/use-confirm-exit';
 import { acceptsTickets, drawCharacters, DrawError, type DrawResult, type Payment } from '@/lib/gacha';
@@ -221,16 +222,18 @@ function BannerPage({ banner, width, height, children }: {
       <View style={styles.odds}>
         <OddsButton
           title={`${banner.title} 확률`}
-          rows={banner.rates.map(({ collection, rate }) => {
-            const { name, grade } = COLLECTIONS.find((c) => c.id === collection)!;
+          rows={DRAW_GRADES.map(grade => {
+            const entries=banner.rates.filter(r=>drawGrade(COLLECTIONS.find(c=>c.id===r.collection)!.grade)===grade);
+            const speciesCount=entries.reduce((n,r)=>n+charactersIn(r.collection).length,0);
             return {
-              key: collection,
-              label: `${name} ${charactersIn(collection).length}종`,
-              chance: rate,
+              key: grade,
+              label: `${GRADES[grade].label} ${speciesCount}종`,
+              speciesCount,
+              chance: entries.reduce((n,r)=>n+r.rate,0),
               color: GRADES[grade].color,
             };
-          })}
-          notes={['같은 컬렉션 안의 동물은 모두 같은 확률이에요.']}
+          }).filter(row=>row.chance>0 && row.speciesCount>0)}
+          notes={['등급을 먼저 추첨한 뒤 해당 등급 안의 동물을 동일한 확률로 추첨해요.','진화 전용 동물은 뽑기에서 나오지 않아요.']}
         />
       </View>
       {children}

@@ -24,10 +24,10 @@ function addToHead(tag: 'link' | 'meta', attributes: Record<string, string>) {
 }
 
 // Icon draws Material Symbols (the Android names) with this font on web.
-addToHead('link', {
-  rel: 'stylesheet',
-  href: 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block',
-});
+const iconFont=Asset.fromModule(require('@expo-google-fonts/material-symbols/400Regular/MaterialSymbols_400Regular.ttf')).uri;
+const iconStyle=document.createElement('style');
+iconStyle.textContent=`@font-face{font-family:'Material Symbols Rounded';font-style:normal;font-weight:400;font-display:block;src:url('${iconFont}') format('truetype');}`;
+document.head.appendChild(iconStyle);
 
 // Icon and name for Safari's "Add to Home Screen".
 addToHead('link', { rel: 'apple-touch-icon', href: Asset.fromModule(require('../../assets/images/icon.png')).uri });

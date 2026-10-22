@@ -13,6 +13,7 @@ import { useColors } from '@/hooks/use-colors';
 import { useConfirmExit } from '@/hooks/use-confirm-exit';
 import { signOut } from '@/lib/auth';
 import { displayName } from '@/lib/profile';
+import { mapProfileRoute } from '@/lib/map-profile-route';
 import { useSession } from '@/providers/session-provider';
 
 const MENU: { label: string; href: Href; icon: keyof typeof ICONS; tint: string }[] = [
@@ -62,24 +63,24 @@ export default function MyPageScreen() {
         <View style={styles.heroTop}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="대표 동물 바꾸기"
-            onPress={() => router.push('/mypage/avatar')}
+            accessibilityLabel="내 프로필 보기"
+            onPress={() => user && router.push(mapProfileRoute(user.uid,user.uid))}
             style={({ pressed }) => pressed && { opacity: 0.8 }}>
             <AvatarFace avatar={profile?.avatar} size={AVATAR_SIZE} fallback={name} />
             <View style={[styles.edit, { backgroundColor: colors.primary, borderColor: colors.surface }]}>
-              <Text style={styles.editLabel}>변경</Text>
+              <Text style={styles.editLabel}>프로필</Text>
             </View>
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="닉네임 바꾸기"
-            onPress={() => router.push('/mypage/change-nickname')}
+            accessibilityLabel="내 프로필 상세 보기"
+            onPress={() => user && router.push(mapProfileRoute(user.uid,user.uid))}
             style={({ pressed }) => [styles.names, pressed && { opacity: 0.6 }]}>
             <View style={styles.nameRow}>
               <Text style={[styles.userId, { color: colors.text }]} numberOfLines={1}>
                 {name}
               </Text>
-              <Icon name={ICONS.edit} size={15} color={colors.secondary} />
+              <Icon name={ICONS.chevron} size={15} color={colors.secondary} />
             </View>
             {profile?.nickname && (
               <Text style={[styles.loginId, { color: colors.secondary }]} numberOfLines={1}>
@@ -90,6 +91,7 @@ export default function MyPageScreen() {
         </View>
 
         <EquippedMedal showcase={showcase} />
+        <View style={{flexDirection:'row',gap:12,flexWrap:'wrap'}}>{([{label:'대표 동물 변경',href:'/mypage/avatar'},{label:'닉네임 변경',href:'/mypage/change-nickname'}] as const).map(item=><Pressable key={item.href} accessibilityRole="button" onPress={()=>router.push(item.href)} style={{minHeight:44,justifyContent:'center',paddingHorizontal:12,borderRadius:12,backgroundColor:colors.background}}><Text style={{color:colors.primary,fontWeight:'700'}}>{item.label}</Text></Pressable>)}</View>
         <View style={[styles.stats, { borderColor: colors.border }]}>
           {stats.map((stat, index) => (
             <View

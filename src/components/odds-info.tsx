@@ -49,7 +49,7 @@ export function OddsButton({ title, rows, notes = [] }: { title: string; rows: O
           <View style={[styles.card, { backgroundColor: colors.background }]}>
             <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
             <ScrollView style={styles.scroll} contentContainerStyle={styles.body}>
-              {rows.map((row) => (
+              {rows.filter(row=>row.chance>0).map((row) => (
                 <View key={row.key} style={styles.row}>
                   <View style={[styles.dot, { backgroundColor: row.color ?? colors.border }]} />
                   <Text style={[styles.label, { color: colors.text }]}>{row.label}</Text>

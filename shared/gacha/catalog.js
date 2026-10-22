@@ -11,7 +11,9 @@ function validateCatalog(value) {
     if (typeof c.id !== 'string' || !idPattern.test(c.id) || collections.has(c.id) || !text(c.name) || !GRADES.includes(c.grade) || typeof c.base !== 'boolean' || typeof c.hidden !== 'boolean') fail('컬렉션 ID·이름·등급을 확인해주세요.');
     if (!Array.isArray(c.characters) || !c.characters.length || c.characters.length > 100) fail(`${c.name}: 동물은 1~100종이어야 해요.`);
     collections.set(c.id, c);
+    if (c.acquisition !== undefined && !['draw','evolution','breeding'].includes(c.acquisition)) fail('획득 경로를 확인해주세요.');
     for (const ch of c.characters) {
+      if (ch.species !== undefined && (typeof ch.species !== 'string' || !idPattern.test(ch.species))) fail('동물 종 ID를 확인해주세요.');
       if (typeof ch.id !== 'string' || !idPattern.test(ch.id) || characters.has(ch.id) || !text(ch.name) || !image(ch.image) || !image(ch.thumb)) fail(`${c.name}: 동물 ID는 중복 없이, 이미지는 HTTPS 주소 또는 업로드로 등록해주세요.`);
       characters.set(ch.id, { ...ch, collection: c.id, grade: c.grade });
     }
@@ -31,6 +33,8 @@ function validateCatalog(value) {
     for (const r of b.rates) {
       if (!collections.has(r.collection) || seen.has(r.collection) || !Number.isFinite(r.rate) || r.rate <= 0 || r.rate > 1 || typeof r.hidden !== 'boolean') fail(`${c.name}: 중복 컬렉션·빈 풀·잘못된 확률이 있어요.`);
       total += r.rate; seen.add(r.collection);
+      if (collections.get(r.collection).acquisition === 'evolution') fail('진화 전용 동물은 뽑기에 넣을 수 없어요.');
+      if (r.collection === 'baby' || collections.get(r.collection).acquisition === 'breeding') fail('아기 시리즈는 교배로만 얻을 수 있어요.');
     }
     if (Math.abs(total - 1) > 1e-8) fail(`${c.name}: 확률 합계가 ${(total * 100).toFixed(4)}%예요. 100%로 맞춰주세요.`);
   }
@@ -43,15 +47,13 @@ function assertCompatible(before, after) {
   const next = validateCatalog(after);
   for (const c of before?.collections ?? []) {
     const nc = next.collections.get(c.id);
+    if (nc && (nc.acquisition ?? 'draw') !== (c.acquisition ?? 'draw') && !(c.id==='baby' && nc.acquisition==='breeding')) throw new Error('기존 동물의 획득 경로는 변경할 수 없어요.');
     if (!nc || nc.grade !== c.grade || nc.base !== c.base) throw new Error('기존 컬렉션 삭제·등급 변경은 보유 데이터 보호를 위해 지원하지 않아요. 판매 중지로 전환해주세요.');
     for (const ch of c.characters) if (!nc.characters.some(n => n.id === ch.id)) throw new Error('기존 동물 ID를 삭제하거나 옮길 수 없어요.');
   }
 }
 function pickCharacter(catalog, banner, random) {
-  let roll = random();
-  const rate = banner.rates.find(r => (roll -= r.rate) < 0) ?? banner.rates.at(-1);
-  const pool = catalog.collections.find(c => c.id === rate.collection).characters;
-  return pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
+  return require('./draw-pools').pickByGrade(catalog.collections, banner.rates, random);
 }
 function compileCatalog(value) {
   validateCatalog(value);
@@ -62,8 +64,21 @@ function compileCatalog(value) {
     banners:value.collections.filter(c=>c.banner).map(c=>{
       const b=c.banner;
       const ids=b.rates.flatMap(r=>value.collections.find(v=>v.id===r.collection).characters.map(ch=>ch.id));
-      return { id:c.id,cost1:b.cost[1],cost10:b.cost[10],ticketable:b.cost[1]<=rewards.ticketMaxCost,enabled:b.enabled!==false,poolRegex:`^(${ids.join('|')})(,(${ids.join('|')}))*$` };
+      const pattern=wordPattern(ids);
+      return { id:c.id,cost1:b.cost[1],cost10:b.cost[10],ticketable:b.cost[1]<=rewards.ticketMaxCost,enabled:b.enabled!==false,characterIds:ids,poolRegex:`^(?:${pattern})(?:,(?:${pattern}))*$` };
     }),
   };
+}
+// Compact compatibility regex for older deployed rules; current rules use characterIds.hasOnly.
+function wordPattern(words) {
+  const root={children:new Map(),end:false};
+  for(const word of words) { let node=root;for(const char of word){if(!node.children.has(char))node.children.set(char,{children:new Map(),end:false});node=node.children.get(char);}node.end=true; }
+  function render(node) {
+    const branches=[...node.children].map(([char,next])=>char+render(next));
+    if(!branches.length)return '';
+    const result=branches.length===1?branches[0]:`(?:${branches.join('|')})`;
+    return node.end?`(?:${result})?`:result;
+  }
+  return render(root);
 }
 module.exports = { validateCatalog, assertCompatible, pickCharacter, compileCatalog };

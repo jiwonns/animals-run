@@ -1,6 +1,7 @@
-import { CHARACTER_BY_ID, charactersIn, type Character, type CollectionId } from './characters';
+import { CHARACTER_BY_ID, type Character, type CollectionId } from './characters';
 import { COLLECTION_DATA } from './gacha.generated';
 import type { GachaImage } from './gacha-types';
+import { pickByGrade } from '../../shared/gacha/draw-pools';
 
 export type DrawCount = 1 | 10;
 
@@ -37,9 +38,5 @@ export function rebuildBanners() {
 }
 
 export function pickFromBanner(banner: Banner): Character {
-  let roll = Math.random();
-  const last = banner.rates[banner.rates.length - 1];
-  const { collection } = banner.rates.find(({ rate }) => (roll -= rate) < 0) ?? last;
-  const pool = charactersIn(collection);
-  return pool[Math.floor(Math.random() * pool.length)];
+  return CHARACTER_BY_ID[pickByGrade(COLLECTION_DATA, banner.rates).id];
 }

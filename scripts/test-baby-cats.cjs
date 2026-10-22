@@ -9,7 +9,7 @@ const { readCollections, readRewards } = require('./generate-gacha');
   const code = ts.transpileModule(fs.readFileSync('src/lib/craft.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const module = { exports: {} };
   new Function('require', 'module', 'exports', code)(id => {
-    if (id === '@/constants/characters') return { CHARACTERS: characters, CHARACTER_BY_ID: byId };
+    if (id === '@/constants/characters') return { CHARACTERS: characters, CHARACTER_BY_ID: byId, speciesOf: c=>c.key };
     if (id === '@/constants/gacha.generated') return { COLLECTION_DATA: data, REWARDS: readRewards() };
     if (id === './home') return { HomeError: Error };
     return {};

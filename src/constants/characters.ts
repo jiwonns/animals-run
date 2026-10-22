@@ -28,6 +28,7 @@ export type Character = {
   thumb: GachaImage;
   collection: CollectionId;
   grade: Grade;
+  species?: string;
 };
 
 export const COLLECTIONS = COLLECTION_DATA.map(({ id, name, grade }) => ({ id, name, grade }));
@@ -47,6 +48,16 @@ export const CHARACTER_BY_ID = Object.fromEntries(CHARACTERS.map((c) => [c.id, c
 
 export function charactersIn(collection: CollectionId): Character[] {
   return CHARACTERS.filter((c) => c.collection === collection);
+}
+
+export function speciesOf(character: Character): string {
+  return character.species ?? (COLLECTION_DATA.find(c=>c.id===character.collection)?.base ? character.id : character.id.slice(character.collection.length+1));
+}
+export function speciesGroups() {
+  const names: Record<string,string> = { mouse:'쥐',cow:'소',tiger:'호랑이',rabbit:'토끼',dragon:'용',snake:'뱀',horse:'말',sheep:'양',monkey:'원숭이',chicken:'닭',dog:'강아지',pig:'돼지' };
+  const groups = new Map<string,Character[]>();
+  for (const ch of CHARACTERS) { const key=speciesOf(ch); const group=groups.get(key)??[];group.push(ch);groups.set(key,group); }
+  return [...groups].map(([id,characters])=>({id,name:names[id]??characters[0].name,characters:characters.sort((a,b)=>GRADE_ORDER.indexOf(a.grade)-GRADE_ORDER.indexOf(b.grade))}));
 }
 
 /** Keep imported array/object identities stable when a published catalog is loaded. */

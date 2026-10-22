@@ -5,6 +5,8 @@ export type CollectionData<C extends string = string, Id extends string = string
   id: C;
   name: string;
   grade: Grade;
+  acquisition?: 'draw' | 'evolution' | 'breeding';
+  assetCollection?: string;
   /** The base collection is in every banner's pool and keeps unprefixed character ids. */
   base: boolean;
   /** Null for collections without their own banner (hidden in others, or only obtainable by crafting). */
@@ -22,7 +24,7 @@ export type CollectionData<C extends string = string, Id extends string = string
   /** A secret collection, only drawn inside other banners. */
   hidden: boolean;
   /** `thumb` is a small copy of `image` for grids and lists. */
-  characters: { id: Id; name: string; image: GachaImage; thumb: GachaImage }[];
+  characters: { id: Id; name: string; species?: string; image: GachaImage; thumb: GachaImage }[];
 };
 
 type GradeOverrides<T> = { default: T } & Partial<Record<Grade, Partial<T>>>;

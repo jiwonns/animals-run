@@ -12,6 +12,8 @@ import { publishCatalog, loadRemoteCatalog } from '@/lib/remote-catalog';
 import { useSession } from '@/providers/session-provider';
 import { useCatalog } from '@/providers/catalog-provider';
 import { assertCompatible, validateCatalog, type Catalog } from '../../shared/gacha/catalog';
+import seedCatalog from '../../shared/gacha/seed-catalog.json';
+import { DRAW_GRADES, drawGrade, gradeRates } from '../../shared/gacha/draw-pools';
 
 const clone = <T,>(v:T):T => JSON.parse(JSON.stringify(v));
 function AdminField({label,value,onChange,numeric,disabled}:{label:string;value:string;onChange:(text:string)=>void;numeric:boolean;disabled:boolean}) {
@@ -43,9 +45,31 @@ export default function AdminScreen() {
   const editingAnimal = collection?.characters.find(ch=>ch.id===animalId) ?? collection?.characters[0];
   function patchCollection(update:Partial<CollectionData>) {
     setReview(false);
-    setDraft(prev => prev && ({ ...prev, collections:prev.collections.map(v => v.id === selected ? { ...v,...update } : v) }));
+    setDraft(prev => {
+      if (!prev) return prev;
+      const collections=prev.collections.map(v => v.id === selected ? { ...v,...update } : {...v});
+      for(const c of collections) if(c.banner) {
+        const weights=Object.fromEntries(DRAW_GRADES.map(g=>[g,c.banner!.rates.filter(r=>drawGrade(prev.collections.find(v=>v.id===r.collection)!.grade)===g).reduce((n,r)=>n+r.rate,0)]));
+        c.banner={...c.banner,rates:gradeRates(collections,weights,c.banner!.rates.map(r=>r.collection))};
+      }
+      return {...prev,collections};
+    });
   }
   function patchBanner(update:Partial<NonNullable<CollectionData['banner']>>) { if (collection?.banner) patchCollection({ banner:{ ...collection.banner,...update } }); }
+  function applyRedesign() {
+    if (!draft) return;
+    const templates = seedCatalog.collections as CollectionData[];
+    const collections = templates.map(template => {
+      const old=draft.collections.find(c=>c.id===template.id);
+      return old ? {...old,acquisition:template.acquisition,banner:template.banner,characters:old.characters.map(ch=>({...ch,species:template.characters.find(v=>v.id===ch.id)?.species??ch.species}))} : clone(template);
+    });
+    collections.push(...draft.collections.filter(c=>!templates.some(t=>t.id===c.id)).map(c=>({...c,banner:null})));
+    for (const c of collections) if (c.banner) {
+      const weights=Object.fromEntries(DRAW_GRADES.map(g=>[g,c.banner!.rates.filter(r=>drawGrade(collections.find(v=>v.id===r.collection)!.grade)===g).reduce((n,r)=>n+r.rate,0)]));
+      c.banner={...c.banner,rates:gradeRates(collections,weights,c.banner!.rates.map(r=>r.collection))};
+    }
+    setDraft({...draft,collections});setSelected('normal');setReview(false);setNotice('등급 뽑기·진화 전용 개편 초안을 적용했어요. 검토 후 게시하면 반영돼요.');
+  }
   async function upload(target:'poster' | 'animal', id?:string) {
     if (busy || !collection) return;
     setBusy(true);
@@ -73,23 +97,26 @@ export default function AdminScreen() {
     if (!draft) return;
     const id = `event_${draft.collections.length + 1}`;
     const first = draft.collections[0].characters[0];
-    const next:CollectionData = { id,name:'새 컬렉션',grade:'E',base:false,hidden:false,characters:[{ ...first,id:`${id}_animal`,name:'새 동물' }],banner:{ title:'새로운 뽑기',tagline:'새 친구를 만나보세요',enabled:false,cost:{ 1:100,10:900 },rates:[{ collection:id,rate:1,hidden:false }],hero:`${id}_animal`,colors:{ background:'#FFF0E9',accent:'#FF5A1F',text:'#3A1A0A' },poster:null } };
-    setDraft({ ...draft,collections:[...draft.collections,next] });setSelected(id);setReview(false);
+    const next:CollectionData = { id,name:'새 동물 그룹',grade:'N',base:false,hidden:false,acquisition:'draw',characters:[{ ...first,id:`${id}_animal`,name:'새 동물',species:`${id}_species` }],banner:null };
+    const collections=[...draft.collections.map(c=>({...c})),next];
+    for (const c of collections) if(c.banner) { const weights=Object.fromEntries(DRAW_GRADES.map(g=>[g,c.banner!.rates.filter(r=>drawGrade(collections.find(v=>v.id===r.collection)!.grade)===g).reduce((n,r)=>n+r.rate,0)]));c.banner={...c.banner,rates:gradeRates(collections,weights,c.banner!.rates.map(r=>r.collection))}; }
+    setDraft({ ...draft,collections });setSelected(id);setReview(false);
   }
   return <View style={{ flex:1,backgroundColor:c.background }}>
     <Stack.Screen options={{ title:'뽑기 관리',headerShown:true,headerTintColor:c.text,headerStyle:{ backgroundColor:c.background } }} />
     {!role.allowed ? <Text style={{ color:c.secondary,padding:24 }}>{role.loading?'관리자 권한을 확인하고 있어요…':'관리자 계정만 접근할 수 있어요.'}</Text> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding:20,gap:18,maxWidth:900,width:'100%',alignSelf:'center',paddingBottom:50 }}>
       <Text style={{ color:c.text,fontSize:24,fontWeight:'900' }}>뽑기 운영</Text>
-      <Text style={{ color:c.secondary,lineHeight:21 }}>이미지·가격·확률을 수정하고 검토 후 게시하세요. 게시 전에는 이용자에게 반영되지 않아요. 컬렉션 안의 동물은 동일한 확률로 추첨돼요.</Text>
+      <Text style={{ color:c.secondary,lineHeight:21 }}>등급 확률을 먼저 정하고, 선택된 등급 안의 동물을 동일한 확률로 추첨해요. 진화 전용 동물은 뽑기에서 제외돼요.</Text>
+      {button('동물·등급 개편 초안 적용',applyRedesign)}
       <Text style={{ color:c.secondary }}>현재 게시 버전 {draft?.version ?? 0}</Text>
       {notice !== '' && <Text accessibilityRole="alert" style={{ color:c.primary,lineHeight:22 }}>{notice}</Text>}
-      <View style={{ flexDirection:'row',gap:10 }}>{button('컬렉션 선택',()=>setPicker(true))}{button('뽑기 추가',addCollection)}</View>
+      <View style={{ flexDirection:'row',gap:10 }}>{button('동물 관리 그룹 선택',()=>setPicker(true))}{button('동물 그룹 추가',addCollection)}</View>
       {picker && draft && <PagedListSheet title="컬렉션 선택" data={draft.collections} keyExtractor={v=>v.id} onClose={()=>setPicker(false)} renderItem={({ item })=><Pressable accessibilityRole="button" onPress={()=>{setSelected(item.id);setPicker(false);}} style={{ minHeight:52,justifyContent:'center' }}><Text style={{ color:c.text }}>{item.name} · {item.characters.length}종</Text></Pressable>} />}
       {collection && <>
         <Text style={{ color:c.text,fontSize:20,fontWeight:'800' }}>{collection.name}</Text>
         <Text style={{ color:c.secondary,fontSize:12 }}>고정 ID: {collection.id}</Text>
-        {field('컬렉션 이름',collection.name,name=>patchCollection({name}))}
-        {!baseline?.collections.some(v=>v.id===collection.id) && <View style={{ flexDirection:'row',gap:8,flexWrap:'wrap' }}>{Object.entries(GRADES).map(([grade,v])=><Pressable key={grade} onPress={()=>patchCollection({grade:grade as CollectionData['grade']})} style={{ padding:10,borderRadius:10,backgroundColor:collection.grade===grade?c.primary:c.surface }}><Text style={{ color:collection.grade===grade?'#fff':c.text }}>{v.label}</Text></Pressable>)}</View>}
+        {field('관리 그룹 이름',collection.name,name=>patchCollection({name}))}
+        {!baseline?.collections.some(v=>v.id===collection.id) && <View style={{ flexDirection:'row',gap:8,flexWrap:'wrap' }}>{DRAW_GRADES.map(grade=><Pressable key={grade} onPress={()=>patchCollection({grade})} style={{ padding:10,borderRadius:10,backgroundColor:collection.grade===grade?c.primary:c.surface }}><Text style={{ color:collection.grade===grade?'#fff':c.text }}>{GRADES[grade].label}</Text></Pressable>)}</View>}
         {collection.banner ? <>
           <View style={{ flexDirection:'row',alignItems:'center',justifyContent:'space-between' }}><Text style={{ color:c.text,fontWeight:'800' }}>판매 중</Text><Switch value={collection.banner.enabled!==false} onValueChange={enabled=>patchBanner({enabled})} disabled={busy} /></View>
           {field('뽑기 제목',collection.banner.title,title=>patchBanner({title}))}
@@ -98,18 +125,22 @@ export default function AdminScreen() {
           {field('10회 가격 (코인)',String(collection.banner.cost[10]),v=>patchBanner({cost:{...collection.banner!.cost,10:Number(v)}}),true)}
           {collection.banner.poster && <Image source={collection.banner.poster} style={{ height:180,width:'100%' }} contentFit="contain" />}
           {button('포스터 이미지 올리기',()=>void upload('poster'))}
-          <Text style={{ color:c.text,fontWeight:'800',fontSize:18 }}>컬렉션별 확률</Text>
+          <Text style={{ color:c.text,fontWeight:'800',fontSize:18 }}>등급별 확률</Text>
           <Text style={{ color:c.primary }}>합계 {(collection.banner.rates.reduce((n,r)=>n+r.rate,0)*100).toFixed(4)}%</Text>
-          {collection.banner.rates.map((r,index)=><View key={r.collection} style={{ gap:6 }}>{field(`${draft?.collections.find(v=>v.id===r.collection)?.name ?? r.collection} 확률 (%)`,String(Number((r.rate*100).toFixed(6))),v=>patchBanner({rates:collection.banner!.rates.map((rate,i)=>i===index?{...rate,rate:Number(v)/100}:rate)}),true)}{button('확률 항목 제거',()=>patchBanner({rates:collection.banner!.rates.filter((_,i)=>i!==index)}))}</View>)}
-          <View style={{ flexDirection:'row',flexWrap:'wrap',gap:8 }}>{draft?.collections.filter(v=>!collection.banner!.rates.some(r=>r.collection===v.id)).map(v=><Pressable key={v.id} onPress={()=>patchBanner({rates:[...collection.banner!.rates,{collection:v.id,rate:0.01,hidden:v.hidden}]})} style={{ padding:10,borderRadius:10,backgroundColor:c.surface }}><Text style={{ color:c.primary }}>+ {v.name}</Text></Pressable>)}</View>
+          {DRAW_GRADES.map(grade=> {
+            const weights=Object.fromEntries(DRAW_GRADES.map(g=>[g,collection.banner!.rates.filter(r=>drawGrade(draft!.collections.find(v=>v.id===r.collection)!.grade)===g).reduce((n,r)=>n+r.rate,0)]));
+            return field(`${GRADES[grade].label} 확률 (%)`,String(Number((weights[grade]*100).toFixed(6))),value=>patchBanner({rates:gradeRates(draft!.collections,{...weights,[grade]:Number(value)/100},collection.banner!.rates.map(r=>r.collection))}),true);
+          })}
         </> : <Text style={{ color:c.secondary }}>이 컬렉션은 단독 뽑기가 없는 획득 풀입니다.</Text>}
         <Text style={{ color:c.text,fontWeight:'800',fontSize:18 }}>동물 {collection.characters.length}종</Text>
+        <Text style={{color:c.secondary}}>획득 경로: {collection.acquisition==='evolution'?'진화 전용':collection.acquisition==='breeding'?'교배 전용':'뽑기·기존 제작'}</Text>
         {button('편집할 동물 선택',()=>setAnimalPicker(true))}
         {animalPicker && <PagedListSheet title="편집할 동물" data={collection.characters} keyExtractor={ch=>ch.id} onClose={()=>setAnimalPicker(false)} renderItem={({item})=><Pressable accessibilityRole="button" onPress={()=>{setAnimalId(item.id);setAnimalPicker(false);}} style={{flexDirection:'row',gap:12,alignItems:'center',minHeight:64}}><Image source={item.thumb} style={{width:52,height:52}} contentFit="contain"/><Text style={{color:c.text}}>{item.name}</Text></Pressable>}/>}
         {editingAnimal && [editingAnimal].map(ch=><View key={ch.id} style={{ gap:8,borderWidth:1,borderColor:c.border,padding:12,borderRadius:16 }}>
           <Image source={ch.thumb} style={{ width:88,height:88 }} contentFit="contain" />
           <Text style={{ color:c.secondary,fontSize:11 }}>{ch.id}</Text>
           {field('동물 이름',ch.name,name=>patchCollection({characters:collection.characters.map(v=>v.id===ch.id?{...v,name}:v)}))}
+          {field('동물 종 ID (mouse, cow 등)',ch.species??'',species=>patchCollection({characters:collection.characters.map(v=>v.id===ch.id?{...v,species}:v)}))}
           {button('동물 이미지 올리기',()=>void upload('animal',ch.id))}
           {field('이미지 주소 (HTTPS 또는 업로드한 이미지)',typeof ch.image==='number'?'':ch.image.uri,uri=>patchCollection({characters:collection.characters.map(v=>v.id===ch.id?{...v,image:{uri},thumb:{uri}}:v)}))}
         </View>)}

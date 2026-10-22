@@ -44,14 +44,14 @@ function RootNavigator() {
   if (loading || !entryReady) return <BrandSplash notice={notice} />;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, title: 'Animals Run', headerBackTitle: '뒤로', headerBackButtonDisplayMode: 'minimal' }}>
       <Stack.Protected guard={!!user}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="community" />
-        <Stack.Screen name="player/[uid]" />
-        <Stack.Screen name="friends" />
-        <Stack.Screen name="notifications" />
-        <Stack.Screen name="admin" />
+        <Stack.Screen name="(tabs)" options={{title:'홈'}} />
+        <Stack.Screen name="community" options={{title:'커뮤니티'}} />
+        <Stack.Screen name="player/[uid]" options={{title:'프로필',headerShown:true}} />
+        <Stack.Screen name="friends" options={{title:'친구',headerShown:true}} />
+        <Stack.Screen name="notifications" options={{title:'알림',headerShown:true}} />
+        <Stack.Screen name="admin" options={{title:'뽑기 관리',headerShown:true}} />
       </Stack.Protected>
       <Stack.Protected guard={!user}>
         <Stack.Screen name="sign-in" />
