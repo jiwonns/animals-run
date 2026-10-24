@@ -1,4 +1,4 @@
-import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, getDocFromServer, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { COLLECTION_DATA } from '@/constants/gacha.generated';
 import { rebuildCharacters } from '@/constants/characters';
@@ -8,31 +8,41 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { assertCompatible, validateCatalog, type Catalog } from '../../shared/gacha/catalog';
 
 let current: Catalog | null = null;
+const listeners=new Set<(catalog:Catalog)=>void>();
+let cacheWrite=Promise.resolve();
 const CACHE_KEY='gacha:catalog:v1';
 export const currentCatalog = () => current;
 function install(catalog:Catalog) {
   validateCatalog(catalog);
   COLLECTION_DATA.splice(0,COLLECTION_DATA.length,...catalog.collections);
   rebuildCharacters();rebuildBanners(catalog.banners ?? []);rebuildCollectionMedals();current=catalog;
+  for(const notify of listeners)notify(catalog);
 }
-export async function loadRemoteCatalog() {
+function accept(catalog:Catalog) {
+  if(current && catalog.version<=current.version)return;
+  install(catalog);
+  cacheWrite=cacheWrite.catch(()=>{}).then(()=>AsyncStorage.setItem(CACHE_KEY,JSON.stringify(catalog)));
+  void cacheWrite.catch(()=>{});
+}
+export function subscribeCatalog(notify:(catalog:Catalog)=>void){listeners.add(notify);if(current)notify(current);return()=>{listeners.delete(notify);};}
+export function watchRemoteCatalog(onError:(error:Error)=>void=()=>{}) {
+  return onSnapshot(doc(db,'gachaCatalog','live'),snap=>{if(snap.exists()&&!snap.metadata.hasPendingWrites)try{accept(snap.data() as Catalog);}catch(e){onError(e instanceof Error?e:new Error('동물 정보를 불러오지 못했어요.'));}},onError);
+}
+export async function loadRemoteCatalog(options?:{server?:boolean}) {
   if (!current) {
     const cached=await AsyncStorage.getItem(CACHE_KEY).catch(()=>null);
-    if(cached)try{install(JSON.parse(cached));}catch{/* Ignore stale/invalid cache. */}
+    if(cached)try{accept(JSON.parse(cached));}catch{/* Ignore stale/invalid cache. */}
   }
-  const snap = await getDoc(doc(db, 'gachaCatalog', 'live'));
+  const snap = await (options?.server===false?getDoc:getDocFromServer)(doc(db, 'gachaCatalog', 'live'));
   if (!snap.exists()) return current;
   const catalog = snap.data() as Catalog;
-  if (!current || catalog.version > current.version) {
-    install(catalog);
-    await AsyncStorage.setItem(CACHE_KEY,JSON.stringify(catalog)).catch(()=>{});
-  }
+  accept(catalog);
   return current;
 }
 export async function publishCatalog(catalog: Catalog, uid: string) {
   validateCatalog(catalog);
   const { compileCatalog } = await import('../../shared/gacha/catalog');
-  return runTransaction(db, async tx => {
+  const publishedVersion=await runTransaction(db, async tx => {
     const ref = doc(db, 'gachaCatalog', 'live');
     const snap = await tx.get(ref);
     const before = snap.exists() ? snap.data() as Catalog : null;
@@ -54,4 +64,6 @@ export async function publishCatalog(catalog: Catalog, uid: string) {
     tx.set(doc(db,'gachaCatalogVersions',String(version+1)),next);
     return version+1;
   });
+  accept({...catalog,version:publishedVersion});
+  return publishedVersion;
 }

@@ -1,3 +1,4 @@
+import { useRefreshRevision } from '@/lib/app-refresh';
 import { onSnapshot } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
@@ -8,6 +9,7 @@ type Eggs = Partial<Record<EggSlot, Egg>>;
 
 /** Live users/{uid}/eggs by slot; null until the first snapshot arrives. */
 export function useEggs(): Eggs | null {
+  const refreshRevision=useRefreshRevision();
   const { user } = useSession();
   const uid = user?.uid;
   const [state, setState] = useState<{ uid: string; eggs: Eggs } | null>(null);
@@ -25,13 +27,14 @@ export function useEggs(): Eggs | null {
       },
       () => setState({ uid, eggs: {} }),
     );
-  }, [uid]);
+  }, [uid, refreshRevision]);
 
   return state && state.uid === uid ? state.eggs : null;
 }
 
 /** Steps walked with each character as the avatar; empty until something is recorded. */
 export function useCompanionSteps(): Companion['steps'] {
+  const refreshRevision=useRefreshRevision();
   const { user } = useSession();
   const uid = user?.uid;
   const [state, setState] = useState<{ uid: string; steps: Companion['steps'] } | null>(null);
@@ -43,7 +46,7 @@ export function useCompanionSteps(): Companion['steps'] {
       (snapshot) => setState({ uid, steps: (snapshot.data() as Companion | undefined)?.steps ?? {} }),
       () => setState({ uid, steps: {} }),
     );
-  }, [uid]);
+  }, [uid, refreshRevision]);
 
   return state && state.uid === uid ? state.steps : {};
 }

@@ -1,8 +1,9 @@
+import { FlatList } from '@/components/refreshable';
 import { useCatalog } from '@/providers/catalog-provider';
 import { Image } from '@/components/gacha-image';
 import { orderBy, query } from 'firebase/firestore';
 import { useMemo } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFirestorePage } from '@/hooks/use-firestore-page';
 
 import { RunningLoader } from '@/components/running-loader';

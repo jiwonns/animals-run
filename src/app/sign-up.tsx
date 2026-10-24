@@ -1,3 +1,4 @@
+import { useCatalog } from '@/providers/catalog-provider';
 import { router } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 
@@ -6,6 +7,7 @@ import { useColors } from '@/hooks/use-colors';
 import { signUp } from '@/lib/auth';
 
 export default function SignUpScreen() {
+  useCatalog();
   const colors = useColors();
   return (
     <AuthForm

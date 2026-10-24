@@ -1,5 +1,6 @@
+import { ScrollView } from '@/components/refreshable';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { COLLECTIONS, GRADES } from '@/constants/characters';
 import { useColors } from '@/hooks/use-colors';

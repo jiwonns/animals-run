@@ -1,3 +1,4 @@
+import { useRefreshRevision } from '@/lib/app-refresh';
 import { onSnapshot } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { equippedMedal, equipMedal, medalDisplayRef, ownedMedals } from '@/lib/medal-display';
@@ -5,6 +6,7 @@ import { rankingsRef, type RankingEntry } from '@/lib/ranking';
 import { useMedals } from './use-medals';
 
 export function useMedalShowcase(uid?: string) {
+  const refreshRevision=useRefreshRevision();
   const { claimed, failed } = useMedals(uid);
   const [ranking, setRanking] = useState<{ entries: (RankingEntry & { uid: string })[]; failed: boolean } | null>(null);
   const [display, setDisplay] = useState<{ uid: string; id: string | null; failed: boolean } | null>(null);
@@ -16,7 +18,7 @@ export function useMedalShowcase(uid?: string) {
     const offDisplay = onSnapshot(medalDisplayRef(uid), snap => setDisplay({ uid, id: snap.data()?.medalId ?? null, failed: false }),
       () => setDisplay({ uid, id: null, failed: true }));
     return () => { offRankings(); offDisplay(); };
-  }, [uid]);
+  }, [uid, refreshRevision]);
   const medals = uid ? ownedMedals(uid, claimed ?? new Set(), ranking?.entries ?? []) : [];
   const current = display?.uid === uid ? display : null;
   const equipped = equippedMedal(current?.id ?? null, medals);

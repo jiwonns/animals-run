@@ -1,4 +1,6 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCatalog } from '@/providers/catalog-provider';
+import { ScrollView } from '@/components/refreshable';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { useColors } from '@/hooks/use-colors';
 
@@ -64,6 +66,7 @@ const SECTIONS: { title: string; body: string[] }[] = [
 ];
 
 export default function TermsScreen() {
+  useCatalog();
   const colors = useColors();
   return (
     <ScrollView

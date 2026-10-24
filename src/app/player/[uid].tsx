@@ -1,9 +1,11 @@
+import { useRefreshRevision } from '@/lib/app-refresh';
+import { ScrollView } from '@/components/refreshable';
 import { useCatalog } from '@/providers/catalog-provider';
 import { Image } from '@/components/gacha-image';
 import { Stack, useLocalSearchParams } from "expo-router";
-import { getDoc } from "firebase/firestore";
+import { onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Text, View } from 'react-native';
 import { AvatarFace } from "@/components/avatar-face";
 import { FriendActions } from '@/components/friend-actions';
 import { EquippedMedal, MedalShowcaseList } from '@/components/medal-showcase';
@@ -27,6 +29,7 @@ import { kindsByGrade, profileAnimals } from '@/lib/inventory';
 import { useSession } from '@/providers/session-provider';
 
 export default function PlayerScreen() {
+  const refreshRevision=useRefreshRevision();
   useCatalog();
   const { uid } = useLocalSearchParams<{ uid: string }>();
   const {user,profile}=useSession();
@@ -40,40 +43,16 @@ export default function PlayerScreen() {
   const [loadedUid,setLoadedUid]=useState<string|null>(null);
   const [loadFailed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
-  useEffect(() => {
+  useEffect(()=>{
     if(!uid||isSelf)return;
-    let live = true;
-    async function load() {
-      try {
-        const snap = await getDoc(rankingRef(uid));
-        let data = snap.exists() ? (snap.data() as RankingEntry) : null;
-        if (!data) {
-          const location = await getDoc(locationRef(uid));
-          if (location.exists())
-            data = {
-              ...location.data(),
-              steps: 0,
-              characters: {},
-              hatchCount: 0,
-              evolveCount: 0,
-              fuseCount: 0,
-              recycleCount: 0,
-            } as RankingEntry;
-        }
-        if (live) {
-          setEntry(data);
-          setLoadedUid(uid);
-          setFailed(false);
-        }
-      } catch {
-        if (live) {setFailed(true);setLoadedUid(uid);}
-      }
-    }
-    if (uid) void load();
-    return () => {
-      live = false;
-    };
-  }, [uid, retry,isSelf]);
+    let stopLocation:(()=>void)|undefined;
+    const apply=(data:RankingEntry|null)=>{setEntry(data);setLoadedUid(uid);setFailed(false);};
+    const stop=onSnapshot(rankingRef(uid),snapshot=>{
+      if(snapshot.exists()){stopLocation?.();stopLocation=undefined;apply(snapshot.data() as RankingEntry);}
+      else if(!stopLocation)stopLocation=onSnapshot(locationRef(uid),location=>apply(location.exists()?{...location.data(),steps:0,characters:{},hatchCount:0,evolveCount:0,fuseCount:0,recycleCount:0} as RankingEntry:null),()=>apply(null));
+    },()=>{setFailed(true);setLoadedUid(uid);});
+    return()=>{stop();stopLocation?.();};
+  },[uid,retry,isSelf,refreshRevision]);
   const entry:RankingEntry|null|undefined=isSelf ? profile ? {username:profile.username,nickname:profile.nickname,avatar:profile.avatar??null,steps:profile.steps??0,characters:profile.characters,hatchCount:profile.hatchCount??0,evolveCount:profile.evolveCount??0,fuseCount:profile.fuseCount??0,recycleCount:profile.recycleCount??0,updatedAt:null} : undefined : loadedUid===uid ? remoteEntry : undefined;
   const failed=!isSelf&&loadedUid===uid&&loadFailed;
   const owned = profileAnimals(entry?.characters ?? {});

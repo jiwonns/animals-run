@@ -1,3 +1,4 @@
+import { useCatalog } from '@/providers/catalog-provider';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
@@ -5,6 +6,7 @@ import { AccountForm } from '@/components/account-form';
 import { changePassword } from '@/lib/account';
 
 export default function ChangePasswordScreen() {
+  useCatalog();
   return (
     <AccountForm
       fields={[

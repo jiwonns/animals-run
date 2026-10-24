@@ -1,6 +1,7 @@
+import { ScrollView } from '@/components/refreshable';
 import { Image } from '@/components/gacha-image';
 import { useRef, useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GRADES, type Character } from "@/constants/characters";
 import { useColors } from "@/hooks/use-colors";

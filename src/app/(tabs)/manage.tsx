@@ -1,4 +1,5 @@
 import { useCatalog } from '@/providers/catalog-provider';
+import { RefreshHandle } from '@/components/refresh-handle';
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -108,6 +109,7 @@ export default function MapScreen() {
       )}
 
       <SafeAreaView edges={["top"]} style={styles.top} pointerEvents="box-none">
+        <RefreshHandle />
         <View
           style={[
             styles.card,

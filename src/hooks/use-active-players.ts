@@ -1,3 +1,4 @@
+import { useRefreshRevision } from '@/lib/app-refresh';
 import { onSnapshot, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
@@ -13,6 +14,7 @@ export type ActivePlayer = PlayerLocation & { id: string };
 
 /** Other players sharing their location recently; excludes `uid`. */
 export function useActivePlayers(uid: string | undefined) {
+  const refreshRevision=useRefreshRevision();
   const { friends } = useFriends();
   const friendKey = uid ? friends.map(r => friendIdentity(r, uid).uid).sort().join(',') : '';
   const [friendState, setFriendState] = useState<{ uid: string; players: ActivePlayer[] } | null>(null);
@@ -38,7 +40,7 @@ export function useActivePlayers(uid: string | undefined) {
         }),
       () => setState({ uid, players: [], failed: true }),
     );
-  }, [uid]);
+  }, [uid, refreshRevision]);
 
   useEffect(() => {
     if (!uid) return;
@@ -50,7 +52,7 @@ export function useActivePlayers(uid: string | undefined) {
       publish();
     }, () => { players.delete(id); publish(); }));
     return () => off.forEach(unsubscribe => unsubscribe());
-  }, [uid, friendKey]);
+  }, [uid, friendKey, refreshRevision]);
 
   const friendIds = new Set(friendKey ? friendKey.split(',') : []);
   const visible = new Map<string, ActivePlayer>();

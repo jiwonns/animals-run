@@ -1,7 +1,9 @@
+import { useCatalog } from '@/providers/catalog-provider';
+import { ScrollView } from '@/components/refreshable';
 import { Image } from '@/components/gacha-image';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CraftShow, type CraftResult } from '@/components/home/craft-show';
 import { MysteryImage } from '@/components/home/outcomes';
@@ -28,6 +30,7 @@ const evolveCostNotes = (Object.entries(REWARDS.evolution.steps) as [Grade, numb
 );
 
 export default function EvolveScreen() {
+  useCatalog();
   const colors = useColors();
   const { user, profile } = useSession();
   const companion = useCompanionSteps();

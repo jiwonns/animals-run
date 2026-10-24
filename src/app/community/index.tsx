@@ -1,13 +1,9 @@
+import { useRefreshRevision } from '@/lib/app-refresh';
+import { useCatalog } from '@/providers/catalog-provider';
+import { FlatList, ScrollView } from '@/components/refreshable';
 import { router, Stack } from "expo-router";
 import { useEffect, useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthorLine, CommunityEmpty } from "@/components/community-ui";
 import { PostAttachments } from "@/components/community-attachments";
@@ -18,6 +14,8 @@ import { TOPICS, watchPosts, type Post } from "@/lib/community";
 import { TOPIC_CONFIG } from "@/lib/community-topics";
 
 export default function CommunityScreen() {
+  const refreshRevision=useRefreshRevision();
+  useCatalog();
   const c = useColors();
   const insets = useSafeAreaInsets();
   const [topic, setTopic] = useState<(typeof TOPICS)[number]>("전체");
@@ -33,7 +31,7 @@ export default function CommunityScreen() {
         },
         () => setFailed(true),
       ),
-    [retry],
+    [retry, refreshRevision],
   );
   const config = topic === "전체" ? null : TOPIC_CONFIG[topic];
   const accent = config?.color ?? c.primary;

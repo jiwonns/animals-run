@@ -1,7 +1,9 @@
+import { useCatalog } from '@/providers/catalog-provider';
+import { ScrollView } from '@/components/refreshable';
 import { Stack, router, type Href } from 'expo-router';
 import { NotificationBell } from '@/components/notification-bell';
 import { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AvatarFace } from '@/components/avatar-face';
 import { EggView } from '@/components/home/egg-view';
@@ -51,6 +53,7 @@ function formatLeft(ms: number) {
 }
 
 export default function HomeScreen() {
+  useCatalog();
   const colors = useColors();
   useConfirmExit();
   const { user, profile } = useSession();

@@ -1,5 +1,6 @@
+import { ScrollView } from '@/components/refreshable';
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
 import { useMedalShowcase } from '@/hooks/use-medal-showcase';
 import { PERMANENT_MEDALS } from '@/lib/medals';

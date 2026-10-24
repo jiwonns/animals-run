@@ -1,3 +1,4 @@
+import { useRefreshRevision } from '@/lib/app-refresh';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { Pedometer } from 'expo-sensors';
@@ -57,6 +58,7 @@ function startOfToday() {
 }
 
 export function WalkProvider({ children }: { children: ReactNode }) {
+  const refreshRevision=useRefreshRevision();
   const { user, profile, loading: sessionLoading } = useSession();
   const uid = user?.uid;
   const [pedometer, setPedometer] = useState<Status>(Platform.OS === 'web' ? 'unavailable' : 'checking');
@@ -95,7 +97,7 @@ export function WalkProvider({ children }: { children: ReactNode }) {
       }).catch(() => { if (!cancelled) setSharingError(true); });
     }, () => { setMapState(null); setSharingError(true); });
     return () => { cancelled = true; off(); };
-  }, [uid]);
+  }, [uid, refreshRevision]);
   useEffect(() => {
     if (!sharing) return;
     const timer = setInterval(() => setShareTick(v => v + 1), SHARE_INTERVAL_MS);

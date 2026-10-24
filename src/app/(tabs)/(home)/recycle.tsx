@@ -1,14 +1,8 @@
+import { useCatalog } from '@/providers/catalog-provider';
+import { ScrollView } from '@/components/refreshable';
 import { Image } from '@/components/gacha-image';
 import { useRef, useState } from "react";
-import {
-  Alert,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CraftShow, type CraftResult } from "@/components/home/craft-show";
 import { Outcomes } from "@/components/home/outcomes";
@@ -52,6 +46,7 @@ const TRAY_PADDING = 12;
 const TRAY_GAP = 8;
 
 export default function RecycleScreen() {
+  useCatalog();
   const colors = useColors();
   const { user, profile } = useSession();
   const [selection, setPicks] = useState<CharacterId[]>([]);

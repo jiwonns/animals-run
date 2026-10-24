@@ -1,5 +1,6 @@
+import { FlatList, ScrollView } from '@/components/refreshable';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, Switch, Text, TextInput, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { Image } from '@/components/gacha-image';
 import { PagedListSheet } from '@/components/paged-list-sheet';
@@ -8,7 +9,7 @@ import { COLLECTION_DATA } from '@/constants/gacha.generated';
 import type { CatalogBanner, GachaImage, Grade } from '@/constants/gacha-types';
 import { GRADES } from '@/constants/characters';
 import { useAdministrator, uploadGachaImage } from '@/lib/admin-catalog';
-import { loadRemoteCatalog, publishCatalog } from '@/lib/remote-catalog';
+import { currentCatalog, loadRemoteCatalog, publishCatalog } from '@/lib/remote-catalog';
 import { useSession } from '@/providers/session-provider';
 import { useCatalog } from '@/providers/catalog-provider';
 import { assertCompatible, catalogBanners, validateCatalog, type Catalog } from '../../shared/gacha/catalog';
@@ -30,18 +31,28 @@ const identifier=(prefix:string)=>`${prefix}_${Date.now().toString(36)}_${Math.r
 const clone=(value:Catalog):Catalog=>JSON.parse(JSON.stringify(value));
 export default function AdminScreen() {
   const c=useColors(),role=useAdministrator();
-  const {user}=useSession();const {refresh}=useCatalog();
+  const {user}=useSession();const {version:catalogVersion,refresh}=useCatalog();
   const [draft,setDraft]=useState<Catalog|null>(null),[baseline,setBaseline]=useState<Catalog|null>(null);
   const [selected,setSelected]=useState(''),[grade,setGrade]=useState<Grade>('N'),[search,setSearch]=useState('');
   const [picker,setPicker]=useState(false),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
   const [settings,setSettings]=useState(false);
   const [form,setForm]=useState<{name:string;grade:Grade;image:GachaImage|null}|null>(null);
-  const reload=useCallback(async()=>{
-    const live=await loadRemoteCatalog();const next=live??{schema:1 as const,version:0,collections:COLLECTION_DATA};
+  const reload=useCallback(async(snapshot?:Catalog)=>{
+    const live=snapshot??await loadRemoteCatalog();const next=live??{schema:1 as const,version:0,collections:COLLECTION_DATA};
     setBaseline(clone(next));setDraft(clone(next));
     const list=catalogBanners(next);setSelected(prev=>list.some(b=>b.id===prev)?prev:(list.find(b=>b.enabled!==false)??list[0])?.id??'');
   },[]);
   useEffect(()=>{if(!role.allowed)return;const timer=setTimeout(()=>void reload().catch(e=>setNotice(e.message)),0);return()=>clearTimeout(timer);},[role.allowed,reload]);
+  useEffect(()=>{
+    if(!baseline||!draft||catalogVersion<=baseline.version||busy||form)return;
+    if(JSON.stringify(draft)!==JSON.stringify(baseline))return;
+    const timer=setTimeout(()=>void reload(currentCatalog()??undefined).catch(e=>setNotice(e.message)),0);
+    return()=>clearTimeout(timer);
+  },[catalogVersion,baseline,draft,busy,form,reload]);
+  const refreshEditor=useCallback(async()=>{
+    if(busy||form||(baseline&&draft&&JSON.stringify(baseline)!==JSON.stringify(draft))){setNotice('서버 정보는 새로고침하고 편집 중인 내용은 유지했어요.');return;}
+    await reload();
+  },[busy,form,baseline,draft,reload]);
   const banners=draft?catalogBanners(draft):[];
   const banner=banners.find(b=>b.id===selected);
   const animals=useMemo(()=>draft?storedAnimals(draft):[],[draft]);
@@ -56,7 +67,7 @@ export default function AdminScreen() {
   async function save() {
     if(!draft||!baseline||!user||busy)return;
     setBusy(true);setNotice('');
-    try {validateCatalog(draft);assertCompatible(baseline,draft);await publishCatalog(draft,user.uid);await refresh();await reload();setNotice('저장 완료 · 선택한 동물과 확률이 뽑기에 적용됐어요.');}
+    try {validateCatalog(draft);assertCompatible(baseline,draft);await publishCatalog(draft,user.uid);await refresh();await reload(currentCatalog()??undefined);setNotice('저장 완료 · 선택한 동물과 확률이 뽑기에 적용됐어요.');}
     catch(e){setNotice(e instanceof Error?e.message:'저장하지 못했어요. 다시 시도해주세요.');}finally{setBusy(false);}
   }
   async function upload(target:'animal'|'poster') {
@@ -80,11 +91,14 @@ export default function AdminScreen() {
   }
   const button=(label:string,onPress:()=>void,primary=false,disabled=false)=><Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={busy||disabled} style={{minHeight:46,justifyContent:'center',alignItems:'center',paddingHorizontal:14,borderRadius:12,backgroundColor:primary?c.primary:c.surface,opacity:busy||disabled?0.45:1}}><Text style={{color:primary?'#fff':c.primary,fontWeight:'800'}}>{label}</Text></Pressable>;
   const field=(label:string,value:string,onChange:(value:string)=>void,numeric=false)=><Field key={`${selected}:${label}`} label={label} value={value} onChange={onChange} numeric={numeric} disabled={busy}/>;
-  const noticeView=notice?<Text accessibilityRole="alert" style={{color:c.primary,lineHeight:22}}>{notice}</Text>:null;
+  const staleDraft=baseline&&draft&&catalogVersion>baseline.version&&JSON.stringify(draft)!==JSON.stringify(baseline);
+  const actualNotice=staleDraft?'새 게시 내용이 있어요. 편집 중인 내용은 유지했어요. 최신 내용으로 바꾸려면 편집을 취소하고 다시 불러오세요.':notice;
+  const noticeView=actualNotice?<Text accessibilityRole="alert" style={{color:c.primary,lineHeight:22}}>{actualNotice}</Text>:null;
   const header=<View style={{gap:16,paddingBottom:16}}>
     <Text style={{fontSize:24,fontWeight:'900',color:c.text}}>뽑기 관리</Text>
     <Text style={{color:c.secondary,lineHeight:22}}>뽑기와 등급을 고른 뒤 서버에 저장된 동물을 선택하세요. 없는 동물은 바로 등록할 수 있어요.</Text>
     {noticeView}
+    {actualNotice.includes('편집')&&button('편집 취소하고 최신 내용 불러오기',()=>{setForm(null);void reload().then(()=>setNotice('최신 내용을 불러왔어요.')).catch(e=>setNotice(e.message));})}
     <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>{button(banner?.title??'뽑기 선택',()=>setPicker(true))}{button('새 뽑기 만들기',()=>{if(!draft)return;const next=newBanner(draft,identifier('draw'));setDraft(putBanner(draft,next));setSelected(next.id);setSettings(true);setNotice('동물을 선택하고 저장하면 새 뽑기가 만들어져요.');})}</View>
     {banner&&<>
       {button(settings?'설정 접기':'이름·가격·확률 설정',()=>setSettings(prev=>!prev))}
@@ -116,7 +130,7 @@ export default function AdminScreen() {
   return <View style={{flex:1,backgroundColor:c.background}}>
     <Stack.Screen options={{title:'뽑기 관리',headerShown:true,headerTintColor:c.text,headerStyle:{backgroundColor:c.background}}}/>
     {!role.allowed?<Text style={{padding:24,color:c.secondary}}>{role.loading?'관리자 권한을 확인하고 있어요…':'관리자 계정만 접근할 수 있어요.'}</Text>:<>
-      <FlatList data={banner?visible:[]} keyExtractor={ch=>ch.id} numColumns={2} extraData={selectedIds.join(',')} contentContainerStyle={{padding:16,gap:12,maxWidth:900,width:'100%',alignSelf:'center',paddingBottom:24}} columnWrapperStyle={{gap:12}} initialNumToRender={12} maxToRenderPerBatch={12} windowSize={5} keyboardShouldPersistTaps="handled" ListHeaderComponent={header}
+      <FlatList onRefresh={refreshEditor} data={banner?visible:[]} keyExtractor={ch=>ch.id} numColumns={2} extraData={selectedIds.join(',')} contentContainerStyle={{padding:16,gap:12,maxWidth:900,width:'100%',alignSelf:'center',paddingBottom:24}} columnWrapperStyle={{gap:12}} initialNumToRender={12} maxToRenderPerBatch={12} windowSize={5} keyboardShouldPersistTaps="handled" ListHeaderComponent={header}
         ListEmptyComponent={<Text style={{padding:20,color:c.secondary}}>{draft?'이 등급에는 동물이 없어요. 새 동물을 등록해보세요.':'서버 동물을 불러오는 중이에요.'}</Text>}
         renderItem={({item})=><Pressable accessibilityRole="checkbox" accessibilityLabel={item.name} accessibilityState={{checked:selectedSet.has(item.id),disabled:!item.eligible||busy}} disabled={!item.eligible||busy} onPress={()=>choose(selectedSet.has(item.id)?selectedIds.filter(id=>id!==item.id):[...selectedIds,item.id])} style={{flex:1,maxWidth:'50%',minHeight:145,padding:12,borderRadius:14,borderWidth:2,borderColor:selectedSet.has(item.id)?c.primary:c.border,backgroundColor:c.surface,alignItems:'center',gap:7,opacity:item.eligible?1:0.5}}>
           <Image source={item.thumb} style={{width:75,height:75}} contentFit="contain"/><Text style={{color:c.text,fontWeight:'700'}} numberOfLines={2}>{item.name}</Text><Text style={{color:c.secondary,fontSize:12}}>{!item.eligible?'진화·교배 전용':selectedSet.has(item.id)?'✓ 선택됨':'선택하기'}</Text>

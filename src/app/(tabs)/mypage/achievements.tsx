@@ -1,13 +1,8 @@
+import { useCatalog } from '@/providers/catalog-provider';
+import { ScrollView } from '@/components/refreshable';
 import { router } from "expo-router";
 import { Fragment, useRef, useState, type ReactNode } from "react";
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GradeBadge } from "@/components/grade-badge";
@@ -63,6 +58,7 @@ const categoryOf = (reward: Reward) =>
   CATEGORY[reward.id.split(":")[0]] ?? CATEGORY.draws;
 
 export default function AchievementsScreen() {
+  useCatalog();
   const colors = useColors();
   const { user, profile, claimed, claimsFailed } = useSession();
   const { state, claimable, ready } = useAchievements();

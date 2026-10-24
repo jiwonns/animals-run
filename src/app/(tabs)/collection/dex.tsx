@@ -1,6 +1,7 @@
+import { FlatList } from '@/components/refreshable';
 import { useListWindow } from '@/hooks/use-list-window';
 import { useCatalog } from '@/providers/catalog-provider';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { CharacterCard } from '@/components/character-card';
 import { useMedals } from '@/hooks/use-medals';

@@ -1,5 +1,6 @@
 import { useCatalog } from '@/providers/catalog-provider';
 import { useState, type ReactNode } from 'react';
+import { ScrollView } from '@/components/refreshable';
 import { Alert, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Extrapolation,
@@ -33,7 +34,8 @@ const MAX_POSTER_RATIO = 1.65;
 type Show = { key: number; banner: Banner; count: DrawCount; payment: Payment };
 
 export default function GachaScreen() {
-  const { refresh:refreshCatalog } = useCatalog();
+  const { version,refresh:refreshCatalog } = useCatalog();
+  const banners=[...BANNERS];
   const colors = useColors();
   useConfirmExit();
   const { width } = useWindowDimensions();
@@ -74,6 +76,7 @@ export default function GachaScreen() {
   }
 
   return (
+    <ScrollView style={{flex:1}} contentContainerStyle={{flexGrow:1}}>
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>뽑기</Text>
@@ -84,7 +87,7 @@ export default function GachaScreen() {
       </View>
 
       <View style={styles.dots}>
-        {BANNERS.map((b, index) => (
+        {banners.map((b, index) => (
           <Dot
             key={b.id}
             index={index}
@@ -99,7 +102,8 @@ export default function GachaScreen() {
       <View style={styles.pager} onLayout={(e) => setPagerHeight(e.nativeEvent.layout.height)}>
         {pagerHeight > 0 && (
           <Animated.FlatList
-            data={BANNERS}
+            data={banners}
+            extraData={version}
             keyExtractor={banner=>banner.id}
             initialNumToRender={1}
             maxToRenderPerBatch={2}
@@ -195,6 +199,7 @@ export default function GachaScreen() {
         )}
       </Modal>
     </SafeAreaView>
+    </ScrollView>
   );
 }
 

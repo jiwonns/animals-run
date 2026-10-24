@@ -1,5 +1,6 @@
+import { FlatList } from '@/components/refreshable';
 import { useState, type ReactNode } from 'react';
-import { FlatList, Modal, Pressable, Text, View, type ListRenderItem } from 'react-native';
+import { Modal, Pressable, Text, View, type ListRenderItem } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/use-colors';
 

@@ -1,16 +1,8 @@
+import { ScrollView } from '@/components/refreshable';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CommunityAnimalPicker } from "./community-animal-picker";
 import { WalkShareCard } from "./community-attachments";

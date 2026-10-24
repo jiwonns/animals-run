@@ -1,8 +1,10 @@
+import { useRefreshRevision } from '@/lib/app-refresh';
 import { useEffect, useState } from 'react';
 import { limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { arenaWalletRef, duelsRef, type Duel } from '@/lib/duel-service';
 import type { DuelState } from '@/lib/duel';
 export function useDuels(uid: string | undefined) {
+  const refreshRevision=useRefreshRevision();
   const [data, setData] = useState<{ uid: string; duels: Duel[]; failed: boolean } | null>(null);
   const [wallet, setWallet] = useState<{ uid: string; day: number; count: number } | null>(null);
   const [previous, setPrevious] = useState<Record<string, DuelState | null>>({});
@@ -18,7 +20,7 @@ export function useDuels(uid: string | undefined) {
     }, () => setData({ uid, duels: [], failed: true }));
     const stopWallet = onSnapshot(arenaWalletRef(uid), snap => setWallet({ uid, day: snap.data()?.day ?? -1, count: snap.data()?.count ?? 0 }), () => {});
     return () => { stop(); stopWallet(); };
-  }, [uid]);
+  }, [uid, refreshRevision]);
   const current = data?.uid === uid ? data : null;
   return { duels: current?.duels ?? [], previous, loading: !current, failed: current?.failed ?? false,
     wallet: wallet?.uid === uid ? wallet : null };

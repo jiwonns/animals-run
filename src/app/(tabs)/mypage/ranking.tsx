@@ -1,15 +1,9 @@
+import { useCatalog } from '@/providers/catalog-provider';
+import { FlatList, ScrollView } from '@/components/refreshable';
 import { useListWindow } from '@/hooks/use-list-window';
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { AvatarFace } from "@/components/avatar-face";
 import { RunningLoader } from "@/components/running-loader";
@@ -19,6 +13,7 @@ import { useColors } from "@/hooks/use-colors";
 import { displayName } from "@/lib/profile";
 import {
   fetchRankings,
+  watchRankings,
   type RankingCount,
   type RankingEntry,
 } from "@/lib/ranking";
@@ -101,6 +96,7 @@ function rank(
 }
 
 export default function RankingScreen() {
+  useCatalog();
   const colors = useColors();
   const { user } = useSession();
   const [board, setBoard] = useState<Board>("steps");
@@ -120,10 +116,7 @@ export default function RankingScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(load, 0);
-    return () => clearTimeout(timer);
-  }, [load]);
+  useEffect(()=>watchRankings(value=>{setEntries(value);setFailed(false);},()=>setFailed(true)),[]);
 
   async function refresh() {
     setRefreshing(true);

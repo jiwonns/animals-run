@@ -5,9 +5,9 @@ const stubs={
  'expo-router':`export const Stack={Screen:()=>null};`,
  '@/hooks/use-colors':`export const useColors=()=>({background:'#fffaf5',surface:'#ffffff',border:'#ddd',text:'#222',secondary:'#666',primary:'#ed701e'});`,
  '@/providers/session-provider':`export const useSession=()=>({user:{uid:'admin'}});`,
- '@/providers/catalog-provider':`export const useCatalog=()=>({refresh:async()=>{}});`,
+ '@/providers/catalog-provider':`export const useCatalog=()=>({version:6,refresh:async()=>{}});`,
  '@/lib/admin-catalog':`export const useAdministrator=()=>({allowed:true,loading:false});export const uploadGachaImage=async()=>({uri:'https://example.com/image.png'});`,
- '@/lib/remote-catalog':`import seed from '${path.join(root,'shared/gacha/seed-catalog.json').replace(/\\/g,'/')}';import {validateCatalog,assertCompatible} from '${path.join(root,'shared/gacha/catalog.js').replace(/\\/g,'/')}';let live=structuredClone(seed);live.version=6;window.__saved=[];export const loadRemoteCatalog=async()=>structuredClone(live);export const publishCatalog=async(candidate)=>{validateCatalog(candidate);assertCompatible(live,candidate);if(candidate.version!==live.version)throw Error('버전 충돌');live=structuredClone({...candidate,version:live.version+1});window.__saved.push(structuredClone(live));return live.version;};`,
+ '@/lib/remote-catalog':`import seed from '${path.join(root,'shared/gacha/seed-catalog.json').replace(/\\/g,'/')}';import {validateCatalog,assertCompatible} from '${path.join(root,'shared/gacha/catalog.js').replace(/\\/g,'/')}';let live=structuredClone(seed);live.version=6;window.__saved=[];export const currentCatalog=()=>structuredClone(live);export const loadRemoteCatalog=async()=>structuredClone(live);export const publishCatalog=async(candidate)=>{validateCatalog(candidate);assertCompatible(live,candidate);if(candidate.version!==live.version)throw Error('버전 충돌');live=structuredClone({...candidate,version:live.version+1});window.__saved.push(structuredClone(live));return live.version;};`,
  '@/components/gacha-image':`import * as React from 'react';import {View} from 'react-native-web';export const Image=({style})=><View style={[style,{backgroundColor:'#f2e7d9'}]}/>;`,
  'react-native-safe-area-context':`export {View as SafeAreaView} from 'react-native-web';`,
 };

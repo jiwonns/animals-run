@@ -10,6 +10,8 @@ import { WalkProvider } from "@/providers/walk-provider";
 import { BondProvider } from '@/hooks/use-bond';
 import { FriendsProvider } from '@/providers/friends-provider';
 import { CatalogProvider } from '@/providers/catalog-provider';
+import { GlobalPullRefresh } from '@/components/global-pull-refresh';
+import { View } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 SplashScreen.setOptions({ duration: 400, fade: true });
@@ -21,7 +23,7 @@ export default function RootLayout() {
       <FriendsProvider>
       <BondProvider>
       <WalkProvider>
-        <RootNavigator />
+        <View style={{flex:1}}><RootNavigator /><GlobalPullRefresh /></View>
       </WalkProvider>
       </BondProvider>
       <StatusBar style="auto" />

@@ -1,7 +1,9 @@
+import { useCatalog } from '@/providers/catalog-provider';
+import { ScrollView } from '@/components/refreshable';
 import { Image } from '@/components/gacha-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GradeBadge } from '@/components/grade-badge';
 import { Outcomes } from '@/components/home/outcomes';
 import { Icon, ICONS } from '@/components/icon';
@@ -31,6 +33,7 @@ function formatMinutes(minutes: number) {
 }
 
 export default function BreedScreen() {
+  useCatalog();
   const colors = useColors();
   const cellWidth = useGridCellWidth(COLUMNS, PADDING, GAP);
   const { user, profile } = useSession();

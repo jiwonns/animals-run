@@ -1,13 +1,7 @@
+import { FlatList } from '@/components/refreshable';
 import { Image } from '@/components/gacha-image';
 import { useMemo, useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   CHARACTERS,

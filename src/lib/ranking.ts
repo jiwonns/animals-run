@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, serverTimestamp, setDoc, type Timestamp } from 'firebase/firestore';
+import { collection, doc, getDocsFromServer, onSnapshot, serverTimestamp, setDoc, type DocumentData, type QuerySnapshot, type Timestamp } from 'firebase/firestore';
 
 import { CHARACTER_BY_ID, GRADES, type CharacterId, type Grade } from '@/constants/characters';
 
@@ -52,7 +52,12 @@ export function syncRanking(uid: string, profile: Profile) {
 
 /** Entries written before a counter existed read it as 0. */
 export async function fetchRankings(): Promise<(RankingEntry & { uid: string })[]> {
-  const snapshot = await getDocs(rankingsRef());
+  return rankingEntries(await getDocsFromServer(rankingsRef()));
+}
+export function watchRankings(next:(entries:(RankingEntry & {uid:string})[])=>void,onError:()=>void) {
+  return onSnapshot(rankingsRef(),snapshot=>next(rankingEntries(snapshot)),onError);
+}
+function rankingEntries(snapshot:QuerySnapshot<DocumentData>): (RankingEntry & {uid:string})[] {
   return snapshot.docs.map((d) => {
     const data = d.data() as Partial<RankingEntry>;
     return {

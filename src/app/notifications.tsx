@@ -1,6 +1,8 @@
+import { useCatalog } from '@/providers/catalog-provider';
+import { FlatList } from '@/components/refreshable';
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { AvatarFace } from '@/components/avatar-face';
 import { FriendActions } from '@/components/friend-actions';
 import { useColors } from '@/hooks/use-colors';
@@ -10,6 +12,7 @@ import { useFriends } from '@/providers/friends-provider';
 import { useSession } from '@/providers/session-provider';
 
 export default function NotificationsScreen() {
+  useCatalog();
   const c = useColors();
   const { user } = useSession();
   const { notifications, unread, loading, failed } = useFriends();

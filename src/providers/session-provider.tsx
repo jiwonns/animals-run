@@ -1,3 +1,4 @@
+import { useRefreshRevision } from '@/lib/app-refresh';
 import { onIdTokenChanged, signOut as firebaseSignOut, type User } from 'firebase/auth';
 import { onSnapshot, updateDoc } from 'firebase/firestore';
 import { createContext, use, useEffect, useState, type ReactNode } from 'react';
@@ -23,6 +24,7 @@ type SessionContextValue = {
 const SessionContext = createContext<SessionContextValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
+  const refreshRevision=useRefreshRevision();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
@@ -114,7 +116,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setNotice('로그인이 만료되었거나 다른 기기에서 접속했어요. 다시 로그인해주세요.');
       void firebaseSignOut(auth).catch(() => {});
     });
-  }, [user, sessionEpoch]);
+  }, [user, sessionEpoch, refreshRevision]);
 
   useEffect(() => {
     if (!uid) return;
@@ -123,7 +125,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       (snapshot) => setClaimedState({ uid, ids: new Set(snapshot.docs.map((d) => d.id)), failed: false }),
       () => setClaimedState({ uid, ids: new Set(), failed: true }),
     );
-  }, [uid, sessionEpoch]);
+  }, [uid, sessionEpoch, refreshRevision]);
 
   return <SessionContext value={{ user, loading, profile, claimed, claimsFailed, notice }}>{children}</SessionContext>;
 }

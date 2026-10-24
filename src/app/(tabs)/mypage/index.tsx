@@ -1,5 +1,7 @@
+import { useCatalog } from '@/providers/catalog-provider';
+import { ScrollView } from '@/components/refreshable';
 import { router, type Href } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AvatarFace } from '@/components/avatar-face';
 import { BondCard } from '@/components/bond-card';
@@ -29,6 +31,7 @@ const MENU: { label: string; href: Href; icon: keyof typeof ICONS; tint: string 
 const AVATAR_SIZE = 92;
 
 export default function MyPageScreen() {
+  useCatalog();
   const colors = useColors();
   useConfirmExit();
   const { user, profile } = useSession();

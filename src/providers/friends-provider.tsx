@@ -1,9 +1,11 @@
+import { useRefreshRevision } from '@/lib/app-refresh';
 import { onSnapshot, query, where } from 'firebase/firestore';
 import { createContext, use, useEffect, useState, type ReactNode } from 'react';
 import { friendNotifications, friendshipsRef, type Friendship } from '@/lib/friends';
 import { useSession } from './session-provider';
 
 function useFriendsState() {
+  const refreshRevision=useRefreshRevision();
   const { user } = useSession();
   const uid = user?.uid;
   const [state, setState] = useState<{ uid: string; relationships: Friendship[]; failed: boolean } | null>(null);
@@ -12,7 +14,7 @@ function useFriendsState() {
     return onSnapshot(query(friendshipsRef(), where('members', 'array-contains', uid)), snapshot => {
       setState({ uid, relationships: snapshot.docs.map(d => ({ ...d.data(), id: d.id }) as Friendship), failed: false });
     }, () => setState({ uid, relationships: [], failed: true }));
-  }, [uid]);
+  }, [uid, refreshRevision]);
   const current = state?.uid === uid ? state : null;
   const relationships = current?.relationships ?? [];
   const friends = relationships.filter(r => r.status === 'accepted');

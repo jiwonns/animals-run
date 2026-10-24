@@ -1,3 +1,4 @@
+import { useCatalog } from '@/providers/catalog-provider';
 import { router } from 'expo-router';
 import { Alert, Text } from 'react-native';
 
@@ -7,6 +8,7 @@ import { changeUsername } from '@/lib/account';
 import { useSession } from '@/providers/session-provider';
 
 export default function ChangeUsernameScreen() {
+  useCatalog();
   const colors = useColors();
   const { profile } = useSession();
 

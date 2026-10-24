@@ -1,3 +1,4 @@
+import { useCatalog } from '@/providers/catalog-provider';
 import { router } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 
@@ -7,6 +8,7 @@ import { useConfirmExit } from '@/hooks/use-confirm-exit';
 import { signIn } from '@/lib/auth';
 
 export default function SignInScreen() {
+  useCatalog();
   const colors = useColors();
   useConfirmExit();
   return (

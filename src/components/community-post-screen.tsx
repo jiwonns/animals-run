@@ -1,16 +1,8 @@
+import { FlatList } from '@/components/refreshable';
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { deleteDoc, onSnapshot } from "firebase/firestore";
 import { useEffect, useRef, useState, type ComponentRef } from "react";
-import {
-  Alert,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PostAttachments } from "./community-attachments";
 import { CommunityComment } from "./community-comment";

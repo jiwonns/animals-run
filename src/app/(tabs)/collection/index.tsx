@@ -1,7 +1,8 @@
+import { FlatList, ScrollView } from '@/components/refreshable';
 import { useCatalog } from '@/providers/catalog-provider';
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MedalCabinet } from '@/components/medal-cabinet';
 import { SafeAreaView } from "react-native-safe-area-context";
 

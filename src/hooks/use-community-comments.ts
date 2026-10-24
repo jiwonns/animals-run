@@ -1,3 +1,4 @@
+import { useRefreshRevision } from '@/lib/app-refresh';
 import { limit, onSnapshot, orderBy, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/lib/community";
 
 export function useCommunityComments(id: string, enabled: boolean) {
+  const refreshRevision=useRefreshRevision();
   const [state, setState] = useState<{ id: string; list: Comment[] }>({
     id: "",
     list: [],
@@ -33,7 +35,7 @@ export function useCommunityComments(id: string, enabled: boolean) {
       },
       () => setFailedAt(id),
     );
-  }, [id, enabled]);
+  }, [id, enabled, refreshRevision]);
   const ids = new Set(comments.map((c) => c.id));
   const missingKey = [
     ...new Set(
@@ -64,7 +66,7 @@ export function useCommunityComments(id: string, enabled: boolean) {
       ),
     );
     return () => off.forEach((unsubscribe) => unsubscribe());
-  }, [id, enabled, missingKey]);
+  }, [id, enabled, missingKey, refreshRevision]);
   const extra =
     parents.id === id
       ? missingKey

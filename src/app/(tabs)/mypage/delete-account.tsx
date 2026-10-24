@@ -1,3 +1,4 @@
+import { useCatalog } from '@/providers/catalog-provider';
 import { Alert, Text } from 'react-native';
 
 import { AccountForm } from '@/components/account-form';
@@ -5,6 +6,7 @@ import { useColors } from '@/hooks/use-colors';
 import { deleteAccount } from '@/lib/account';
 
 export default function DeleteAccountScreen() {
+  useCatalog();
   const colors = useColors();
 
   return (

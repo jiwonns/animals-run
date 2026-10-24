@@ -1,6 +1,7 @@
+import { ScrollView } from '@/components/refreshable';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from './gacha-image';
 import { AvatarFace } from './avatar-face';
 import { DuelStage } from './duel-stage';

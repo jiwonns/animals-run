@@ -1,5 +1,7 @@
+import { useCatalog } from '@/providers/catalog-provider';
+import { ScrollView } from '@/components/refreshable';
 import { router, type Href } from 'expo-router';
-import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Icon, ICONS } from '@/components/icon';
 import { useColors } from '@/hooks/use-colors';
@@ -8,6 +10,7 @@ import { useWalk } from '@/providers/walk-provider';
 import { useAdministrator } from '@/lib/admin-catalog';
 
 export default function SettingsScreen() {
+  useCatalog();
   const colors = useColors();
   const { profile } = useSession();
   const administrator = useAdministrator();

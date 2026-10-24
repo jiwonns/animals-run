@@ -1,5 +1,6 @@
+import { ScrollView } from '@/components/refreshable';
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { RunningDot } from '@/components/running-loader';
 import { useColors } from '@/hooks/use-colors';

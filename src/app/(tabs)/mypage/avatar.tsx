@@ -1,9 +1,10 @@
+import { FlatList } from '@/components/refreshable';
 import { useListWindow } from '@/hooks/use-list-window';
 import { useCatalog } from '@/providers/catalog-provider';
 import { Image } from '@/components/gacha-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AvatarFace } from '@/components/avatar-face';
 import { GradeBadge } from '@/components/grade-badge';
