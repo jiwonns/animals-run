@@ -11,6 +11,8 @@ export type CollectionData<C extends string = string, Id extends string = string
   base: boolean;
   /** Null for collections without their own banner (hidden in others, or only obtainable by crafting). */
   banner: {
+    /** Explicit animal selection; omitted for legacy collection-wide pools. */
+    characterIds?: Id[];
     enabled?: boolean;
     title: string;
     tagline: string;
@@ -26,6 +28,8 @@ export type CollectionData<C extends string = string, Id extends string = string
   /** `thumb` is a small copy of `image` for grids and lists. */
   characters: { id: Id; name: string; species?: string; image: GachaImage; thumb: GachaImage }[];
 };
+
+export type CatalogBanner = NonNullable<CollectionData['banner']> & { id: string };
 
 type GradeOverrides<T> = { default: T } & Partial<Record<Grade, Partial<T>>>;
 

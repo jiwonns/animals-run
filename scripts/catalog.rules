@@ -6,6 +6,7 @@
       allow read: if request.auth != null;
       allow create, update: if id == 'live' && isCatalogAdmin()
         && request.resource.data.schema == 1 && request.resource.data.collections is list
+        && request.resource.data.get('editorVersion', 0) == 2
         && request.resource.data.collections.size() > 0 && request.resource.data.collections.size() <= 80
         && request.resource.data.version == (resource == null ? 1 : resource.data.version + 1)
         && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;

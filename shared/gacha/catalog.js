@@ -1,6 +1,9 @@
 'use strict';
 const GRADES = ['N', 'R', 'EP', 'U', 'L', 'E', 'H'];
 const idPattern = /^[a-zA-Z0-9_-]{1,80}$/;
+function catalogBanners(value) {
+  return [...value.collections.filter(c=>c.banner).map(c=>({ ...c.banner,id:c.id })), ...(value.banners ?? [])];
+}
 function validateCatalog(value) {
   const fail = message => { throw new Error(message); };
   if (!value || value.schema !== 1 || !Array.isArray(value.collections) || !value.collections.length || value.collections.length > 80) fail('컬렉션은 1~80개여야 해요.');
@@ -19,10 +22,13 @@ function validateCatalog(value) {
     }
   }
   if (characters.size > 600) fail('동물은 최대 600종까지 등록할 수 있어요.');
-  for (const c of value.collections) {
-    const b = c.banner;
-    if (!b) continue;
-    if (!text(b.title) || typeof b.tagline !== 'string' || b.tagline.length > 300 || !c.characters.some(ch => ch.id === b.hero)) fail(`${c.name}: 제목과 대표 동물을 확인해주세요.`);
+  if (value.banners !== undefined && (!Array.isArray(value.banners) || value.banners.length > 40)) fail('뽑기는 최대 40개까지 추가할 수 있어요.');
+  const bannerIds = new Set();
+  for (const b of catalogBanners(value)) {
+    const c = { name:b.title };
+    if (typeof b.id !== 'string' || !idPattern.test(b.id) || bannerIds.has(b.id)) fail('뽑기 ID가 중복되거나 잘못됐어요.');
+    bannerIds.add(b.id);
+    if (!text(b.title) || typeof b.tagline !== 'string' || b.tagline.length > 300 || !characters.has(b.hero)) fail(`${c.name}: 제목과 대표 동물을 확인해주세요.`);
     if (![b.cost?.[1], b.cost?.[10]].every(n => Number.isSafeInteger(n) && n > 0 && n <= 1000000)) fail(`${c.name}: 비용은 1~1,000,000 코인이어야 해요.`);
     if (!b.colors || !['background', 'accent', 'text'].every(k => /^#[a-fA-F0-9]{6}$/.test(b.colors[k]))) fail(`${c.name}: 색상은 #RRGGBB 형식이어야 해요.`);
     if (b.poster !== null && !image(b.poster)) fail('포스터 주소를 확인해주세요.');
@@ -37,8 +43,18 @@ function validateCatalog(value) {
       if (r.collection === 'baby' || collections.get(r.collection).acquisition === 'breeding') fail('아기 시리즈는 교배로만 얻을 수 있어요.');
     }
     if (Math.abs(total - 1) > 1e-8) fail(`${c.name}: 확률 합계가 ${(total * 100).toFixed(4)}%예요. 100%로 맞춰주세요.`);
+    if (b.characterIds !== undefined) {
+      if (!Array.isArray(b.characterIds) || !b.characterIds.length || b.characterIds.length > 600 || new Set(b.characterIds).size !== b.characterIds.length) fail('뽑기에 나올 동물을 하나 이상 선택해주세요.');
+      for (const id of b.characterIds) {
+        const ch = characters.get(id), group = ch && collections.get(ch.collection);
+        if (!ch || group.id === 'baby' || (group.acquisition && group.acquisition !== 'draw')) fail('진화 전용·아기 동물은 뽑기에서 선택할 수 없어요.');
+        if (!b.rates.some(r=>r.collection===ch.collection)) fail('선택한 동물의 등급 확률을 0보다 크게 설정해주세요.');
+      }
+      if (b.rates.some(r=>!b.characterIds.some(id=>characters.get(id)?.collection===r.collection))) fail('확률을 설정한 등급에서 동물을 선택해주세요.');
+      if (!b.characterIds.includes(b.hero)) fail('대표 동물은 선택한 동물 안에서 정해주세요.');
+    }
   }
-  if (!value.collections.some(c => c.banner && c.banner.enabled !== false)) fail('게시하려면 판매 중인 뽑기가 하나 이상 필요해요.');
+  if (!catalogBanners(value).some(b => b.enabled !== false)) fail('게시하려면 판매 중인 뽑기가 하나 이상 필요해요.');
   if (BufferByteLength(JSON.stringify(value)) > 850000) fail('카탈로그가 너무 커요.');
   return { collections, characters };
 }
@@ -53,7 +69,7 @@ function assertCompatible(before, after) {
   }
 }
 function pickCharacter(catalog, banner, random) {
-  return require('./draw-pools').pickByGrade(catalog.collections, banner.rates, random);
+  return require('./draw-pools').pickByGrade(catalog.collections, banner.rates, random, banner.characterIds);
 }
 function compileCatalog(value) {
   validateCatalog(value);
@@ -61,11 +77,10 @@ function compileCatalog(value) {
   return {
     characters:value.collections.flatMap(c=>c.characters.map(ch=>({ id:ch.id,grade:c.grade,collection:c.id }))),
     collections:value.collections.map(c=>({ id:c.id,characterIds:c.characters.map(ch=>ch.id) })),
-    banners:value.collections.filter(c=>c.banner).map(c=>{
-      const b=c.banner;
-      const ids=b.rates.flatMap(r=>value.collections.find(v=>v.id===r.collection).characters.map(ch=>ch.id));
+    banners:catalogBanners(value).map(b=>{
+      const ids=b.characterIds ?? b.rates.flatMap(r=>value.collections.find(v=>v.id===r.collection).characters.map(ch=>ch.id));
       const pattern=wordPattern(ids);
-      return { id:c.id,cost1:b.cost[1],cost10:b.cost[10],ticketable:b.cost[1]<=rewards.ticketMaxCost,enabled:b.enabled!==false,characterIds:ids,poolRegex:`^(?:${pattern})(?:,(?:${pattern}))*$` };
+      return { id:b.id,cost1:b.cost[1],cost10:b.cost[10],ticketable:b.cost[1]<=rewards.ticketMaxCost,enabled:b.enabled!==false,characterIds:ids,poolRegex:`^(?:${pattern})(?:,(?:${pattern}))*$` };
     }),
   };
 }
@@ -81,4 +96,4 @@ function wordPattern(words) {
   }
   return render(root);
 }
-module.exports = { validateCatalog, assertCompatible, pickCharacter, compileCatalog };
+module.exports = { validateCatalog, assertCompatible, pickCharacter, compileCatalog, catalogBanners };

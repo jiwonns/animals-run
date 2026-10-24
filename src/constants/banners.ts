@@ -1,42 +1,25 @@
-import { CHARACTER_BY_ID, type Character, type CollectionId } from './characters';
+import { CHARACTER_BY_ID, type Character } from './characters';
 import { COLLECTION_DATA } from './gacha.generated';
-import type { GachaImage } from './gacha-types';
+import type { CatalogBanner, GachaImage } from './gacha-types';
 import { pickByGrade } from '../../shared/gacha/draw-pools';
-
+import { catalogBanners } from '../../shared/gacha/catalog';
 export type DrawCount = 1 | 10;
-
 export type Banner = {
-  id: CollectionId;
-  title: string;
-  tagline: string;
-  cost: Record<DrawCount, number>;
-  /** Chance of landing in each collection (sums to 1); characters within a collection are equally likely. */
-  rates: { collection: CollectionId; rate: number; hidden: boolean }[];
-  hero: Character;
-  poster: { background: string; accent: string; text: string; image: GachaImage | null };
+  id: string; title: string; tagline: string; cost: Record<DrawCount,number>;
+  rates: {collection:string;rate:number;hidden:boolean}[]; characterIds?: string[];
+  hero: Character; poster: {background:string;accent:string;text:string;image:GachaImage|null};
 };
-
-/** One banner per collection that has one; scripts/generate-gacha.js works out each banner's odds. */
-export const BANNERS: Banner[] = COLLECTION_DATA.flatMap(({ id, banner }) =>
-    banner && banner.enabled !== false
-    ? [
-        {
-          id,
-          title: banner.title,
-          tagline: banner.tagline,
-          cost: banner.cost,
-          rates: banner.rates,
-          hero: CHARACTER_BY_ID[banner.hero],
-          poster: { ...banner.colors, image: banner.poster },
-        },
-      ]
-    : [],
-);
-
-export function rebuildBanners() {
-  BANNERS.splice(0, BANNERS.length, ...COLLECTION_DATA.flatMap(({ id, banner }) => banner && banner.enabled !== false ? [{ id, title: banner.title, tagline: banner.tagline, cost: banner.cost, rates: banner.rates, hero: CHARACTER_BY_ID[banner.hero], poster: { ...banner.colors, image: banner.poster } }] : []));
+let additionalBanners: CatalogBanner[] = [];
+function listBanners(): Banner[] {
+  return catalogBanners({schema:1,version:0,collections:COLLECTION_DATA,banners:additionalBanners})
+    .filter(b=>b.enabled!==false).map(b=>({id:b.id,title:b.title,tagline:b.tagline,cost:b.cost,rates:b.rates,
+      ...(b.characterIds ? {characterIds:b.characterIds} : {}),hero:CHARACTER_BY_ID[b.hero],poster:{...b.colors,image:b.poster}}));
 }
-
+export const BANNERS: Banner[] = listBanners();
+export function rebuildBanners(extra?: CatalogBanner[]) {
+  if (extra) additionalBanners = extra;
+  BANNERS.splice(0,BANNERS.length,...listBanners());
+}
 export function pickFromBanner(banner: Banner): Character {
-  return CHARACTER_BY_ID[pickByGrade(COLLECTION_DATA, banner.rates).id];
+  return CHARACTER_BY_ID[pickByGrade(COLLECTION_DATA,banner.rates,Math.random,banner.characterIds).id];
 }

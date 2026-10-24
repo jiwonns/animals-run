@@ -26,6 +26,7 @@ async function client(name){
   await assert.rejects(player.catalog.publishCatalog(clone(seed),player.user.uid));
   assert.equal(await admin.catalog.publishCatalog(clone(seed),admin.user.uid),1);
   const live=(await fire.getDoc(fire.doc(player.db,'gachaCatalog','live'))).data();assert.equal(live.version,1);
+  await assert.rejects(fire.updateDoc(fire.doc(admin.db,'gachaCatalog','live'),{version:2,editorVersion:fire.deleteField(),updatedBy:admin.user.uid,updatedAt:fire.serverTimestamp()}));
   await assert.rejects(fire.setDoc(fire.doc(player.db,'administrators',player.user.uid),{enabled:true}));
   await assert.rejects(fire.getDocs(fire.collection(player.db,'administrators')));
   await assert.rejects(fire.updateDoc(fire.doc(player.db,'gachaBanners',seed.collections.find(c=>c.banner).id),{cost1:0}));
@@ -40,7 +41,8 @@ async function client(name){
   await put(`users/${player.user.uid}`,{...profile,createdAt:'seed'});
   const chars=Object.fromEntries(changed.collections.flatMap(c=>c.characters.map(ch=>[ch.id,{...ch,grade:c.grade,collection:c.id}])));
   const before={characters:{},gradeCounts:{},drawCount:0};
-  const gacha=load('src/lib/gacha.ts',{'firebase/firestore':fire,'@/constants/banners':{BANNERS:[],pickFromBanner:()=>chars.new_event_animal},'@/constants/gacha.generated':{REWARDS:require('../shared/gacha/rewards.json')},'./firebase':{db:player.db},'./profile':{profileRef:uid=>fire.doc(player.db,'users',uid),drawLogRef:(uid,n)=>fire.doc(player.db,'users',uid,'draws',String(n))},'./remote-catalog':{currentCatalog:()=>null,loadRemoteCatalog:async()=>null},'./rewards':{gradeCountsAfter:(counts,picks)=>({...counts,R:(counts.R??0)+picks.length}),newRewards:()=>[]}});
+  let picked=chars.new_event_animal;
+  const gacha=load('src/lib/gacha.ts',{'firebase/firestore':fire,'@/constants/banners':{BANNERS:[],pickFromBanner:()=>picked},'@/constants/gacha.generated':{REWARDS:require('../shared/gacha/rewards.json')},'./firebase':{db:player.db},'./profile':{profileRef:uid=>fire.doc(player.db,'users',uid),drawLogRef:(uid,n)=>fire.doc(player.db,'users',uid,'draws',String(n))},'./remote-catalog':{currentCatalog:()=>null,loadRemoteCatalog:async()=>null},'./rewards':{gradeCountsAfter:(counts,picks)=>{const next={...counts};for(const id of picks){const grade=chars[id].grade;next[grade]=(next[grade]??0)+1;}return next;},newRewards:()=>[]}});
   const banner={id:'new_event',cost:{1:10,10:90},rates:[{collection:'new_event',rate:1,hidden:false}]};
   const outcome=await gacha.drawCharacters(player.user.uid,banner,10,'coins');assert.equal(outcome.results.length,10);
   let p=(await fire.getDoc(fire.doc(player.db,'users',player.user.uid))).data();assert.equal(p.coins,910);assert.equal(p.characters.new_event_animal,10);
@@ -69,5 +71,17 @@ async function client(name){
   assert.equal(firstPage.size,24);assert.equal(nextPage.size,10);
   assert.equal(new Set([...firstPage.docs,...nextPage.docs].map(d=>d.id)).size,34);
   console.log('PASS server-side history pagination: 24 + 10 records, identical timestamps, no duplicates or missing rows');
+  const selective=clone((await fire.getDoc(fire.doc(admin.db,'gachaCatalog','live'))).data());
+  selective.banners=[{...selective.collections.find(c=>c.id==='normal').banner,id:'selected_animals',hero:'mouse',characterIds:['mouse'],rates:[{collection:'normal',rate:1,hidden:false}]}];
+  assert.equal(await admin.catalog.publishCatalog(selective,admin.user.uid),3);
+  const saved=(await fire.getDoc(fire.doc(player.db,'gachaCatalog','live'))).data();
+  assert.deepEqual(saved.banners[0].characterIds,['mouse']);
+  assert.deepEqual((await fire.getDoc(fire.doc(player.db,'gachaBanners','selected_animals'))).data().characterIds,['mouse']);
+  const selection={id:'selected_animals',cost:{1:5,10:45},rates:[{collection:'normal',rate:1,hidden:false}],characterIds:['mouse']};
+  picked=chars.cow;await assert.rejects(gacha.drawCharacters(player.user.uid,selection,1,'coins'));
+  picked=chars.mouse;await gacha.drawCharacters(player.user.uid,selection,1,'coins');
+  saved.banners[0].enabled=false;assert.equal(await admin.catalog.publishCatalog(saved,admin.user.uid),4);
+  await assert.rejects(gacha.drawCharacters(player.user.uid,selection,1,'coins'));
+  console.log('PASS additional draw saved atomically; unselected same-grade animal and paused draw rejected; selected animal granted');
  }finally{await Promise.all([deleteApp(admin.app),deleteApp(player.app)]);}
 })().catch(e=>{console.error(e);process.exitCode=1;});

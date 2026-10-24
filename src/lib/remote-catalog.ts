@@ -13,7 +13,7 @@ export const currentCatalog = () => current;
 function install(catalog:Catalog) {
   validateCatalog(catalog);
   COLLECTION_DATA.splice(0,COLLECTION_DATA.length,...catalog.collections);
-  rebuildCharacters();rebuildBanners();rebuildCollectionMedals();current=catalog;
+  rebuildCharacters();rebuildBanners(catalog.banners ?? []);rebuildCollectionMedals();current=catalog;
 }
 export async function loadRemoteCatalog() {
   if (!current) {
@@ -49,7 +49,7 @@ export async function publishCatalog(catalog: Catalog, uid: string) {
     for (const b of compiled.banners) { tx.set(doc(db,'gachaBanners',b.id),{ ...b,version:version+1 }); writes++; }
     if (writes > 450) throw new Error('한 번에 추가하는 항목이 너무 많아요. 나눠서 추가해주세요.');
     const gradeIds=Object.fromEntries(['N','R','EP','U','L','E','H'].map(grade=>[grade,catalog.collections.filter(c=>c.grade===grade).flatMap(c=>c.characters.map(ch=>ch.id))]));
-    const next = { schema:1,version:version+1,collections:catalog.collections,gradeIds,updatedBy:uid,updatedAt:serverTimestamp() };
+    const next = { schema:1,editorVersion:2,version:version+1,collections:catalog.collections,banners:catalog.banners ?? [],gradeIds,updatedBy:uid,updatedAt:serverTimestamp() };
     tx.set(ref,next);
     tx.set(doc(db,'gachaCatalogVersions',String(version+1)),next);
     return version+1;

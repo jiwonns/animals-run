@@ -224,7 +224,7 @@ function BannerPage({ banner, width, height, children }: {
           title={`${banner.title} 확률`}
           rows={DRAW_GRADES.map(grade => {
             const entries=banner.rates.filter(r=>drawGrade(COLLECTIONS.find(c=>c.id===r.collection)!.grade)===grade);
-            const speciesCount=entries.reduce((n,r)=>n+charactersIn(r.collection).length,0);
+            const speciesCount=entries.reduce((n,r)=>n+charactersIn(r.collection).filter(ch=>!banner.characterIds || banner.characterIds.includes(ch.id)).length,0);
             return {
               key: grade,
               label: `${GRADES[grade].label} ${speciesCount}종`,

@@ -1,154 +1,138 @@
-import { Image } from '@/components/gacha-image';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { Image } from '@/components/gacha-image';
 import { PagedListSheet } from '@/components/paged-list-sheet';
 import { useColors } from '@/hooks/use-colors';
 import { COLLECTION_DATA } from '@/constants/gacha.generated';
-import type { CollectionData } from '@/constants/gacha-types';
+import type { CatalogBanner, GachaImage, Grade } from '@/constants/gacha-types';
 import { GRADES } from '@/constants/characters';
 import { useAdministrator, uploadGachaImage } from '@/lib/admin-catalog';
-import { publishCatalog, loadRemoteCatalog } from '@/lib/remote-catalog';
+import { loadRemoteCatalog, publishCatalog } from '@/lib/remote-catalog';
 import { useSession } from '@/providers/session-provider';
 import { useCatalog } from '@/providers/catalog-provider';
-import { assertCompatible, validateCatalog, type Catalog } from '../../shared/gacha/catalog';
-import seedCatalog from '../../shared/gacha/seed-catalog.json';
-import { DRAW_GRADES, drawGrade, gradeRates } from '../../shared/gacha/draw-pools';
+import { assertCompatible, catalogBanners, validateCatalog, type Catalog } from '../../shared/gacha/catalog';
+import { DRAW_GRADES } from '../../shared/gacha/draw-pools';
+import { bannerWeights, newBanner, putBanner, registerAnimal, selectAnimals, selectedAnimalIds, setGradeWeight, storedAnimals } from '@/lib/admin-catalog-editor';
 
-const clone = <T,>(v:T):T => JSON.parse(JSON.stringify(v));
-function AdminField({label,value,onChange,numeric,disabled}:{label:string;value:string;onChange:(text:string)=>void;numeric:boolean;disabled:boolean}) {
+function Field({label,value,onChange,numeric=false,disabled=false}:{label:string;value:string;onChange:(value:string)=>void;numeric?:boolean;disabled?:boolean}) {
   const c=useColors();
   const [editing,setEditing]=useState<string|null>(null);
-  return <View style={{gap:6}}><Text style={{color:c.secondary,fontSize:12}}>{label}</Text><TextInput accessibilityLabel={label} value={editing??value} onChangeText={text=>{setEditing(text);onChange(numeric?text.replace(',','.'):text);}} onBlur={()=>setEditing(null)} editable={!disabled} keyboardType={numeric?'decimal-pad':'default'} autoCapitalize="none" style={{color:c.text,backgroundColor:c.surface,borderColor:c.border,borderWidth:1,borderRadius:12,padding:12,minHeight:46}}/></View>;
+  return <View style={{gap:5}}><Text style={{color:c.secondary,fontSize:13}}>{label}</Text><TextInput accessibilityLabel={label} value={editing??value} editable={!disabled}
+    onChangeText={text=>{setEditing(text);onChange(numeric?text.replace(',','.'):text);}} onBlur={()=>setEditing(null)}
+    keyboardType={numeric?'decimal-pad':'default'} autoCapitalize="none" style={{minHeight:46,padding:12,borderRadius:12,borderWidth:1,borderColor:c.border,color:c.text,backgroundColor:c.surface}}/></View>;
 }
+function Grades({value,onChange,disabled=false}:{value:Grade;onChange:(grade:Grade)=>void;disabled?:boolean}) {
+  const c=useColors();
+  return <View style={{flexDirection:'row',flexWrap:'wrap',gap:7}}>{DRAW_GRADES.map(g=><Pressable key={g} accessibilityRole="button" accessibilityState={{selected:value===g}} disabled={disabled} onPress={()=>onChange(g)} style={{minHeight:44,paddingHorizontal:12,justifyContent:'center',borderRadius:12,backgroundColor:value===g?c.primary:c.surface}}><Text style={{fontWeight:'700',color:value===g?'#fff':c.text}}>{GRADES[g].label}</Text></Pressable>)}</View>;
+}
+const identifier=(prefix:string)=>`${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,8)}`;
+const clone=(value:Catalog):Catalog=>JSON.parse(JSON.stringify(value));
 export default function AdminScreen() {
-  const c = useColors();
-  const role = useAdministrator();
-  const { user } = useSession();
-  const { refresh } = useCatalog();
-  const [draft, setDraft] = useState<Catalog | null>(null);
-  const [baseline, setBaseline] = useState<Catalog | null>(null);
-  const [selected, setSelected] = useState('');
-  const [picker, setPicker] = useState(false);
-  const [animalPicker,setAnimalPicker] = useState(false);
-  const [animalId,setAnimalId] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState('');
-  const [review, setReview] = useState(false);
-  async function reload() {
-    const live = await loadRemoteCatalog();
-    const next:Catalog = live ?? { schema:1,version:0,collections:COLLECTION_DATA };
-    setBaseline(clone(next)); setDraft(clone(next)); setSelected(next.collections[0].id); setNotice(''); setReview(false);
+  const c=useColors(),role=useAdministrator();
+  const {user}=useSession();const {refresh}=useCatalog();
+  const [draft,setDraft]=useState<Catalog|null>(null),[baseline,setBaseline]=useState<Catalog|null>(null);
+  const [selected,setSelected]=useState(''),[grade,setGrade]=useState<Grade>('N'),[search,setSearch]=useState('');
+  const [picker,setPicker]=useState(false),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
+  const [settings,setSettings]=useState(false);
+  const [form,setForm]=useState<{name:string;grade:Grade;image:GachaImage|null}|null>(null);
+  const reload=useCallback(async()=>{
+    const live=await loadRemoteCatalog();const next=live??{schema:1 as const,version:0,collections:COLLECTION_DATA};
+    setBaseline(clone(next));setDraft(clone(next));
+    const list=catalogBanners(next);setSelected(prev=>list.some(b=>b.id===prev)?prev:(list.find(b=>b.enabled!==false)??list[0])?.id??'');
+  },[]);
+  useEffect(()=>{if(!role.allowed)return;const timer=setTimeout(()=>void reload().catch(e=>setNotice(e.message)),0);return()=>clearTimeout(timer);},[role.allowed,reload]);
+  const banners=draft?catalogBanners(draft):[];
+  const banner=banners.find(b=>b.id===selected);
+  const animals=useMemo(()=>draft?storedAnimals(draft):[],[draft]);
+  const selectedIds=draft&&banner?selectedAnimalIds(draft,banner):[];
+  const selectedSet=new Set(selectedIds);
+  const visible=animals.filter(ch=>ch.grade===grade && ch.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+  const eligible=visible.filter(ch=>ch.eligible);
+  const weights=draft&&banner?bannerWeights(draft,banner):{};
+  const chosenGrades=DRAW_GRADES.filter(g=>animals.some(ch=>ch.grade===g&&selectedSet.has(ch.id)));
+  function patch(update:Partial<CatalogBanner>) {if(draft&&banner){setDraft(putBanner(draft,{...banner,...update}));setNotice('');}}
+  function choose(ids:string[]) {if(draft&&banner){setDraft(putBanner(draft,selectAnimals(draft,banner,ids)));setNotice('');}}
+  async function save() {
+    if(!draft||!baseline||!user||busy)return;
+    setBusy(true);setNotice('');
+    try {validateCatalog(draft);assertCompatible(baseline,draft);await publishCatalog(draft,user.uid);await refresh();await reload();setNotice('저장 완료 · 선택한 동물과 확률이 뽑기에 적용됐어요.');}
+    catch(e){setNotice(e instanceof Error?e.message:'저장하지 못했어요. 다시 시도해주세요.');}finally{setBusy(false);}
   }
-  useEffect(() => { if (!role.allowed) return; const timer = setTimeout(() => void reload().catch(e => setNotice(e.message)), 0); return () => clearTimeout(timer); }, [role.allowed]);
-  const collection = draft?.collections.find(v => v.id === selected);
-  const editingAnimal = collection?.characters.find(ch=>ch.id===animalId) ?? collection?.characters[0];
-  function patchCollection(update:Partial<CollectionData>) {
-    setReview(false);
-    setDraft(prev => {
-      if (!prev) return prev;
-      const collections=prev.collections.map(v => v.id === selected ? { ...v,...update } : {...v});
-      for(const c of collections) if(c.banner) {
-        const weights=Object.fromEntries(DRAW_GRADES.map(g=>[g,c.banner!.rates.filter(r=>drawGrade(prev.collections.find(v=>v.id===r.collection)!.grade)===g).reduce((n,r)=>n+r.rate,0)]));
-        c.banner={...c.banner,rates:gradeRates(collections,weights,c.banner!.rates.map(r=>r.collection))};
-      }
-      return {...prev,collections};
-    });
+  async function upload(target:'animal'|'poster') {
+    setBusy(true);setNotice('');
+    try {const image=await uploadGachaImage();if(image){if(target==='animal')setForm(prev=>prev?{...prev,image}:prev);else patch({poster:image});}}
+    catch(e){setNotice(e instanceof Error?e.message:'이미지를 올리지 못했어요.');}finally{setBusy(false);}
   }
-  function patchBanner(update:Partial<NonNullable<CollectionData['banner']>>) { if (collection?.banner) patchCollection({ banner:{ ...collection.banner,...update } }); }
-  function applyRedesign() {
-    if (!draft) return;
-    const templates = seedCatalog.collections as CollectionData[];
-    const collections = templates.map(template => {
-      const old=draft.collections.find(c=>c.id===template.id);
-      return old ? {...old,acquisition:template.acquisition,banner:template.banner,characters:old.characters.map(ch=>({...ch,species:template.characters.find(v=>v.id===ch.id)?.species??ch.species}))} : clone(template);
-    });
-    collections.push(...draft.collections.filter(c=>!templates.some(t=>t.id===c.id)).map(c=>({...c,banner:null})));
-    for (const c of collections) if (c.banner) {
-      const weights=Object.fromEntries(DRAW_GRADES.map(g=>[g,c.banner!.rates.filter(r=>drawGrade(collections.find(v=>v.id===r.collection)!.grade)===g).reduce((n,r)=>n+r.rate,0)]));
-      c.banner={...c.banner,rates:gradeRates(collections,weights,c.banner!.rates.map(r=>r.collection))};
-    }
-    setDraft({...draft,collections});setSelected('normal');setReview(false);setNotice('등급 뽑기·진화 전용 개편 초안을 적용했어요. 검토 후 게시하면 반영돼요.');
-  }
-  async function upload(target:'poster' | 'animal', id?:string) {
-    if (busy || !collection) return;
-    setBusy(true);
+  async function saveAnimal() {
+    if(!form||!form.image||!draft||!baseline||!user||busy)return;
+    setBusy(true);setNotice('');
     try {
-      const image = await uploadGachaImage(); if (!image) return;
-      if (target === 'poster') patchBanner({ poster:image });
-      else patchCollection({ characters:collection.characters.map(ch => ch.id === id ? { ...ch,image,thumb:image } : ch) });
-    } catch (e) { setNotice((e as Error).message); }
-    finally { setBusy(false); }
+      const input={id:identifier('animal'),name:form.name,grade:form.grade,image:form.image};
+      const nextBase=registerAnimal(baseline,input),nextDraft=registerAnimal(draft,input);
+      validateCatalog(nextBase);assertCompatible(baseline,nextBase);
+      const version=await publishCatalog(nextBase,user.uid);
+      const active=catalogBanners(nextDraft).find(b=>b.id===selected);
+      const edited=active?putBanner(nextDraft,selectAnimals(nextDraft,active,[...selectedAnimalIds(nextDraft,active),input.id])):nextDraft;
+      setBaseline({...nextBase,version});setDraft({...edited,version});setGrade(form.grade);setSearch(input.name);setForm(null);await refresh();
+      setNotice('동물을 서버에 저장했어요. 아래 저장하고 적용을 누르면 이 뽑기에 추가돼요.');
+    } catch(e){setNotice(e instanceof Error?e.message:'동물을 저장하지 못했어요.');}finally{setBusy(false);}
   }
-  async function publish() {
-    if (!draft || busy) return;
-    setBusy(true); setNotice('');
-    try {
-      validateCatalog(draft); assertCompatible(baseline,draft);
-      if (!user) return;
-      const version = await publishCatalog(draft, user.uid);
-      await refresh(); await reload(); setNotice(`버전 ${version} 게시 완료 · 앱을 다시 열면 적용돼요.`);
-    } catch (e) { setNotice((e as Error).message); }
-    finally { setBusy(false); }
-  }
-  const button = (label:string, onPress:()=>void, primary=false) => <Pressable accessibilityRole="button" disabled={busy} onPress={onPress} style={{ minHeight:46, justifyContent:'center', alignItems:'center', paddingHorizontal:16, borderRadius:14, backgroundColor:primary?c.primary:c.surface, opacity:busy?0.5:1 }}><Text style={{ color:primary?'#fff':c.primary,fontWeight:'800' }}>{label}</Text></Pressable>;
-  const field = (label:string, value:string, change:(v:string)=>void, numeric=false) => <AdminField key={`${selected}:${editingAnimal?.id}:${label}`} label={label} value={value} onChange={change} disabled={busy} numeric={numeric}/>;
-  function addCollection() {
-    if (!draft) return;
-    const id = `event_${draft.collections.length + 1}`;
-    const first = draft.collections[0].characters[0];
-    const next:CollectionData = { id,name:'새 동물 그룹',grade:'N',base:false,hidden:false,acquisition:'draw',characters:[{ ...first,id:`${id}_animal`,name:'새 동물',species:`${id}_species` }],banner:null };
-    const collections=[...draft.collections.map(c=>({...c})),next];
-    for (const c of collections) if(c.banner) { const weights=Object.fromEntries(DRAW_GRADES.map(g=>[g,c.banner!.rates.filter(r=>drawGrade(collections.find(v=>v.id===r.collection)!.grade)===g).reduce((n,r)=>n+r.rate,0)]));c.banner={...c.banner,rates:gradeRates(collections,weights,c.banner!.rates.map(r=>r.collection))}; }
-    setDraft({ ...draft,collections });setSelected(id);setReview(false);
-  }
-  return <View style={{ flex:1,backgroundColor:c.background }}>
-    <Stack.Screen options={{ title:'뽑기 관리',headerShown:true,headerTintColor:c.text,headerStyle:{ backgroundColor:c.background } }} />
-    {!role.allowed ? <Text style={{ color:c.secondary,padding:24 }}>{role.loading?'관리자 권한을 확인하고 있어요…':'관리자 계정만 접근할 수 있어요.'}</Text> : <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding:20,gap:18,maxWidth:900,width:'100%',alignSelf:'center',paddingBottom:50 }}>
-      <Text style={{ color:c.text,fontSize:24,fontWeight:'900' }}>뽑기 운영</Text>
-      <Text style={{ color:c.secondary,lineHeight:21 }}>등급 확률을 먼저 정하고, 선택된 등급 안의 동물을 동일한 확률로 추첨해요. 진화 전용 동물은 뽑기에서 제외돼요.</Text>
-      {button('동물·등급 개편 초안 적용',applyRedesign)}
-      <Text style={{ color:c.secondary }}>현재 게시 버전 {draft?.version ?? 0}</Text>
-      {notice !== '' && <Text accessibilityRole="alert" style={{ color:c.primary,lineHeight:22 }}>{notice}</Text>}
-      <View style={{ flexDirection:'row',gap:10 }}>{button('동물 관리 그룹 선택',()=>setPicker(true))}{button('동물 그룹 추가',addCollection)}</View>
-      {picker && draft && <PagedListSheet title="컬렉션 선택" data={draft.collections} keyExtractor={v=>v.id} onClose={()=>setPicker(false)} renderItem={({ item })=><Pressable accessibilityRole="button" onPress={()=>{setSelected(item.id);setPicker(false);}} style={{ minHeight:52,justifyContent:'center' }}><Text style={{ color:c.text }}>{item.name} · {item.characters.length}종</Text></Pressable>} />}
-      {collection && <>
-        <Text style={{ color:c.text,fontSize:20,fontWeight:'800' }}>{collection.name}</Text>
-        <Text style={{ color:c.secondary,fontSize:12 }}>고정 ID: {collection.id}</Text>
-        {field('관리 그룹 이름',collection.name,name=>patchCollection({name}))}
-        {!baseline?.collections.some(v=>v.id===collection.id) && <View style={{ flexDirection:'row',gap:8,flexWrap:'wrap' }}>{DRAW_GRADES.map(grade=><Pressable key={grade} onPress={()=>patchCollection({grade})} style={{ padding:10,borderRadius:10,backgroundColor:collection.grade===grade?c.primary:c.surface }}><Text style={{ color:collection.grade===grade?'#fff':c.text }}>{GRADES[grade].label}</Text></Pressable>)}</View>}
-        {collection.banner ? <>
-          <View style={{ flexDirection:'row',alignItems:'center',justifyContent:'space-between' }}><Text style={{ color:c.text,fontWeight:'800' }}>판매 중</Text><Switch value={collection.banner.enabled!==false} onValueChange={enabled=>patchBanner({enabled})} disabled={busy} /></View>
-          {field('뽑기 제목',collection.banner.title,title=>patchBanner({title}))}
-          {field('소개 문구',collection.banner.tagline,tagline=>patchBanner({tagline}))}
-          {field('1회 가격 (코인)',String(collection.banner.cost[1]),v=>patchBanner({cost:{...collection.banner!.cost,1:Number(v)}}),true)}
-          {field('10회 가격 (코인)',String(collection.banner.cost[10]),v=>patchBanner({cost:{...collection.banner!.cost,10:Number(v)}}),true)}
-          {collection.banner.poster && <Image source={collection.banner.poster} style={{ height:180,width:'100%' }} contentFit="contain" />}
-          {button('포스터 이미지 올리기',()=>void upload('poster'))}
-          <Text style={{ color:c.text,fontWeight:'800',fontSize:18 }}>등급별 확률</Text>
-          <Text style={{ color:c.primary }}>합계 {(collection.banner.rates.reduce((n,r)=>n+r.rate,0)*100).toFixed(4)}%</Text>
-          {DRAW_GRADES.map(grade=> {
-            const weights=Object.fromEntries(DRAW_GRADES.map(g=>[g,collection.banner!.rates.filter(r=>drawGrade(draft!.collections.find(v=>v.id===r.collection)!.grade)===g).reduce((n,r)=>n+r.rate,0)]));
-            return field(`${GRADES[grade].label} 확률 (%)`,String(Number((weights[grade]*100).toFixed(6))),value=>patchBanner({rates:gradeRates(draft!.collections,{...weights,[grade]:Number(value)/100},collection.banner!.rates.map(r=>r.collection))}),true);
-          })}
-        </> : <Text style={{ color:c.secondary }}>이 컬렉션은 단독 뽑기가 없는 획득 풀입니다.</Text>}
-        <Text style={{ color:c.text,fontWeight:'800',fontSize:18 }}>동물 {collection.characters.length}종</Text>
-        <Text style={{color:c.secondary}}>획득 경로: {collection.acquisition==='evolution'?'진화 전용':collection.acquisition==='breeding'?'교배 전용':'뽑기·기존 제작'}</Text>
-        {button('편집할 동물 선택',()=>setAnimalPicker(true))}
-        {animalPicker && <PagedListSheet title="편집할 동물" data={collection.characters} keyExtractor={ch=>ch.id} onClose={()=>setAnimalPicker(false)} renderItem={({item})=><Pressable accessibilityRole="button" onPress={()=>{setAnimalId(item.id);setAnimalPicker(false);}} style={{flexDirection:'row',gap:12,alignItems:'center',minHeight:64}}><Image source={item.thumb} style={{width:52,height:52}} contentFit="contain"/><Text style={{color:c.text}}>{item.name}</Text></Pressable>}/>}
-        {editingAnimal && [editingAnimal].map(ch=><View key={ch.id} style={{ gap:8,borderWidth:1,borderColor:c.border,padding:12,borderRadius:16 }}>
-          <Image source={ch.thumb} style={{ width:88,height:88 }} contentFit="contain" />
-          <Text style={{ color:c.secondary,fontSize:11 }}>{ch.id}</Text>
-          {field('동물 이름',ch.name,name=>patchCollection({characters:collection.characters.map(v=>v.id===ch.id?{...v,name}:v)}))}
-          {field('동물 종 ID (mouse, cow 등)',ch.species??'',species=>patchCollection({characters:collection.characters.map(v=>v.id===ch.id?{...v,species}:v)}))}
-          {button('동물 이미지 올리기',()=>void upload('animal',ch.id))}
-          {field('이미지 주소 (HTTPS 또는 업로드한 이미지)',typeof ch.image==='number'?'':ch.image.uri,uri=>patchCollection({characters:collection.characters.map(v=>v.id===ch.id?{...v,image:{uri},thumb:{uri}}:v)}))}
-        </View>)}
-        {button('동물 추가',()=>{ const id=`${collection.id}_animal_${collection.characters.length+1}`;patchCollection({characters:[...collection.characters,{...collection.characters[0],id,name:'새 동물'}]}); })}
-      </>}
-      {button('변경 내용 검토',()=>{try{validateCatalog(draft);assertCompatible(baseline,draft!);setReview(true);setNotice('확률·비용·이미지 주소·기존 데이터 호환성 검사 통과');}catch(e){setNotice((e as Error).message);}})}
-      {review && <View style={{ padding:16,borderRadius:16,backgroundColor:c.surface,gap:12 }}><Text style={{ color:c.text,lineHeight:22 }}>게시하면 버전 {(draft?.version??0)+1}로 반영됩니다. 활성 뽑기 {draft?.collections.filter(v=>v.banner&&v.banner.enabled!==false).length}개 · 전체 동물 {draft?.collections.reduce((n,v)=>n+v.characters.length,0)}종</Text>{button(busy?'게시 중…':'검토한 변경 게시',()=>void publish(),true)}</View>}
-      {button('게시된 내용으로 다시 불러오기',()=>Alert.alert('변경 내용 되돌리기','저장하지 않은 편집 내용을 버리고 최신 게시본을 불러올까요?',[{text:'취소',style:'cancel'},{text:'다시 불러오기',onPress:()=>void reload().catch(e=>setNotice(e.message))}]))}
-    </ScrollView>}
+  const button=(label:string,onPress:()=>void,primary=false,disabled=false)=><Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={busy||disabled} style={{minHeight:46,justifyContent:'center',alignItems:'center',paddingHorizontal:14,borderRadius:12,backgroundColor:primary?c.primary:c.surface,opacity:busy||disabled?0.45:1}}><Text style={{color:primary?'#fff':c.primary,fontWeight:'800'}}>{label}</Text></Pressable>;
+  const field=(label:string,value:string,onChange:(value:string)=>void,numeric=false)=><Field key={`${selected}:${label}`} label={label} value={value} onChange={onChange} numeric={numeric} disabled={busy}/>;
+  const noticeView=notice?<Text accessibilityRole="alert" style={{color:c.primary,lineHeight:22}}>{notice}</Text>:null;
+  const header=<View style={{gap:16,paddingBottom:16}}>
+    <Text style={{fontSize:24,fontWeight:'900',color:c.text}}>뽑기 관리</Text>
+    <Text style={{color:c.secondary,lineHeight:22}}>뽑기와 등급을 고른 뒤 서버에 저장된 동물을 선택하세요. 없는 동물은 바로 등록할 수 있어요.</Text>
+    {noticeView}
+    <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>{button(banner?.title??'뽑기 선택',()=>setPicker(true))}{button('새 뽑기 만들기',()=>{if(!draft)return;const next=newBanner(draft,identifier('draw'));setDraft(putBanner(draft,next));setSelected(next.id);setSettings(true);setNotice('동물을 선택하고 저장하면 새 뽑기가 만들어져요.');})}</View>
+    {banner&&<>
+      {button(settings?'설정 접기':'이름·가격·확률 설정',()=>setSettings(prev=>!prev))}
+      {settings&&<View style={{gap:14,padding:12,borderWidth:1,borderColor:c.border,borderRadius:12}}>
+      {field('뽑기 이름',banner.title,title=>patch({title}))}
+      {field('소개',banner.tagline,tagline=>patch({tagline}))}
+      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><Text style={{color:c.text,fontWeight:'700'}}>판매 중</Text><Switch accessibilityLabel="판매 중" value={banner.enabled!==false} disabled={busy} onValueChange={enabled=>patch({enabled})}/></View>
+      {field('1회 가격',String(banner.cost[1]),value=>patch({cost:{...banner.cost,1:Number(value)}}),true)}
+      {field('10회 가격',String(banner.cost[10]),value=>patch({cost:{...banner.cost,10:Number(value)}}),true)}
+      {banner.poster&&<Image source={banner.poster} style={{width:'100%',height:150}} contentFit="contain"/>}
+      {button('뽑기 포스터 변경',()=>void upload('poster'))}
+      <Text style={{fontSize:19,fontWeight:'800',color:c.text}}>등급별 확률</Text>
+      <Text style={{color:c.primary}}>합계 {(banner.rates.reduce((n,r)=>n+r.rate,0)*100).toFixed(4)}% · 같은 등급 안에서는 선택한 동물이 균등하게 나와요.</Text>
+      {chosenGrades.map(g=>field(`${GRADES[g].label} 확률 (%)`,String(Number(((weights[g]??0)*100).toFixed(6))),value=>{if(draft)setDraft(putBanner(draft,setGradeWeight(draft,banner,g,Number(value)/100)));},true))}
+      </View>}
+      <Text style={{fontSize:19,fontWeight:'800',color:c.text}}>1. 등급 선택</Text>
+      <Grades value={grade} onChange={g=>{setGrade(g);setSearch('');}} disabled={busy}/>
+      <Text style={{fontSize:19,fontWeight:'800',color:c.text}}>2. 서버 동물 선택</Text>
+      {field('동물 이름 검색',search,setSearch)}
+      <Text style={{color:c.secondary,lineHeight:22}}>선택 {selectedIds.length}종 · 진화 전용·아기 동물은 뽑기에 넣을 수 없어요.</Text>
+      <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
+        {button('이 등급 전체 선택',()=>choose([...selectedIds,...eligible.map(ch=>ch.id)]),false,!eligible.length)}
+        {button('이 등급 선택 해제',()=>choose(selectedIds.filter(id=>!animals.some(ch=>ch.id===id&&ch.grade===grade))))}
+        {button('새 동물 등록',()=>setForm({name:'',grade,image:null}))}
+      </View>
+    </>}
+    {!draft&&button('서버 동물 다시 불러오기',()=>void reload().catch(e=>setNotice(e.message)))}
+  </View>;
+  return <View style={{flex:1,backgroundColor:c.background}}>
+    <Stack.Screen options={{title:'뽑기 관리',headerShown:true,headerTintColor:c.text,headerStyle:{backgroundColor:c.background}}}/>
+    {!role.allowed?<Text style={{padding:24,color:c.secondary}}>{role.loading?'관리자 권한을 확인하고 있어요…':'관리자 계정만 접근할 수 있어요.'}</Text>:<>
+      <FlatList data={banner?visible:[]} keyExtractor={ch=>ch.id} numColumns={2} extraData={selectedIds.join(',')} contentContainerStyle={{padding:16,gap:12,maxWidth:900,width:'100%',alignSelf:'center',paddingBottom:24}} columnWrapperStyle={{gap:12}} initialNumToRender={12} maxToRenderPerBatch={12} windowSize={5} keyboardShouldPersistTaps="handled" ListHeaderComponent={header}
+        ListEmptyComponent={<Text style={{padding:20,color:c.secondary}}>{draft?'이 등급에는 동물이 없어요. 새 동물을 등록해보세요.':'서버 동물을 불러오는 중이에요.'}</Text>}
+        renderItem={({item})=><Pressable accessibilityRole="checkbox" accessibilityLabel={item.name} accessibilityState={{checked:selectedSet.has(item.id),disabled:!item.eligible||busy}} disabled={!item.eligible||busy} onPress={()=>choose(selectedSet.has(item.id)?selectedIds.filter(id=>id!==item.id):[...selectedIds,item.id])} style={{flex:1,maxWidth:'50%',minHeight:145,padding:12,borderRadius:14,borderWidth:2,borderColor:selectedSet.has(item.id)?c.primary:c.border,backgroundColor:c.surface,alignItems:'center',gap:7,opacity:item.eligible?1:0.5}}>
+          <Image source={item.thumb} style={{width:75,height:75}} contentFit="contain"/><Text style={{color:c.text,fontWeight:'700'}} numberOfLines={2}>{item.name}</Text><Text style={{color:c.secondary,fontSize:12}}>{!item.eligible?'진화·교배 전용':selectedSet.has(item.id)?'✓ 선택됨':'선택하기'}</Text>
+        </Pressable>}/>
+      <View style={{padding:12,borderTopWidth:1,borderColor:c.border,gap:8}}><Text style={{color:c.secondary}}>선택 {selectedIds.length}종 · 확률 합계 {((banner?.rates.reduce((n,r)=>n+r.rate,0)??0)*100).toFixed(2)}%</Text>{button(busy?'저장 중…':'저장하고 적용',()=>void save(),true,!draft)}</View>
+    </>}
+    {picker&&draft&&<PagedListSheet title="뽑기 선택" data={banners} keyExtractor={b=>b.id} onClose={()=>setPicker(false)} renderItem={({item})=><Pressable accessibilityRole="button" onPress={()=>{setSelected(item.id);setPicker(false);}} style={{minHeight:52,justifyContent:'center'}}><Text style={{color:c.text}}>{item.title} · {item.enabled===false?'판매 중지':'판매 중'}</Text></Pressable>}/>}
+    {form&&<Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>{if(!busy)setForm(null);}}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:24,paddingTop:48,gap:18,maxWidth:700,width:'100%',alignSelf:'center'}} style={{backgroundColor:c.background}}>
+      <Text style={{fontSize:23,fontWeight:'800',color:c.text}}>새 동물 등록</Text>{noticeView}
+      <Grades value={form.grade} onChange={g=>setForm({...form,grade:g})} disabled={busy}/>
+      <Field label="새 동물 이름" value={form.name} onChange={name=>setForm({...form,name})} disabled={busy}/>
+      {form.image&&<Image source={form.image} style={{width:160,height:160,alignSelf:'center'}} contentFit="contain"/>}
+      {button('동물 이미지 올리기',()=>void upload('animal'))}
+      <Field label="이미지 주소 (선택)" value={form.image&&typeof form.image==='object'&&!form.image.uri.startsWith('gacha-image:')?form.image.uri:''} onChange={uri=>setForm({...form,image:uri?{uri}:null})} disabled={busy}/>
+      <Text style={{color:c.secondary,lineHeight:22}}>이름·등급·이미지를 서버에 저장해요. 저장한 동물은 다음에도 등급 목록에서 고를 수 있어요.</Text>
+      {button('동물 저장',()=>void saveAnimal(),true,!form.image||!form.name.trim())}{button('닫기',()=>setForm(null))}
+    </ScrollView></Modal>}
   </View>;
 }
