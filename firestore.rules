@@ -453,7 +453,7 @@ service cloud.firestore {
     function auctionTrade(data) {
       return data.keys().hasOnly(['id', 'action', 'character', 'price'])
         && data.id is string && data.id.size() > 0 && data.id.size() <= 128
-        && data.action in ['list', 'cancel', 'buy', 'sell', 'bid', 'cancelBid', 'fill', 'filled']
+        && data.action in ['list', 'cancel', 'buy', 'sell', 'bid', 'cancelBid', 'fill', 'filled', 'editList', 'editBid']
         && data.character is string && gradeOf(data.character) in ['N', 'R', 'EP', 'U', 'L', 'E', 'H']
         && data.price is int && data.price > 0;
     }
@@ -589,6 +589,34 @@ service cloud.firestore {
         && seller.lastAuction.action == 'fill' && seller.lastAuction.id == trade.id
         && seller.lastAuction.character == trade.character && seller.lastAuction.price == trade.price;
     }
+    function isAuctionEditList(uid) {
+      let before = auctionUserBefore(uid);
+      let after = auctionUserAfter(uid);
+      let trade = after.lastAuction;
+      let listing = get(auctionListingPath(trade.id)).data;
+      let next = getAfter(auctionListingPath(trade.id)).data;
+      return isOwner(uid) && auctionTrade(trade) && trade.action == 'editList'
+        && after.diff(before).affectedKeys().hasOnly(['lastAuction'])
+        && listing.seller == uid && listing.character == trade.character
+        && next.diff(listing).affectedKeys().hasOnly(['price'])
+        && next.price == trade.price && next.price != listing.price
+        && next.price >= auctionMinOf(trade.character) && next.price <= auctionMaxOf(trade.character);
+    }
+    function isAuctionEditBid(uid) {
+      let before = auctionUserBefore(uid);
+      let after = auctionUserAfter(uid);
+      let trade = after.lastAuction;
+      let bid = get(auctionBidPath(trade.id)).data;
+      let next = getAfter(auctionBidPath(trade.id)).data;
+      return isOwner(uid) && auctionTrade(trade) && trade.action == 'editBid'
+        && after.diff(before).affectedKeys().hasOnly(['coins', 'lastAuction'])
+        && bid.buyer == uid && bid.character == trade.character
+        && next.diff(bid).affectedKeys().hasOnly(['price'])
+        && next.price == trade.price && next.price != bid.price
+        && next.price >= auctionMinOf(trade.character) && next.price <= auctionMaxOf(trade.character)
+        && before.coins + bid.price >= trade.price
+        && after.coins == before.coins + bid.price - trade.price;
+    }
     function isAuctionProfile(uid) {
       let action = auctionUserAfter(uid).lastAuction.action;
       return action == 'list' ? isAuctionList(uid)
@@ -596,6 +624,8 @@ service cloud.firestore {
         : action == 'buy' ? isAuctionBuy(uid)
         : action == 'bid' ? isAuctionBid(uid)
         : action == 'cancelBid' ? isAuctionCancelBid(uid)
+        : action == 'editList' ? isAuctionEditList(uid)
+        : action == 'editBid' ? isAuctionEditBid(uid)
         : action == 'fill' && isAuctionFill(uid);
     }
     function isAuctionSell(uid) {
@@ -618,6 +648,8 @@ service cloud.firestore {
         && request.resource.data.seller == request.auth.uid
         && request.resource.data.sellerName == auctionUserAfter(request.auth.uid).get('nickname', auctionUserAfter(request.auth.uid).username)
         && request.resource.data.createdAt == request.time;
+      allow update: if isSignedIn() && isAuctionEditList(request.auth.uid)
+        && request.resource.data.keys().hasOnly(['seller', 'sellerName', 'character', 'price', 'createdAt']);
       allow delete: if isSignedIn() && (
         isAuctionCancel(request.auth.uid)
         || isAuctionBuy(request.auth.uid)
@@ -631,6 +663,8 @@ service cloud.firestore {
         && request.resource.data.buyer == request.auth.uid
         && request.resource.data.buyerName == auctionUserAfter(request.auth.uid).get('nickname', auctionUserAfter(request.auth.uid).username)
         && request.resource.data.createdAt == request.time;
+      allow update: if isSignedIn() && isAuctionEditBid(request.auth.uid)
+        && request.resource.data.keys().hasOnly(['buyer', 'buyerName', 'character', 'price', 'createdAt']);
       allow delete: if isSignedIn() && (
         isAuctionCancelBid(request.auth.uid)
         || isAuctionFill(request.auth.uid)

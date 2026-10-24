@@ -32,15 +32,11 @@ import { useSession } from '@/providers/session-provider';
 
 type Hatching = { key: number; egg: Egg; saved: boolean; isNew: boolean };
 
-/** Shortcuts to other tabs; navigate() switches the tab bar selection too. Null href is not built yet. */
+/** Play modes that are not already on the tab bar (보관함·뽑기·지도·도감). */
 const SHORTCUTS: { label: string; icon: keyof typeof ICONS; tint: string; href: Href | null }[] = [
   { label: '경매장', icon: 'auction', tint: '#0EA5E9', href: '/auction' as Href },
   { label: '결투장', icon: 'trophy', tint: '#8B5CF6', href: '/arena' as Href },
   { label: '커뮤니티', icon: 'community', tint: '#6366F1', href: '/community' },
-  { label: '지도', icon: 'map', tint: '#10B981', href: '/manage' },
-  { label: '뽑기', icon: 'gift', tint: '#FF5A1F', href: '/gacha' },
-  { label: '도감', icon: 'dex', tint: '#3B82F6', href: '/collection/dex' },
-  { label: '보관함', icon: 'archive', tint: '#F59E0B', href: '/collection' },
   { label: '친구', icon: 'people', tint: '#10B981', href: '/friends' },
 ];
 
@@ -111,7 +107,7 @@ export default function HomeScreen() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}>
       <Stack.Screen options={{ headerRight: () => <NotificationBell /> }} />
-      <View style={styles.shortcuts}>
+      <View style={[styles.shortcutCard, { backgroundColor: colors.surface }]}>
         {SHORTCUTS.map((item) => (
           <Pressable
             key={item.label}
@@ -286,6 +282,7 @@ export default function HomeScreen() {
         )}
       </View>
 
+      <Text style={[styles.section, { color: colors.secondary }]}>만들기</Text>
       <View style={styles.tiles}>
         {(
           [
@@ -343,9 +340,17 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 16,
   },
-  shortcuts: {
+  shortcutCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+  },
+  section: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginTop: 4,
   },
   shortcut: {
     flex: 1,

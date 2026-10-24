@@ -18,7 +18,7 @@ export type Profile = {
   /** Receipt checked against the listing and 시세 write by Firestore rules. */
   lastAuction?: {
     id: string;
-    action: 'list' | 'cancel' | 'buy' | 'sell' | 'bid' | 'cancelBid' | 'fill' | 'filled';
+    action: 'list' | 'cancel' | 'buy' | 'sell' | 'bid' | 'cancelBid' | 'fill' | 'filled' | 'editList' | 'editBid';
     character: CharacterId;
     price: number;
   };

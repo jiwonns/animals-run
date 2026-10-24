@@ -4,6 +4,7 @@ import { Image } from '@/components/gacha-image';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuctionBookRow } from '@/components/auction-book-row';
 import { AuctionOfferSheet, type AuctionOfferMode } from '@/components/auction-offer-sheet';
@@ -27,8 +28,8 @@ import { AUCTION_BID_COLOR, AUCTION_SELL_COLOR, bidsFor, listingsFor } from '@/l
 import { availableCopies } from '@/lib/inventory';
 import { useSession } from '@/providers/session-provider';
 
+type BookTab = 'sell' | 'buy';
 type BookItem =
-  | { type: 'section'; key: string; label: string; tint: string }
   | { type: 'empty'; key: string; label: string }
   | { type: 'sell'; key: string; row: ReturnType<typeof listingsFor>[number] }
   | { type: 'buy'; key: string; row: ReturnType<typeof bidsFor>[number] };
@@ -36,13 +37,16 @@ type BookItem =
 export default function AuctionAnimalScreen() {
   useCatalog();
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { user, profile } = useSession();
   const { id, offer } = useLocalSearchParams<{ id?: string; offer?: string }>();
   const character = id && CHARACTER_BY_ID[id] ? CHARACTER_BY_ID[id] : null;
   const { listings, bids, quotes, failed } = useAuction();
   useAuctionBandSweep(user?.uid, listings, bids, quotes);
   useAuctionQuoteSettle(quotes);
+  const [tab, setTab] = useState<BookTab>(offer === 'buy' ? 'buy' : 'sell');
   const [sheetMode, setSheetMode] = useState<AuctionOfferMode | null>(offer === 'buy' ? 'buy' : offer === 'sell' ? 'sell' : null);
+  const [editing, setEditing] = useState<{ id: string; price: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const quote = character ? quotes[character.id] : undefined;
@@ -54,24 +58,36 @@ export default function AuctionAnimalScreen() {
   const owned = character ? (profile?.characters[character.id] ?? 0) : 0;
   const extra = character ? availableCopies(profile, character.id) : 0;
   const ready = listings !== null && bids !== null;
+  const tint = tab === 'sell' ? AUCTION_SELL_COLOR : AUCTION_BID_COLOR;
 
   const items = useMemo<BookItem[]>(() => {
     if (!character) return [];
-    return [
-      { type: 'section', key: 'sell-h', label: `팔아요 ${sells.length}`, tint: AUCTION_SELL_COLOR },
-      ...(sells.length
+    if (tab === 'sell') {
+      return sells.length
         ? sells.map((row) => ({ type: 'sell' as const, key: `sell-${row.id}`, row }))
-        : [{ type: 'empty' as const, key: 'sell-empty', label: '아직 올라온 판매가 없어요.' }]),
-      { type: 'section', key: 'buy-h', label: `살게요 ${buys.length}`, tint: AUCTION_BID_COLOR },
-      ...(buys.length
-        ? buys.map((row) => ({ type: 'buy' as const, key: `buy-${row.id}`, row }))
-        : [{ type: 'empty' as const, key: 'buy-empty', label: '아직 걸어 둔 구매희망이 없어요.' }]),
-    ];
-  }, [buys, character, sells]);
+        : [{ type: 'empty', key: 'sell-empty', label: '아직 올라온 판매가 없어요.' }];
+    }
+    return buys.length
+      ? buys.map((row) => ({ type: 'buy' as const, key: `buy-${row.id}`, row }))
+      : [{ type: 'empty', key: 'buy-empty', label: '아직 걸어 둔 구매희망이 없어요.' }];
+  }, [buys, character, sells, tab]);
 
   function closeSheet() {
     setSheetMode(null);
+    setEditing(null);
     if (offer) router.setParams({ offer: undefined });
+  }
+
+  function openCreate(mode: AuctionOfferMode) {
+    setEditing(null);
+    setTab(mode);
+    setSheetMode(mode);
+  }
+
+  function openEdit(mode: AuctionOfferMode, listingId: string, price: number) {
+    setEditing({ id: listingId, price });
+    setTab(mode);
+    setSheetMode(mode);
   }
 
   async function run(label: string, task: () => Promise<unknown>, ok: string) {
@@ -173,96 +189,119 @@ export default function AuctionAnimalScreen() {
       ) : !ready ? (
         <RunningLoader label="시세를 열고 있어요" />
       ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={styles.list}
-          ListHeaderComponent={
-            <View style={styles.header}>
-              <View style={[styles.info, { backgroundColor: colors.surface }]}>
-                <Image source={character.image} style={styles.hero} contentFit="contain" />
-                <View style={styles.infoBody}>
-                  <View style={styles.titleRow}>
-                    <Text style={[styles.name, { color: colors.text }]}>{character.name}</Text>
-                    <GradeBadge grade={character.grade} />
-                  </View>
-                  <Text style={[styles.meta, { color: colors.secondary }]}>
-                    {collection?.name ?? character.collection}
-                    {owned ? ` · 보유 ${owned}마리` : ' · 미보유'}
-                    {extra ? ` · 등록 가능 ${extra}마리` : ''}
-                  </Text>
-                  <Text style={[styles.quote, { color: colors.text }]}>시세 {band.quote.toLocaleString()}코인</Text>
-                  <Text style={[styles.meta, { color: colors.secondary }]}>
-                    하한 {band.min.toLocaleString()} · 상한 {band.max.toLocaleString()}
-                    {volume > 0 ? ` · 지난 ${volume.toLocaleString()}건` : ''}
-                  </Text>
-                </View>
+        <>
+          <View style={[styles.info, { backgroundColor: colors.surface }]}>
+            <Image source={character.image} style={styles.hero} contentFit="contain" />
+            <View style={styles.infoBody}>
+              <View style={styles.titleRow}>
+                <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+                  {character.name}
+                </Text>
+                <GradeBadge grade={character.grade} />
               </View>
-              <View style={styles.actions}>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setSheetMode('sell')}
-                  style={[styles.offer, { backgroundColor: `${AUCTION_SELL_COLOR}18`, borderColor: AUCTION_SELL_COLOR }]}>
-                  <Text style={[styles.offerLabel, { color: AUCTION_SELL_COLOR }]}>팔기</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setSheetMode('buy')}
-                  style={[styles.offer, { backgroundColor: `${AUCTION_BID_COLOR}18`, borderColor: AUCTION_BID_COLOR }]}>
-                  <Text style={[styles.offerLabel, { color: AUCTION_BID_COLOR }]}>구매희망</Text>
-                </Pressable>
-              </View>
-              <Text style={[styles.legend, { color: colors.secondary }]}>
-                파란 칸은 사람들이 올린 판매, 노란 칸은 구매희망이에요. 살 때는 싼 것부터, 팔 때는 비싼 것부터 체결돼요.
+              <Text style={[styles.quote, { color: colors.text }]}>{band.quote.toLocaleString()}코인</Text>
+              <Text style={[styles.meta, { color: colors.secondary }]}>
+                {owned ? `보유 ${owned}마리` : '미보유'}
+                {extra ? ` · 등록 ${extra}` : ''}
+                {volume > 0 ? ` · 지난 ${volume.toLocaleString()}건` : ''}
+              </Text>
+              <Text style={[styles.meta, { color: colors.secondary }]}>
+                {collection?.name ?? character.collection} · {band.min.toLocaleString()}~{band.max.toLocaleString()}
               </Text>
             </View>
-          }
-          renderItem={({ item }) => {
-            if (item.type === 'section') {
-              return <Text style={[styles.section, { color: item.tint }]}>{item.label}</Text>;
-            }
-            if (item.type === 'empty') {
-              return <Text style={[styles.emptyRow, { color: colors.secondary }]}>{item.label}</Text>;
-            }
-            if (item.type === 'sell') {
+          </View>
+          <View style={[styles.tabs, { backgroundColor: colors.surface }]}>
+            <Pressable
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === 'sell' }}
+              onPress={() => setTab('sell')}
+              style={[styles.tab, tab === 'sell' && { backgroundColor: `${AUCTION_SELL_COLOR}22` }]}>
+              <Text style={[styles.tabLabel, { color: tab === 'sell' ? AUCTION_SELL_COLOR : colors.secondary }]}>
+                팔아요 {sells.length}
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === 'buy' }}
+              onPress={() => setTab('buy')}
+              style={[styles.tab, tab === 'buy' && { backgroundColor: `${AUCTION_BID_COLOR}22` }]}>
+              <Text style={[styles.tabLabel, { color: tab === 'buy' ? AUCTION_BID_COLOR : colors.secondary }]}>
+                살게요 {buys.length}
+              </Text>
+            </Pressable>
+          </View>
+          <FlatList
+            data={items}
+            keyExtractor={(item) => item.key}
+            extraData={`${tab}:${busy}`}
+            contentContainerStyle={styles.list}
+            renderItem={({ item }) => {
+              if (item.type === 'empty') {
+                return (
+                  <View style={styles.emptyBox}>
+                    <Text style={[styles.emptyRow, { color: colors.secondary }]}>{item.label}</Text>
+                    <Pressable accessibilityRole="button" onPress={() => openCreate(tab)}>
+                      <Text style={[styles.emptyAction, { color: tint }]}>
+                        {tab === 'sell' ? '먼저 올려 볼까요?' : '구매희망을 걸어 볼까요?'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                );
+              }
+              if (item.type === 'sell') {
+                return (
+                  <AuctionBookRow
+                    kind="sell"
+                    who={item.row.seller === user?.uid ? '내가 올림' : item.row.sellerName}
+                    price={item.row.price}
+                    characterId={item.row.character}
+                    quote={quote}
+                    next={cheapestAsk(listings ?? [], character.id, user?.uid, quote)?.id === item.row.id}
+                    mine={item.row.seller === user?.uid}
+                    busy={busy}
+                    onEdit={item.row.seller === user?.uid ? () => openEdit('sell', item.row.id, item.row.price) : undefined}
+                    onPress={() => (item.row.seller === user?.uid ? confirmCancelSell(item.row) : confirmBuy(item.row))}
+                  />
+                );
+              }
               return (
                 <AuctionBookRow
-                  kind="sell"
-                  who={item.row.seller === user?.uid ? '내가 올림' : item.row.sellerName}
+                  kind="buy"
+                  who={item.row.buyer === user?.uid ? '내가 건 구매희망' : item.row.buyerName}
                   price={item.row.price}
                   characterId={item.row.character}
                   quote={quote}
-                  next={cheapestAsk(listings ?? [], character.id, user?.uid, quote)?.id === item.row.id}
-                  mine={item.row.seller === user?.uid}
+                  next={highestBid(bids ?? [], character.id, user?.uid, quote)?.id === item.row.id}
+                  mine={item.row.buyer === user?.uid}
                   busy={busy}
-                  onPress={() => (item.row.seller === user?.uid ? confirmCancelSell(item.row) : confirmBuy(item.row))}
+                  onEdit={item.row.buyer === user?.uid ? () => openEdit('buy', item.row.id, item.row.price) : undefined}
+                  onPress={() => (item.row.buyer === user?.uid ? confirmCancelBuy(item.row) : confirmFill(item.row))}
                 />
               );
-            }
-            return (
-              <AuctionBookRow
-                kind="buy"
-                who={item.row.buyer === user?.uid ? '내가 건 구매희망' : item.row.buyerName}
-                price={item.row.price}
-                characterId={item.row.character}
-                quote={quote}
-                next={highestBid(bids ?? [], character.id, user?.uid, quote)?.id === item.row.id}
-                mine={item.row.buyer === user?.uid}
-                busy={busy}
-                onPress={() => (item.row.buyer === user?.uid ? confirmCancelBuy(item.row) : confirmFill(item.row))}
-              />
-            );
-          }}
-        />
+            }}
+          />
+          <View style={[styles.bar, { paddingBottom: Math.max(12, insets.bottom), backgroundColor: colors.background }]}>
+            <Text style={[styles.barHint, { color: colors.secondary }]}>
+              {tab === 'sell' ? '살 때는 싼 것부터 사져요' : '팔 때는 비싼 것부터 팔려요'}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => openCreate(tab)}
+              style={[styles.offer, { backgroundColor: tint }]}>
+              <Text style={styles.offerLabel}>{tab === 'sell' ? '이 동물 팔기' : '구매희망 걸기'}</Text>
+            </Pressable>
+          </View>
+        </>
       )}
       {sheetMode && (
         <AuctionOfferSheet
-          key={`${sheetMode}:${character.id}`}
+          key={`${sheetMode}:${character.id}:${editing?.id ?? 'new'}`}
           mode={sheetMode}
           initial={character}
           gradeFilter={character.grade}
           quotes={quotes}
           busy={busy}
+          editing={editing}
           onClose={closeSheet}
           onDone={closeSheet}
         />
@@ -273,20 +312,23 @@ export default function AuctionAnimalScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  list: { padding: 20, gap: 10, paddingBottom: 32 },
-  header: { gap: 12, paddingBottom: 4 },
-  info: { flexDirection: 'row', gap: 14, borderRadius: 22, padding: 14, alignItems: 'center' },
-  hero: { width: 88, height: 88 },
-  infoBody: { flex: 1, gap: 4 },
+  info: { flexDirection: 'row', gap: 12, marginHorizontal: 20, marginTop: 12, borderRadius: 20, padding: 12, alignItems: 'center' },
+  hero: { width: 72, height: 72 },
+  infoBody: { flex: 1, gap: 2 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { flexShrink: 1, fontSize: 22, fontWeight: '900' },
-  quote: { fontSize: 18, fontWeight: '900' },
-  meta: { fontSize: 12, fontWeight: '600', lineHeight: 17 },
-  actions: { flexDirection: 'row', gap: 8 },
-  offer: { flex: 1, minHeight: 46, borderRadius: 16, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  offerLabel: { fontSize: 15, fontWeight: '800' },
-  legend: { fontSize: 12, lineHeight: 17 },
-  section: { fontSize: 14, fontWeight: '800', paddingTop: 6 },
+  name: { flexShrink: 1, fontSize: 18, fontWeight: '900' },
+  quote: { fontSize: 20, fontWeight: '900' },
+  meta: { fontSize: 12, fontWeight: '600', lineHeight: 16 },
+  tabs: { flexDirection: 'row', marginHorizontal: 20, marginTop: 10, borderRadius: 16, padding: 4, gap: 4 },
+  tab: { flex: 1, minHeight: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  tabLabel: { fontSize: 14, fontWeight: '800' },
+  list: { padding: 20, gap: 10, paddingBottom: 12 },
   empty: { textAlign: 'center', padding: 28, lineHeight: 22 },
-  emptyRow: { textAlign: 'center', paddingVertical: 16, fontSize: 13 },
+  emptyBox: { alignItems: 'center', paddingVertical: 28, gap: 8 },
+  emptyRow: { fontSize: 14 },
+  emptyAction: { fontSize: 14, fontWeight: '800' },
+  bar: { paddingHorizontal: 20, paddingTop: 8, gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#00000014' },
+  barHint: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  offer: { minHeight: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  offerLabel: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

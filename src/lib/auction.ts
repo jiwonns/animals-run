@@ -190,6 +190,28 @@ export function listOnAuction(uid: string, id: CharacterId, price: number) {
   });
 }
 
+export function editListing(uid: string, listingId: string, price: number) {
+  if (!Number.isSafeInteger(price)) throw new AuctionError('등록 정보를 확인해주세요.');
+  const reference = listingRef(listingId);
+  return runTransaction(db, async (tx) => {
+    const listingSnap = await tx.get(reference);
+    if (!listingSnap.exists()) throw new AuctionError('등록을 찾을 수 없어요.');
+    const listing = listingSnap.data() as Omit<AuctionListing, 'id'>;
+    if (listing.seller !== uid) throw new AuctionError('내가 올린 등록만 수정할 수 있어요.');
+    if (listing.price === price) throw new AuctionError('같은 가격이에요.');
+    const [profileSnap, quoteSnap] = await Promise.all([tx.get(profileRef(uid)), tx.get(quoteRef(listing.character))]);
+    if (!profileSnap.exists()) throw new AuctionError('프로필을 찾을 수 없어요.');
+    const band = marketBand(listing.character, quoteSnap.exists() ? (quoteSnap.data() as AuctionQuote) : null);
+    if (price < band.min || price > band.max) {
+      throw new AuctionError(`지금은 ${band.min}~${band.max}코인 사이에서만 등록할 수 있어요.`);
+    }
+    tx.update(reference, { price });
+    tx.update(profileRef(uid), {
+      lastAuction: { id: listingId, action: 'editList', character: listing.character, price },
+    });
+  });
+}
+
 export function cancelListing(uid: string, listingId: string) {
   const reference = listingRef(listingId);
   return runTransaction(db, async (tx) => {
@@ -273,6 +295,31 @@ export function placeBid(uid: string, id: CharacterId, price: number) {
       lastAuction: { id: reference.id, action: 'bid', character: id, price },
     });
     return reference.id;
+  });
+}
+
+export function editBid(uid: string, bidId: string, price: number) {
+  if (!Number.isSafeInteger(price)) throw new AuctionError('등록 정보를 확인해주세요.');
+  const reference = bidRef(bidId);
+  return runTransaction(db, async (tx) => {
+    const bidSnap = await tx.get(reference);
+    if (!bidSnap.exists()) throw new AuctionError('구매희망을 찾을 수 없어요.');
+    const bid = bidSnap.data() as Omit<AuctionBid, 'id'>;
+    if (bid.buyer !== uid) throw new AuctionError('내가 건 구매희망만 수정할 수 있어요.');
+    if (bid.price === price) throw new AuctionError('같은 가격이에요.');
+    const [profileSnap, quoteSnap] = await Promise.all([tx.get(profileRef(uid)), tx.get(quoteRef(bid.character))]);
+    if (!profileSnap.exists()) throw new AuctionError('프로필을 찾을 수 없어요.');
+    const profile = profileSnap.data() as Profile;
+    const band = marketBand(bid.character, quoteSnap.exists() ? (quoteSnap.data() as AuctionQuote) : null);
+    if (price < band.min || price > band.max) {
+      throw new AuctionError(`지금은 ${band.min}~${band.max}코인 사이에서만 걸어둘 수 있어요.`);
+    }
+    if (profile.coins + bid.price < price) throw new AuctionError('코인이 부족해요.');
+    tx.update(reference, { price });
+    tx.update(profileRef(uid), {
+      coins: profile.coins + bid.price - price,
+      lastAuction: { id: bidId, action: 'editBid', character: bid.character, price },
+    });
   });
 }
 
