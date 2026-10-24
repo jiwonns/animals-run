@@ -28,7 +28,8 @@ import { acceptsTickets, drawCharacters, DrawError, type DrawResult, type Paymen
 import type { Reward } from '@/lib/rewards';
 import { useSession } from '@/providers/session-provider';
 
-const SIDE_PADDING = 32;
+const POSTER_MARGIN = 24;
+const HEIGHT_CAP_MARGIN = 32;
 const MAX_POSTER_RATIO = 1.65;
 
 type Show = { key: number; banner: Banner; count: DrawCount; payment: Payment };
@@ -218,8 +219,9 @@ function BannerPage({ banner, width, height,compact,children }: {
   children: ReactNode;
 }) {
   const [stageHeight, setStageHeight] = useState(0);
-  const posterWidth = Math.min(Math.max(0,width-SIDE_PADDING*2),Math.max(0,stageHeight-16)/MAX_POSTER_RATIO);
-  const posterHeight = posterWidth*MAX_POSTER_RATIO;
+  const posterWidth = Math.max(0,width-POSTER_MARGIN*2);
+  // Preserve the previous height and controls; widen only the poster's horizontal frame.
+  const posterHeight = Math.min(Math.max(0,stageHeight-16),Math.max(0,width-HEIGHT_CAP_MARGIN*2)*MAX_POSTER_RATIO);
 
   return (
     <View style={{ width, height,overflow:'hidden' }}>
