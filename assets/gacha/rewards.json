@@ -15,7 +15,7 @@
     "ceil": { "N": 24, "R": 64, "EP": 160, "U": 360, "L": 640, "E": 64, "H": 1120 },
     "low": 70,
     "high": 130,
-    "weight": 30
+    "windowHours": 2
   },
   "stepsPerCoin": 50,
   "character": {

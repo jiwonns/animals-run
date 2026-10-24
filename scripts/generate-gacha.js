@@ -387,7 +387,7 @@ function renderRules(collections, rewards) {
     .replaceAll('__AUCTION_CEIL__', JSON.stringify(rewards.auction.ceil))
     .replaceAll('__AUCTION_LOW__', String(rewards.auction.low))
     .replaceAll('__AUCTION_HIGH__', String(rewards.auction.high))
-    .replaceAll('__AUCTION_WEIGHT__', String(rewards.auction.weight));
+    .replaceAll('__AUCTION_WINDOW_MS__', String(rewards.auction.windowHours * 3600000));
   return renderBaseRules(collections, rewards).replace('    match /users/{uid} {', () => extra + '\n' + friends + '\n' + walking + '\n' + catalog + '\n' + arena + '\n' + auction + '\n    match /users/{uid} {');
 }
 
@@ -465,7 +465,7 @@ ${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
       allow get: if isSignedIn();
       allow list: if isOwner(uid);
       allow create: if isOwner(uid) && isNewProfile();
-      allow update: if (isOwner(uid) && isProfileUpdate(uid)) || isAuctionSell(uid);
+      allow update: if (isOwner(uid) && isProfileUpdate(uid)) || isAuctionSell(uid) || isAuctionFilled(uid);
       // Leaving: the profile goes first, then its history (see isGone).
       allow delete: if isOwner(uid);
     }

@@ -636,7 +636,7 @@ export const REWARDS: Rewards = {
     },
     "low": 70,
     "high": 130,
-    "weight": 30
+    "windowHours": 2
   },
   "stepsPerCoin": 50,
   "character": {

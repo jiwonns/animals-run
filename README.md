@@ -17,7 +17,15 @@
   <a href="docs/beta-guide.pdf"><b>📄 안내서 PDF</b></a>
 </p>
 
-## 최신 업데이트 · 2026년 10월 25일 · APK 1.0.10
+## 최신 업데이트 · 2026년 10월 25일 · APK 1.0.11
+
+- **경매장** — 홈에서 여분 동물을 올리고 다른 사람의 동물을 살 수 있어요. 팔아요·살게요(구매희망)·내 등록 탭이 있어요. 구매희망은 코인을 걸어 두고, 같은 동물은 싼 등록부터 / 비싼 구매희망부터 체결돼요.
+- **시세·상한·하한** — 시세의 70~130% 안에서만 사고팔아요. 시세가 바뀌어 밖으로 빠진 등록은 목록에 **시세 밖**으로 보이고, 주인이 경매장을 열면 자동 취소돼요.
+- **2시간 시세** — 한국 시간 2시간마다 그 사이 체결 평균으로 시세가 바뀌어요. 지난 2시간 동안 몇 건 사고팔렸는지는 다음 갱신 뒤에 보여요.
+
+웹과 APK 1.0.11에 반영했어요. 웹은 새로고침하고 앱은 아래 APK를 덮어 설치해주세요.
+
+## 이전 업데이트 · 2026년 10월 25일 · APK 1.0.10
 
 - **코인·뽑기권 UI 개선** — 재화별 색상 테두리와 선택 체크 표시를 넣었어요. 마이페이지 재화 카드도 같은 아이콘으로 맞췄어요.
 - **홈·마이페이지 다크모드 수정** — 상단 헤더와 내비게이션 배경·글자색도 기기 테마를 따라 바뀌어요.
@@ -100,12 +108,12 @@
 - **원격 이미지와 관리자** — 뽑기 이미지를 원격으로 불러오고 캐시해요. 권한이 있는 계정은 [관리자 페이지](https://animalsrun-2571c.web.app/admin)에서 기존 뽑기에 동물을 추가하고 이미지·가격·확률을 수정한 뒤 검토·게시할 수 있어요. Firebase 무료 요금제를 유지해요.
 - **커뮤니티와 고양이 컬렉션** — 글·사진·댓글·답글·좋아요로 이야기를 나누고, 10가지 고양이 품종을 6등급으로 모아요.
 
-**현재 공개 APK는 1.0.10예요.** 코인·뽑기권 UI 개선과 홈·마이페이지 헤더의 다크모드 수정을 포함해요. 포스터 좌우 여백을 버튼과 맞춰 넓혔어요. 뽑기 화면 높이 수정과 지도 수동 새로고침 제거를 포함해요. 실시간 변경 반영과 화면별 내려서 새로고침을 지원해요. 등급별 서버 동물 선택·등록과 새 뽑기 생성을 지원해요. 프리미엄 진화 제외와 진화 동물의 원형 장식 제거를 포함해요. 첫 획득 보상 축소, 노말·프리미엄 뽑기 제한과 고등급 진화 전용 변경을 포함해요. 내 프로필 상세 화면, 보관함 수량·필터·정렬, 동물별 도감과 진화, 뽑기 확률 표시 및 지도 개선을 포함해요. 기존 결투장·친구·훈장·친밀도·알림·백그라운드 걸음 기록도 이용할 수 있어요. **아래 APK를 다시 받아 기존 앱 위에 설치**해주세요. 앱을 삭제할 필요가 없고, 다운로드 주소와 QR도 그대로예요.
+**현재 공개 APK는 1.0.11예요.** 홈 경매장에서 동물을 사고팔 수 있어요. 구매희망, 2시간 시세, 지난 거래 건수를 포함해요. 코인·뽑기권 UI 개선과 홈·마이페이지 헤더의 다크모드 수정을 포함해요. 포스터 좌우 여백을 버튼과 맞춰 넓혔어요. 뽑기 화면 높이 수정과 지도 수동 새로고침 제거를 포함해요. 실시간 변경 반영과 화면별 내려서 새로고침을 지원해요. 등급별 서버 동물 선택·등록과 새 뽑기 생성을 지원해요. 프리미엄 진화 제외와 진화 동물의 원형 장식 제거를 포함해요. 첫 획득 보상 축소, 노말·프리미엄 뽑기 제한과 고등급 진화 전용 변경을 포함해요. 내 프로필 상세 화면, 보관함 수량·필터·정렬, 동물별 도감과 진화, 뽑기 확률 표시 및 지도 개선을 포함해요. 기존 결투장·친구·훈장·친밀도·알림·백그라운드 걸음 기록도 이용할 수 있어요. **아래 APK를 다시 받아 기존 앱 위에 설치**해주세요. 앱을 삭제할 필요가 없고, 다운로드 주소와 QR도 그대로예요.
 
 | 바로 이용하기 | 링크 |
 | --- | --- |
 | 웹 · 아이폰에서도 설치 없이 이용 | [Animals Run 웹](https://animalsrun-2571c.web.app) |
-| 갤럭시 APK · 1.0.10 · 약 31.4MB (설치 버전 11) | [AnimalsRun-beta.apk](https://github.com/jiwonns/animals-run/releases/download/v1.0.0-beta/AnimalsRun-beta.apk) |
+| 갤럭시 APK · 1.0.11 · 약 31.4MB (설치 버전 12) | [AnimalsRun-beta.apk](https://github.com/jiwonns/animals-run/releases/download/v1.0.0-beta/AnimalsRun-beta.apk) |
 | 친구에게 공유할 APK QR | [APK 다운로드 QR 이미지](https://github.com/jiwonns/animals-run/releases/download/v1.0.0-beta/AnimalsRun-beta-QR.png) |
 
 | 내 폰 | 설치 방법 |
@@ -169,6 +177,7 @@
 ## 5. 이렇게 놀아요
 
 - **뽑기** — 코인이나 티켓으로 동물을 뽑아요. 배너마다 나오는 동물이 달라요.
+- **경매장** — 홈에서 여분 동물을 팔거나 구매희망을 걸어요. 시세의 70~130% 안에서만 거래되고, 한국 시간 2시간마다 그 사이 평균으로 시세가 바뀌어요. 지난 거래 건수는 갱신된 뒤에 보여요.
 - **홈** — 알 부화, 합성, 진화, 교배, 재활용으로 더 높은 등급의 동물을 만들어요. 커뮤니티도 홈에서 들어갈 수 있어요.
 - **커뮤니티** — 글에 보유 동물을 첨부하고 댓글·좋아요로 친구들과 이야기해요. 내가 쓴 글과 댓글은 삭제할 수 있어요.
 - **보관함** — 동물·훈장·기타를 나눠 보고, 보유 종류·총 마릿수·카드별 개수를 확인해요. 동물별 도감에서 수집 현황을 보고, 훈장 탭에서 대표 훈장을 장착해요.
@@ -244,6 +253,7 @@ node scripts/test-inventory.cjs
 node scripts/test-bond-medals.cjs
 node scripts/test-map-profile.cjs
 node scripts/test-species-catalog.cjs
+node scripts/test-auction.cjs
 ```
 
 브라우저 UI 검사는 별도로 준비한 `esbuild`·`playwright`의 `node_modules` 절대 경로를 `ARENA_TEST_TOOLS` 환경 변수로 지정해야 해요. Playwright Chromium도 설치되어 있어야 해요.
@@ -259,7 +269,7 @@ node scripts/test-walk-location-ui.cjs
 npx firebase-tools emulators:exec --project demo-animalsrun --config firebase.community-test.json --only auth,firestore "node scripts/test-catalog-rules.cjs"
 ```
 
-같은 방식으로 `test-login-sessions.cjs`, `test-inventory-rules.cjs`, `test-friends-rules.cjs`, `test-bond-medals-rules.cjs`도 검증할 수 있어요. 카탈로그 테스트는 관리자 권한, 게시 충돌, 신규 뽑기·보상·이미지 등록, 같은 시각의 기록을 포함한 페이지네이션을 확인해요.
+같은 방식으로 `test-login-sessions.cjs`, `test-inventory-rules.cjs`, `test-friends-rules.cjs`, `test-bond-medals-rules.cjs`, `test-auction-rules.cjs`도 검증할 수 있어요. 카탈로그 테스트는 관리자 권한, 게시 충돌, 신규 뽑기·보상·이미지 등록, 같은 시각의 기록을 포함한 페이지네이션을 확인해요.
 
 ### 기능별 문서
 
@@ -270,4 +280,5 @@ npx firebase-tools emulators:exec --project demo-animalsrun --config firebase.co
 - [로그인 세션과 부화](docs/sessions-and-hatching.md)
 - [무료 카탈로그와 관리자 운영](docs/catalog-admin.md)
 - [동물 분류와 획득 방식 개편](docs/species-redesign.md)
+- [경매장](docs/auction.md)
 - [APK 빌드·검증·교체 절차](docs/releases.md)

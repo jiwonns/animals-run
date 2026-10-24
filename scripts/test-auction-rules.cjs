@@ -89,6 +89,9 @@ const denied = (task) => assert.rejects(task, (e) => e.code === 'permission-deni
   assert.equal(afterBuyer.characters[seller.character], 4);
   assert.equal(afterSeller.coins, 108);
   assert.equal(quote.lastPrice, 8);
+  assert.equal(quote.quote, 8);
+  assert.equal(quote.windowCount, 1);
+  assert.equal(quote.lastWindowCount, 0);
   assert.ok(!(await f.getDoc(f.doc(buyer.db, 'auctionListings', id))).exists());
   await assert.rejects(() => buyer.service.buyListing(buyer.uid, id));
   console.log('Auction: cancel returns the animal');
@@ -97,6 +100,22 @@ const denied = (task) => assert.rejects(task, (e) => e.code === 'permission-deni
   await seller.service.cancelListing(seller.uid, cancelId);
   const restored = (await f.getDoc(f.doc(seller.db, 'users', seller.uid))).data();
   assert.equal(restored.characters[seller.character], 2);
+  console.log('Auction: buy orders escrow coins and can be filled or cancelled');
+  const bidId = await buyer.service.placeBid(buyer.uid, seller.character, 8);
+  assert.equal((await f.getDoc(f.doc(buyer.db, 'users', buyer.uid))).data().coins, 84);
+  await assert.rejects(() => buyer.service.fillBid(buyer.uid, bidId));
+  await assert.rejects(() => buyer.service.placeBid(buyer.uid, seller.character, 99));
+  await seller.service.fillBid(seller.uid, bidId);
+  const filledBuyer = (await f.getDoc(f.doc(buyer.db, 'users', buyer.uid))).data();
+  const filledSeller = (await f.getDoc(f.doc(seller.db, 'users', seller.uid))).data();
+  assert.equal(filledBuyer.coins, 84);
+  assert.equal(filledBuyer.characters[seller.character], 5);
+  assert.equal(filledSeller.coins, 116);
+  assert.equal(filledSeller.characters[seller.character], 1);
+  const bidCancel = await buyer.service.placeBid(buyer.uid, seller.character, 8);
+  await assert.rejects(() => seller.service.cancelBid(seller.uid, bidCancel));
+  await buyer.service.cancelBid(buyer.uid, bidCancel);
+  assert.equal((await f.getDoc(f.doc(buyer.db, 'users', buyer.uid))).data().coins, 84);
   await Promise.all(clients.map((c) => deleteApp(c.app)));
   console.log('Auction rules look right');
 })().catch((error) => {

@@ -38,8 +38,8 @@ export type Rewards = {
   /** Coins paid per sold copy, including zero-coin normal cleanup. */
   sale: Record<Grade, number>;
   /**
-   * Player-to-player auction: starting 시세 per grade, hard floor/ceil, and the band
-   * (low/high %) plus how much each trade pulls 시세 (weight %).
+   * Player-to-player auction: starting 시세 per grade, hard floor/ceil, the live band
+   * (low/high %), and how often 시세 becomes the average of trades in that window.
    */
   auction: {
     quote: Record<Grade, number>;
@@ -47,7 +47,7 @@ export type Rewards = {
     ceil: Record<Grade, number>;
     low: number;
     high: number;
-    weight: number;
+    windowHours: number;
   };
   /** Tickets work on banners whose single draw costs at most this many coins. */
   ticketMaxCost: number;
