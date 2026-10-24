@@ -1,6 +1,6 @@
 {
   "name": "myapp",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/ui": "~58.0.20",

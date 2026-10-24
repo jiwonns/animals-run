@@ -63,11 +63,12 @@ export default function GachaScreen() {
 
   async function draw(b: Banner, count: DrawCount, p: Payment) {
     if (!user) return;
+    const offer = BANNERS.find((item) => item.id === b.id) ?? b;
     setResults(null);
     setRewards([]);
-    setShow((prev) => ({ key: (prev?.key ?? 0) + 1, banner: b, count, payment: p }));
+    setShow((prev) => ({ key: (prev?.key ?? 0) + 1, banner: offer, count, payment: p }));
     try {
-      const outcome = await drawCharacters(user.uid, b, count, p);
+      const outcome = await drawCharacters(user.uid, offer, count, p);
       setResults(outcome.results);
       setRewards(outcome.rewards);
     } catch (error) {
