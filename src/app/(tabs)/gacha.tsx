@@ -233,7 +233,7 @@ function BannerPage({ banner, width, height, children }: {
               color: GRADES[grade].color,
             };
           }).filter(row=>row.chance>0 && row.speciesCount>0)}
-          notes={['등급을 먼저 추첨한 뒤 해당 등급 안의 동물을 동일한 확률로 추첨해요.','진화 전용 동물은 뽑기에서 나오지 않아요.']}
+          notes={['등급을 먼저 추첨한 뒤 해당 등급 안의 동물을 동일한 확률로 추첨해요.','현재 노말·프리미엄 동물만 나와요. 레어·에픽·유니크·레전더리 모습은 진화로 획득해요.']}
         />
       </View>
       {children}

@@ -7,7 +7,7 @@ import {
   type CharacterId,
   speciesOf,
 } from "@/constants/characters";
-import { REWARDS } from "@/constants/gacha.generated";
+import { COLLECTION_DATA, REWARDS } from "@/constants/gacha.generated";
 
 import { db } from "./firebase";
 import { companionRef, HomeError, type Companion } from "./home";
@@ -28,7 +28,7 @@ const find = (collection: string, species: string) =>
     (c) => c.collection === collection && speciesOf(c) === species,
   );
 
-const POOL = CHARACTERS.filter((c) => crafting.pool.includes(c.collection));
+const POOL = CHARACTERS.filter((c) => crafting.pool.includes(c.collection) && COLLECTION_DATA.find(group=>group.id===c.collection)?.acquisition !== 'evolution');
 /** Animals crafting can produce at a tier. */
 export const poolOfTier = (tier: number) =>
   POOL.filter((c) => tierOf(c.id) === tier);

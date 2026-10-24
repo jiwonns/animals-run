@@ -14,6 +14,14 @@ function fields(o){return Object.fromEntries(Object.entries(o).map(([k,v])=>[k,v
 function canonical(o){return Array.isArray(o)?o.map(canonical):o&&typeof o==='object'?Object.fromEntries(Object.keys(o).sort().map(k=>[k,canonical(o[k])])):o;}
 function digest(o){return crypto.createHash('sha256').update(JSON.stringify(canonical(o))).digest('hex');}
 function redesign(before){
+ if(process.argv.includes('--draw-balance')) {
+  const collections=before.collections.map(c=>{
+   const template=seed.collections.find(s=>s.id===c.id);
+   return {...c,acquisition:template?.acquisition??c.acquisition,banner:c.banner?{...c.banner,enabled:['normal','premium'].includes(c.id),rates:structuredClone(template?.banner?.rates??[{collection:'normal',rate:1,hidden:false}])}:null};
+  });
+  const next={schema:1,version:before.version+1,collections};validateCatalog(next);assertCompatible(before,next);return next;
+ }
+
  if(process.argv.includes('--restore-original-banners')){
   const backup=JSON.parse(fs.readFileSync(path.join(folder,'catalog-before-v3.json'),'utf8'));
   const original=decode({mapValue:{fields:backup.fields}});

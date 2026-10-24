@@ -29,11 +29,12 @@ const { readCollections, readRewards, renderRules } = require('./generate-gacha'
     }
   }
   assert.equal(hashes.size, 60, 'all sixty sprites must be individually drawn, not copied');
-  assert.ok(cats.every(c=>c.config.acquisition==='draw'));
+  assert.ok(cats.filter(c=>['R','EP','U','L'].includes(c.config.grade)).every(c=>c.config.acquisition==='evolution'));
+  assert.equal(cats[0].config.banner.enabled,false);
   assert.deepEqual(cats[0].config.banner.cost,{'1':10,'10':90});
-  assert.deepEqual(cats[0].rates.map(r=>[r.collection,r.rate]),[['cats',.72],['cats_rare',.2],['cats_epic',.05],['cats_unique',.02],['cats_legendary',.009],['cats_hidden',.001]]);
+  assert.deepEqual(cats[0].rates.map(r=>[r.collection,r.rate]),[['normal',1]]);
   const normal = collections.find(c => c.id === 'normal');
-  assert.deepEqual(normal.rates.map(r=>[r.collection,r.rate]),[['normal',.94],['rare',.05],['hidden',.01]]);
+  assert.deepEqual(normal.rates.map(r=>[r.collection,r.rate]),[['normal',1]]);
   assert.ok(Math.abs(normal.rates.reduce((n,r)=>n+r.rate,0)-1)<1e-9);
   const rewards = readRewards();
   const rules = renderRules(collections, rewards);
@@ -41,7 +42,7 @@ const { readCollections, readRewards, renderRules } = require('./generate-gacha'
   for (const c of cats) for (const character of c.characters) {
     assert.equal(character.id.replace(new RegExp(prefixPattern), ''), character.key, `${c.id} preserves breed through prefix stripping`);
   }
-  for (let i = 0; i < 4; i++) assert.equal(rewards.evolution.paths[cats[i].id], 'evolution_'+cats[i + 1].id);
+  for (let i = 0; i < 4; i++) assert.equal(rewards.evolution.paths[cats[i].id], cats[i + 1].id);
   for (const c of cats.filter(c => c.config.grade !== 'H')) assert.ok(rewards.crafting.pool.includes(c.id));
-  console.log('PASS 60 distinct transparent sprites, ten breeds, grade-based cat draw pools and separate same-breed evolution');
+  console.log('PASS 60 distinct transparent sprites, ten breeds, paused cat banner and evolution-only high-grade cats');
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -34,14 +34,10 @@ for(const [from,to] of Object.entries(rewards.evolution.paths)) {
   for(const ch of a.characters) assert.ok(b.characters.some(target=>target.key===ch.key),'species stays the same');
 }
 const evolved=seed.collections.filter(c=>c.acquisition==='evolution');
-const cats=seed.collections.find(c=>c.id==='cats');
-for(const [grade,count,chance] of [['L',10,.009],['H',10,.001]]){
- const entries=cats.banner.rates.filter(r=>seed.collections.find(c=>c.id===r.collection).grade===grade);
- assert.equal(entries.reduce((n,r)=>n+seed.collections.find(c=>c.id===r.collection).characters.length,0),count);
- assert.equal(entries.reduce((n,r)=>n+r.rate,0),chance);
-}
-const autumn=seed.collections.find(c=>c.id==='autumn');assert.ok(autumn.banner.rates.some(r=>seed.collections.find(c=>c.id===r.collection).grade==='E'));
-assert.equal(evolved.reduce((n,c)=>n+c.characters.length,0),88);
+assert.deepEqual(banners.filter(c=>c.banner.enabled!==false).map(c=>c.id),['normal','premium']);
+assert.equal(evolved.reduce((n,c)=>n+c.characters.length,0),176);
+for(const c of banners)assert.ok(c.banner.rates.every(r=>['normal','premium'].includes(r.collection)));
+for(const [g,n] of Object.entries({N:3,R:4,EP:5,U:6,L:7,H:10})) for(const section of ['character','grade'])assert.equal({...rewards[section].default,...rewards[section][g]}.first,n);
 for(const b of compileCatalog(seed).banners) {
   assert.ok(b.poolRegex.length<=4096,'compatibility regex fits Firestore limit');
   for(const c of evolved)for(const ch of c.characters) { assert.ok(!new RegExp(b.poolRegex).test(ch.id));assert.ok(!b.characterIds.includes(ch.id)); }
@@ -49,9 +45,9 @@ for(const b of compileCatalog(seed).banners) {
 const bad=structuredClone(seed);bad.collections[0].banner.rates=[{collection:evolved[0].id,rate:1,hidden:false}];
 assert.throws(()=>validateCatalog(bad),/진화 전용/);
 const babyDraw=structuredClone(seed);babyDraw.collections[0].banner.rates=[{collection:'baby',rate:1,hidden:false}];assert.throws(()=>validateCatalog(babyDraw),/교배로만/);
-const prior={...seed,collections:seed.collections.filter(c=>c.acquisition!=='evolution').map(c=>{const copy={...c};delete copy.acquisition;return copy;})};
+const prior={...seed,collections:seed.collections.filter(c=>!c.id.startsWith('evolution_')).map(c=>{const copy={...c};delete copy.acquisition;return copy;})};
 assertCompatible(prior,seed);
 const pool=[{id:'a',grade:'N',characters:[{id:'one'}]},{id:'b',grade:'N',characters:[{id:'two'},{id:'three'}]}];
 const rates=gradeRates(pool,{N:1});assert.equal(rates[0].rate,1/3);
 assert.equal(pickCharacter({collections:pool},{rates},(()=>{let values=[0,.9];return()=>values.shift();})()).id,'three');
-console.log('PASS seven distinct grades, cats legendary 10 at 0.9% and hidden 10 at 0.1%, separate event draws, original banners preserved, breeding-only babies, evolution excluded from draws');
+console.log('PASS first rewards 3/4/5/6/7/10, normal/premium-only draws, 176 evolution-only animals, compatible inventory IDs and same-species evolution');

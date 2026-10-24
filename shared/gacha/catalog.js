@@ -47,7 +47,7 @@ function assertCompatible(before, after) {
   const next = validateCatalog(after);
   for (const c of before?.collections ?? []) {
     const nc = next.collections.get(c.id);
-    if (nc && (nc.acquisition ?? 'draw') !== (c.acquisition ?? 'draw') && !(c.id==='baby' && nc.acquisition==='breeding')) throw new Error('기존 동물의 획득 경로는 변경할 수 없어요.');
+    if (nc && (nc.acquisition ?? 'draw') !== (c.acquisition ?? 'draw') && !(c.id==='baby' && nc.acquisition==='breeding') && !(["rare","epic","unique","legendary","cats_rare","cats_epic","cats_unique","cats_legendary"].includes(c.id) && (c.acquisition??'draw')==='draw' && nc.acquisition==='evolution')) throw new Error('기존 동물의 획득 경로는 변경할 수 없어요.');
     if (!nc || nc.grade !== c.grade || nc.base !== c.base) throw new Error('기존 컬렉션 삭제·등급 변경은 보유 데이터 보호를 위해 지원하지 않아요. 판매 중지로 전환해주세요.');
     for (const ch of c.characters) if (!nc.characters.some(n => n.id === ch.id)) throw new Error('기존 동물 ID를 삭제하거나 옮길 수 없어요.');
   }

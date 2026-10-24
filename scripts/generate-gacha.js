@@ -285,7 +285,12 @@ function readCollections() {
   // Preserve original banners, costs and artwork. Evolution keeps separate IDs.
   const labels = { N:'노말', R:'레어', EP:'에픽', U:'유니크', L:'레전더리' };
   const grades = ['N','R','EP','U','L'];
-  for (const c of collections) c.config.acquisition=c.id==='baby'?'breeding':'draw';
+  for (const c of collections) c.config.acquisition=c.id==='baby'?'breeding':["rare","epic","unique","legendary","cats_rare","cats_epic","cats_unique","cats_legendary"].includes(c.id)?'evolution':'draw';
+  // Pause seasonal/cat banners; only original normal and premium animals are drawn.
+  for (const c of collections) if(c.config.banner) {
+    c.config.banner.enabled=['normal','premium'].includes(c.id);
+    c.rates=c.id==='premium'?[{collection:'normal',rate:0.92,hidden:false},{collection:'premium',rate:0.08,hidden:false}]:[{collection:'normal',rate:1,hidden:false}];
+  }
   for (const family of ['', 'cats_']) {
     for (const [index, suffix] of ['rare','epic','unique','legendary'].entries()) {
       const source=collections.find(c=>c.id===(family ? 'cats_'+suffix : suffix));
@@ -315,6 +320,7 @@ function renderTs(collections, rewards) {
       const hero = banner?.hero ?? c.keys[0];
       const bannerTs = banner
         ? `{
+      enabled: ${banner.enabled !== false},
       title: ${q(banner.title)},
       tagline: ${q(banner.tagline ?? '')},
       cost: { 1: ${banner.cost['1']}, 10: ${banner.cost['10']} },
@@ -426,7 +432,7 @@ function renderBaseRules(collections, rewards) {
   // Recycling inputs only have to be in a crafting tier: one regex, so each of the ten slots costs a single match.
   const recycleInputs = regexOf(collections.filter((c) => crafting.tiers.includes(c.config.grade)));
 
-  const bannerCollections = collections.filter((c) => c.config.banner);
+  const bannerCollections = collections.filter((c) => c.config.banner && c.config.banner.enabled !== false);
   const banners = bannerCollections
     .map((c) => {
       const { cost } = c.config.banner;
@@ -838,7 +844,7 @@ ${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
 
   // The same, for animals crafting can produce (crafting.pool).
   function poolTier(c) {
-    return ${tierChain(crafting.pool.map((id) => byId[id]))};
+    return ${tierChain(crafting.pool.map((id) => byId[id]).filter(c=>c.config.acquisition!=='evolution'))};
   }
 
   // The animal behind an id, e.g. 'tiger' for 'sea_tiger'.

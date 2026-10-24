@@ -14,8 +14,8 @@ async function main(){
  const doc=await adminRest('gachaCatalog/live'),catalog=decode({mapValue:{fields:doc.fields}});validateCatalog(catalog);
  assert.ok(catalog.version>=4);
  const banners=catalog.collections.filter(c=>c.banner&&c.banner.enabled!==false);
- assert.deepEqual(banners.map(c=>c.id),['normal','autumn','sea','cats','premium']);
- const evolution=new Set(catalog.collections.filter(c=>c.acquisition==='evolution').flatMap(c=>c.characters.map(ch=>ch.id)));assert.equal(evolution.size,88);
+ assert.deepEqual(banners.map(c=>c.id),['normal','premium']);
+ const evolution=new Set(catalog.collections.filter(c=>c.acquisition==='evolution').flatMap(c=>c.characters.map(ch=>ch.id)));assert.equal(evolution.size,176);
  await Promise.all(banners.map(async c=>{
   const doc=await adminRest('gachaBanners/'+c.id),b=decode({mapValue:{fields:doc.fields}});
   assert.equal(b.version,catalog.version);assert.equal(b.enabled,true);assert.ok(b.characterIds.length>0);
@@ -24,12 +24,18 @@ async function main(){
   assert.ok(c.banner.poster?.uri,'original poster artwork must be present');
   const poster=await fetch(c.banner.poster.uri);assert.equal(poster.status,200);assert.match(poster.headers.get('content-type'),/^image\//);
  }));
- const backup=JSON.parse(fs.readFileSync('.test-artifacts/catalog-before-v3.json','utf8'));
+ const backup=JSON.parse(fs.readFileSync('.test-artifacts/catalog-before-v5.json','utf8'));
  const before=decode({mapValue:{fields:backup.fields}});
- for(const c of before.collections.filter(c=>c.banner))assert.deepEqual(catalog.collections.find(v=>v.id===c.id).banner,c.banner,'original poster, price, title and banner pool');
+ for(const c of before.collections.filter(c=>c.banner)){
+  const next=catalog.collections.find(v=>v.id===c.id).banner;
+  for(const key of ['poster','colors','cost','title','tagline','hero'])assert.deepEqual(next[key],c.banner[key]);
+  if(!['normal','premium'].includes(c.id)){assert.equal(next.enabled,false);const b=decode({mapValue:{fields:(await adminRest('gachaBanners/'+c.id)).fields}});assert.equal(b.enabled,false);assert.equal(b.version,catalog.version);}
+ }
+ const allowed=new Set(catalog.collections.filter(c=>['normal','premium'].includes(c.id)).flatMap(c=>c.characters.map(ch=>ch.id)));
+ for(const c of banners){const b=decode({mapValue:{fields:(await adminRest('gachaBanners/'+c.id)).fields}});assert.ok(b.characterIds.every(id=>allowed.has(id)));}
  for(const c of before.collections)for(const ch of c.characters){
   const next=catalog.collections.find(v=>v.id===c.id)?.characters.find(v=>v.id===ch.id);assert.ok(next);assert.equal(next.name,ch.name);assert.deepEqual(next.image,ch.image);assert.deepEqual(next.thumb,ch.thumb);
  }
- console.log(`PASS deployed JavaScript, catalog v${catalog.version}, five live banners with original poster artwork, evolution excluded from every draw, all 190 existing IDs/names/images preserved`);
+ console.log(`PASS deployed JavaScript, catalog v${catalog.version}, two live banners with original poster artwork, evolution excluded from every draw, all existing IDs/names/images preserved`);
 }
 main().catch(e=>{console.error(e.message);process.exitCode=1;});

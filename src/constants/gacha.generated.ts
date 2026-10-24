@@ -13,10 +13,11 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     acquisition: "draw",
     base: true,
     banner: {
+      enabled: true,
       title: "노말 뽑기",
       tagline: "12간지 친구들을 모아보세요",
       cost: { 1: 5, 10: 45 },
-      rates: [{"collection":"normal","rate":0.94,"hidden":false},{"collection":"rare","rate":0.05,"hidden":false},{"collection":"hidden","rate":0.01,"hidden":true}],
+      rates: [{"collection":"normal","rate":1,"hidden":false}],
       hero: "tiger",
       colors: {"background":"#FFE4D2","accent":"#FF5A1F","text":"#3A1A0A"},
       poster: {"uri":"https://animalsrun-2571c.web.app/gacha-assets/8df592998f202c48914c.jpg"},
@@ -44,10 +45,11 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     acquisition: "draw",
     base: false,
     banner: {
+      enabled: false,
       title: "가을 특별 뽑기",
       tagline: "단풍 옷을 입은 한정 친구들",
       cost: { 1: 8, 10: 72 },
-      rates: [{"collection":"normal","rate":0.8,"hidden":false},{"collection":"autumn","rate":0.2,"hidden":false}],
+      rates: [{"collection":"normal","rate":1,"hidden":false}],
       hero: "autumn_dog",
       colors: {"background":"#9A3412","accent":"#FDBA74","text":"#FFF7ED"},
       poster: {"uri":"https://animalsrun-2571c.web.app/gacha-assets/3b8a0678d3172ef50908.jpg"},
@@ -75,10 +77,11 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     acquisition: "draw",
     base: false,
     banner: {
+      enabled: false,
       title: "바다 특별 뽑기",
       tagline: "바닷가에 여행가는 동물 친구들",
       cost: { 1: 8, 10: 72 },
-      rates: [{"collection":"normal","rate":0.8,"hidden":false},{"collection":"sea","rate":0.2,"hidden":false}],
+      rates: [{"collection":"normal","rate":1,"hidden":false}],
       hero: "sea_dog",
       colors: {"background":"#9A3412","accent":"#FFFFFF","text":"#FFF7ED"},
       poster: {"uri":"https://animalsrun-2571c.web.app/gacha-assets/746c0d782823cd602bd2.jpg"},
@@ -106,10 +109,11 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     acquisition: "draw",
     base: false,
     banner: {
+      enabled: false,
       title: "고양이 뽑기",
       tagline: "10가지 품종 모티브 · 작고 사랑스러운 고양이 친구들",
       cost: { 1: 10, 10: 90 },
-      rates: [{"collection":"cats","rate":0.72,"hidden":false},{"collection":"cats_rare","rate":0.2,"hidden":false},{"collection":"cats_epic","rate":0.05,"hidden":false},{"collection":"cats_unique","rate":0.02,"hidden":false},{"collection":"cats_legendary","rate":0.009,"hidden":false},{"collection":"cats_hidden","rate":0.001,"hidden":true}],
+      rates: [{"collection":"normal","rate":1,"hidden":false}],
       hero: "cats_siamese",
       colors: {"background":"#FFF0E9","accent":"#E57968","text":"#653E37"},
       poster: {"uri":"https://animalsrun-2571c.web.app/gacha-assets/a3a2e5a83a15423fa094.jpg"},
@@ -132,7 +136,7 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     id: "cats_rare",
     name: "고양이 레어 컬렉션",
     grade: "R",
-    acquisition: "draw",
+    acquisition: "evolution",
     base: false,
     banner: null,
     hidden: false,
@@ -153,7 +157,7 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     id: "cats_epic",
     name: "고양이 에픽 컬렉션",
     grade: "EP",
-    acquisition: "draw",
+    acquisition: "evolution",
     base: false,
     banner: null,
     hidden: false,
@@ -174,7 +178,7 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     id: "cats_unique",
     name: "고양이 유니크 컬렉션",
     grade: "U",
-    acquisition: "draw",
+    acquisition: "evolution",
     base: false,
     banner: null,
     hidden: false,
@@ -195,7 +199,7 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     id: "cats_legendary",
     name: "고양이 레전더리 컬렉션",
     grade: "L",
-    acquisition: "draw",
+    acquisition: "evolution",
     base: false,
     banner: null,
     hidden: false,
@@ -237,7 +241,7 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     id: "rare",
     name: "레어 컬렉션",
     grade: "R",
-    acquisition: "draw",
+    acquisition: "evolution",
     base: false,
     banner: null,
     hidden: false,
@@ -263,10 +267,11 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     acquisition: "draw",
     base: false,
     banner: {
+      enabled: true,
       title: "프리미엄 뽑기",
       tagline: "여기서만 만날 수 있는 특별한 친구들",
       cost: { 1: 10, 10: 90 },
-      rates: [{"collection":"normal","rate":0.658,"hidden":false},{"collection":"premium","rate":0.08,"hidden":false},{"collection":"rare","rate":0.2,"hidden":false},{"collection":"epic","rate":0.04,"hidden":false},{"collection":"unique","rate":0.015,"hidden":false},{"collection":"legendary","rate":0.004,"hidden":false},{"collection":"hidden","rate":0.003,"hidden":true}],
+      rates: [{"collection":"normal","rate":0.92,"hidden":false},{"collection":"premium","rate":0.08,"hidden":false}],
       hero: "premium_tiger",
       colors: {"background":"#EDE9FE","accent":"#7C3AED","text":"#2E1065"},
       poster: {"uri":"https://animalsrun-2571c.web.app/gacha-assets/be561a0a94b0c0c20951.jpg"},
@@ -324,7 +329,7 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     id: "epic",
     name: "에픽 컬렉션",
     grade: "EP",
-    acquisition: "draw",
+    acquisition: "evolution",
     base: false,
     banner: null,
     hidden: false,
@@ -347,7 +352,7 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     id: "unique",
     name: "유니크 컬렉션",
     grade: "U",
-    acquisition: "draw",
+    acquisition: "evolution",
     base: false,
     banner: null,
     hidden: false,
@@ -370,7 +375,7 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
     id: "legendary",
     name: "레전더리 컬렉션",
     grade: "L",
-    acquisition: "draw",
+    acquisition: "evolution",
     base: false,
     banner: null,
     hidden: false,
@@ -616,21 +621,27 @@ export const REWARDS: Rewards = {
       "every": 10
     },
     "EP": {
-      "first": 10
+      "first": 5
     },
     "U": {
-      "first": 15,
+      "first": 6,
       "milestone": 10
     },
     "L": {
-      "first": 30,
+      "first": 7,
       "milestone": 10,
       "every": 20
     },
     "H": {
-      "first": 30,
+      "first": 10,
       "milestone": 10,
       "every": 20
+    },
+    "N": {
+      "first": 3
+    },
+    "R": {
+      "first": 4
     }
   },
   "grade": {
@@ -640,17 +651,23 @@ export const REWARDS: Rewards = {
       "every": 10
     },
     "EP": {
-      "first": 20
+      "first": 5
     },
     "U": {
-      "first": 30
+      "first": 6
     },
     "L": {
-      "first": 50
+      "first": 7
     },
     "H": {
-      "first": 30,
+      "first": 10,
       "every": 10
+    },
+    "N": {
+      "first": 3
+    },
+    "R": {
+      "first": 4
     }
   },
   "collectionComplete": 30,
@@ -701,20 +718,21 @@ export const REWARDS: Rewards = {
   },
   "evolution": {
     "paths": {
-      "normal": "evolution_rare",
-      "rare": "evolution_epic",
-      "epic": "evolution_unique",
-      "unique": "evolution_legendary",
-      "cats": "evolution_cats_rare",
-      "cats_rare": "evolution_cats_epic",
-      "cats_epic": "evolution_cats_unique",
-      "cats_unique": "evolution_cats_legendary",
+      "normal": "rare",
+      "rare": "epic",
+      "epic": "unique",
+      "unique": "legendary",
+      "cats": "cats_rare",
+      "cats_rare": "cats_epic",
+      "cats_epic": "cats_unique",
+      "cats_unique": "cats_legendary",
       "evolution_rare": "evolution_epic",
       "evolution_epic": "evolution_unique",
       "evolution_unique": "evolution_legendary",
       "evolution_cats_rare": "evolution_cats_epic",
       "evolution_cats_epic": "evolution_cats_unique",
-      "evolution_cats_unique": "evolution_cats_legendary"
+      "evolution_cats_unique": "evolution_cats_legendary",
+      "premium": "epic"
     },
     "steps": {
       "N": 3000,

@@ -18,7 +18,7 @@ function prepare() {
   const collections = readCollections().map(c => {
     const b = c.config.banner;
     return { id:c.id, name:c.config.name, grade:c.config.grade, acquisition:c.config.acquisition, base:!!c.config.base, hidden:!!c.config.hidden,
-      banner:b ? { title:b.title, tagline:b.tagline ?? '', enabled:true, cost:b.cost, rates:c.rates, hero:c.characters.find(ch => ch.key === (b.hero ?? c.keys[0])).id,
+      banner:b ? { title:b.title, tagline:b.tagline ?? '', enabled:b.enabled!==false, cost:b.cost, rates:c.rates, hero:c.characters.find(ch => ch.key === (b.hero ?? c.keys[0])).id,
         colors:{ background:'#FFE4D2', accent:'#FF5A1F', text:'#3A1A0A', ...b.colors }, poster:c.poster ? remoteImage(c.posterCollection ?? c.id,c.poster) : null } : null,
       characters:c.characters.map(ch => ({ id:ch.id, name:ch.name, species:ch.key, image:remoteImage(c.assetCollection ?? c.id,'characters',`${ch.key}.png`), thumb:remoteImage(c.assetCollection ?? c.id,'thumbs',`${ch.key}.png`) })) };
   });
