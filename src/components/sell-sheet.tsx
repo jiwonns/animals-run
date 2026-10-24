@@ -1,5 +1,6 @@
 import { ScrollView } from '@/components/refreshable';
 import { Image } from '@/components/gacha-image';
+import { router, type Href } from 'expo-router';
 import { useRef, useState } from "react";
 import { Alert, Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -210,6 +211,25 @@ export function SellSheet({
               </Text>
             )}
           </ScrollView>
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy || !quantity}
+            onPress={() => {
+              onClose();
+              router.push(`/auction?character=${character.id}` as Href);
+            }}
+            style={{
+              marginHorizontal: 24,
+              marginBottom: 10,
+              backgroundColor: c.surface,
+              borderRadius: 18,
+              minHeight: 48,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ color: c.text, fontWeight: '800' }}>경매장에 올리기</Text>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             disabled={busy || !quantity || !user}

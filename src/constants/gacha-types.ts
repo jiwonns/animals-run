@@ -37,6 +37,18 @@ type GradeOverrides<T> = { default: T } & Partial<Record<Grade, Partial<T>>>;
 export type Rewards = {
   /** Coins paid per sold copy, including zero-coin normal cleanup. */
   sale: Record<Grade, number>;
+  /**
+   * Player-to-player auction: starting 시세 per grade, hard floor/ceil, and the band
+   * (low/high %) plus how much each trade pulls 시세 (weight %).
+   */
+  auction: {
+    quote: Record<Grade, number>;
+    floor: Record<Grade, number>;
+    ceil: Record<Grade, number>;
+    low: number;
+    high: number;
+    weight: number;
+  };
   /** Tickets work on banners whose single draw costs at most this many coins. */
   ticketMaxCost: number;
   /** Walking this many steps earns one coin. */

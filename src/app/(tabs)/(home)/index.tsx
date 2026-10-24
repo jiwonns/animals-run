@@ -34,6 +34,7 @@ type Hatching = { key: number; egg: Egg; saved: boolean; isNew: boolean };
 
 /** Shortcuts to other tabs; navigate() switches the tab bar selection too. Null href is not built yet. */
 const SHORTCUTS: { label: string; icon: keyof typeof ICONS; tint: string; href: Href | null }[] = [
+  { label: '경매장', icon: 'auction', tint: '#0EA5E9', href: '/auction' as Href },
   { label: '결투장', icon: 'trophy', tint: '#8B5CF6', href: '/arena' as Href },
   { label: '커뮤니티', icon: 'community', tint: '#6366F1', href: '/community' },
   { label: '지도', icon: 'map', tint: '#10B981', href: '/manage' },

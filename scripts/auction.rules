@@ -1,0 +1,125 @@
+    // Player-to-player auction: list one copy between 하한가 and 상한가, buy instantly, then 시세
+    // walks toward the trade price. The band is quote * low/high, clamped to the grade floor/ceil.
+    // These helpers always go through get/getAfter so the same check works from users, listings and quotes.
+    function auctionQuotes() { return __AUCTION_QUOTE__; }
+    function auctionFloors() { return __AUCTION_FLOOR__; }
+    function auctionCeils() { return __AUCTION_CEIL__; }
+    function auctionListingPath(id) { return /databases/$(database)/documents/auctionListings/$(id); }
+    function auctionQuotePath(id) { return /databases/$(database)/documents/auctionQuotes/$(id); }
+    function auctionUserPath(uid) { return /databases/$(database)/documents/users/$(uid); }
+    function auctionUserBefore(uid) { return get(auctionUserPath(uid)).data; }
+    function auctionUserAfter(uid) { return getAfter(auctionUserPath(uid)).data; }
+    function auctionBase(c) { return auctionQuotes().get(gradeOf(c), -1); }
+    function auctionFloorOf(c) { return auctionFloors().get(gradeOf(c), -1); }
+    function auctionCeilOf(c) { return auctionCeils().get(gradeOf(c), -1); }
+    function auctionQuoteOf(c) {
+      return exists(auctionQuotePath(c)) ? get(auctionQuotePath(c)).data.quote : auctionBase(c);
+    }
+    function auctionMinOf(c) {
+      let lo = int(math.floor(auctionQuoteOf(c) * __AUCTION_LOW__ / 100.0));
+      let floor = auctionFloorOf(c);
+      return lo < floor ? floor : lo;
+    }
+    function auctionMaxOf(c) {
+      let hi = int(math.ceil(auctionQuoteOf(c) * __AUCTION_HIGH__ / 100.0));
+      let cap = auctionCeilOf(c);
+      return hi > cap ? cap : hi;
+    }
+    function auctionNextQuote(c, price) {
+      let n = int(math.round((auctionQuoteOf(c) * (100 - __AUCTION_WEIGHT__) + price * __AUCTION_WEIGHT__) / 100.0));
+      let floor = auctionFloorOf(c);
+      let cap = auctionCeilOf(c);
+      return n < floor ? floor : n > cap ? cap : n;
+    }
+    function auctionTrade(data) {
+      return data.keys().hasOnly(['id', 'action', 'character', 'price'])
+        && data.id is string && data.id.size() > 0 && data.id.size() <= 128
+        && data.action in ['list', 'cancel', 'buy', 'sell']
+        && data.character is string && gradeOf(data.character) in ['N', 'R', 'EP', 'U', 'L', 'E', 'H']
+        && data.price is int && data.price > 0;
+    }
+    function auctionListingGone(id) { return !existsAfter(auctionListingPath(id)); }
+    function validAuctionQuote(c, price) {
+      let after = getAfter(auctionQuotePath(c)).data;
+      let trades = exists(auctionQuotePath(c)) ? get(auctionQuotePath(c)).data.trades + 1 : 1;
+      return after.keys().hasOnly(['quote', 'trades', 'lastPrice', 'updatedAt'])
+        && after.quote == auctionNextQuote(c, price)
+        && after.trades == trades && after.lastPrice == price && after.updatedAt == request.time;
+    }
+    function isAuctionList(uid) {
+      let before = auctionUserBefore(uid);
+      let after = auctionUserAfter(uid);
+      let trade = after.lastAuction;
+      let listing = getAfter(auctionListingPath(trade.id)).data;
+      let remaining = before.characters.get(trade.character, 0) - 1;
+      return isOwner(uid) && auctionTrade(trade) && trade.action == 'list'
+        && after.diff(before).affectedKeys().hasOnly(['characters', 'lastAuction'])
+        && remaining >= (before.get('avatar', null) == trade.character ? 1 : 0)
+        && after.characters.diff(before.characters).affectedKeys().hasOnly([trade.character])
+        && after.characters.get(trade.character, 0) == remaining
+        && !exists(auctionListingPath(trade.id))
+        && listing.seller == uid && listing.character == trade.character && listing.price == trade.price
+        && listing.price >= auctionMinOf(trade.character) && listing.price <= auctionMaxOf(trade.character);
+    }
+    function isAuctionCancel(uid) {
+      let before = auctionUserBefore(uid);
+      let after = auctionUserAfter(uid);
+      let trade = after.lastAuction;
+      let listing = get(auctionListingPath(trade.id)).data;
+      return isOwner(uid) && auctionTrade(trade) && trade.action == 'cancel'
+        && after.diff(before).affectedKeys().hasOnly(['characters', 'lastAuction'])
+        && listing.seller == uid && listing.character == trade.character && listing.price == trade.price
+        && auctionListingGone(trade.id)
+        && after.characters.diff(before.characters).affectedKeys().hasOnly([trade.character])
+        && after.characters.get(trade.character, 0) == before.characters.get(trade.character, 0) + 1;
+    }
+    function isAuctionBuy(uid) {
+      let before = auctionUserBefore(uid);
+      let after = auctionUserAfter(uid);
+      let trade = after.lastAuction;
+      let listing = get(auctionListingPath(trade.id)).data;
+      return isOwner(uid) && auctionTrade(trade) && trade.action == 'buy'
+        && after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastAuction'])
+        && listing.seller != uid && listing.character == trade.character && listing.price == trade.price
+        && before.coins >= listing.price && after.coins == before.coins - listing.price
+        && auctionListingGone(trade.id) && validAuctionQuote(trade.character, listing.price)
+        && after.characters.diff(before.characters).affectedKeys().hasOnly([trade.character])
+        && after.characters.get(trade.character, 0) == before.characters.get(trade.character, 0) + 1;
+    }
+    function isAuctionProfile(uid) {
+      let action = auctionUserAfter(uid).lastAuction.action;
+      return action == 'list' ? isAuctionList(uid)
+        : action == 'cancel' ? isAuctionCancel(uid)
+        : action == 'buy' && isAuctionBuy(uid);
+    }
+    function isAuctionSell(uid) {
+      let before = auctionUserBefore(uid);
+      let after = auctionUserAfter(uid);
+      let trade = after.lastAuction;
+      let listing = get(auctionListingPath(trade.id)).data;
+      let buyer = auctionUserAfter(request.auth.uid);
+      return isSignedIn() && request.auth.uid != uid && auctionTrade(trade) && trade.action == 'sell'
+        && after.diff(before).affectedKeys().hasOnly(['coins', 'lastAuction'])
+        && listing.seller == uid && listing.character == trade.character && listing.price == trade.price
+        && after.coins == before.coins + listing.price && auctionListingGone(trade.id)
+        && buyer.lastAuction.action == 'buy' && buyer.lastAuction.id == trade.id
+        && buyer.lastAuction.character == trade.character && buyer.lastAuction.price == trade.price;
+    }
+    match /auctionListings/{id} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isAuctionList(request.auth.uid)
+        && request.resource.data.keys().hasOnly(['seller', 'sellerName', 'character', 'price', 'createdAt'])
+        && request.resource.data.seller == request.auth.uid
+        && request.resource.data.sellerName == auctionUserAfter(request.auth.uid).get('nickname', auctionUserAfter(request.auth.uid).username)
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isSignedIn() && (
+        isAuctionCancel(request.auth.uid)
+        || isAuctionBuy(request.auth.uid)
+        || (resource.data.seller == request.auth.uid && isGone(resource.data.seller))
+      );
+    }
+    match /auctionQuotes/{id} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && isAuctionBuy(request.auth.uid)
+        && id == auctionUserAfter(request.auth.uid).lastAuction.character;
+    }

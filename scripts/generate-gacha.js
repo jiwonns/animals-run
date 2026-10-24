@@ -381,7 +381,14 @@ function renderRules(collections, rewards) {
   const walking = fs.readFileSync(path.join(__dirname, 'walking.rules'), 'utf8');
   const catalog = fs.readFileSync(path.join(__dirname, 'catalog.rules'), 'utf8');
   const arena = fs.readFileSync(path.join(__dirname, 'arena.rules'), 'utf8');
-  return renderBaseRules(collections, rewards).replace('    match /users/{uid} {', () => extra + '\n' + friends + '\n' + walking + '\n' + catalog + '\n' + arena + '\n    match /users/{uid} {');
+  const auction = fs.readFileSync(path.join(__dirname, 'auction.rules'), 'utf8')
+    .replaceAll('__AUCTION_QUOTE__', JSON.stringify(rewards.auction.quote))
+    .replaceAll('__AUCTION_FLOOR__', JSON.stringify(rewards.auction.floor))
+    .replaceAll('__AUCTION_CEIL__', JSON.stringify(rewards.auction.ceil))
+    .replaceAll('__AUCTION_LOW__', String(rewards.auction.low))
+    .replaceAll('__AUCTION_HIGH__', String(rewards.auction.high))
+    .replaceAll('__AUCTION_WEIGHT__', String(rewards.auction.weight));
+  return renderBaseRules(collections, rewards).replace('    match /users/{uid} {', () => extra + '\n' + friends + '\n' + walking + '\n' + catalog + '\n' + arena + '\n' + auction + '\n    match /users/{uid} {');
 }
 
 function renderBaseRules(collections, rewards) {
@@ -454,9 +461,11 @@ service cloud.firestore {
 ${fs.readFileSync(path.join(ROOT, 'scripts/session.rules'), 'utf8').trimEnd()}
 ${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
     match /users/{uid} {
-      allow read: if isOwner(uid);
+      // Get is open so a buyer can pay the seller in the same auction transaction.
+      allow get: if isSignedIn();
+      allow list: if isOwner(uid);
       allow create: if isOwner(uid) && isNewProfile();
-      allow update: if isOwner(uid) && isProfileUpdate(uid);
+      allow update: if (isOwner(uid) && isProfileUpdate(uid)) || isAuctionSell(uid);
       // Leaving: the profile goes first, then its history (see isGone).
       allow delete: if isOwner(uid);
     }
@@ -490,6 +499,7 @@ ${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
         || (changed.hasAny(['recycleCount']) && isRecycle())
         || (changed.hasAny(['evolveCount']) && isEvolve(uid))
         || (changed.hasOnly(['avatar']) && isAvatarChange())
+        || (changed.hasAny(['lastAuction']) && isAuctionProfile(uid))
         || (changed.hasAny(['characters']) && isSale());
     }
 

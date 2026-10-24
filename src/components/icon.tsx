@@ -57,5 +57,6 @@ export const ICONS = {
   person: { ios: 'person.fill', android: 'person' },
   edit: { ios: 'pencil', android: 'edit' },
   nickname: { ios: 'face.smiling', android: 'badge' },
+  auction: { ios: 'tag.fill', android: 'sell' },
   leave: { ios: 'person.crop.circle.badge.xmark', android: 'person_remove' },
 } satisfies Record<string, SymbolName>;

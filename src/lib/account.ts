@@ -20,6 +20,7 @@ import { medalDisplayRef } from './medal-display';
 import { auth } from './firebase-auth';
 import { companionRef, eggsRef } from './home';
 import { claimsRef, drawLogsRef, locationRef, profileRef } from './profile';
+import { listingsRef } from './auction';
 import { rankingRef } from './ranking';
 import { activateSession, beginSessionLogin, sessionRef } from './session-lease';
 
@@ -112,6 +113,7 @@ export async function deleteAccount(password: string): Promise<string | null> {
       deleteDoc(locationRef(uid)),
       deleteDoc(mapPreferencesRef(uid)),
       deleteAll(query(friendshipsRef(), where('members', 'array-contains', uid))),
+      deleteAll(query(listingsRef(), where('seller', '==', uid))),
       deleteDoc(rankingRef(uid)),
     ]);
     await deleteDoc(sessionRef(uid));

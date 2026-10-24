@@ -606,6 +606,38 @@ export const REWARDS: Rewards = {
     "E": 1,
     "H": 100
   },
+  "auction": {
+    "quote": {
+      "N": 8,
+      "R": 16,
+      "EP": 40,
+      "U": 90,
+      "L": 160,
+      "E": 16,
+      "H": 280
+    },
+    "floor": {
+      "N": 1,
+      "R": 3,
+      "EP": 8,
+      "U": 20,
+      "L": 40,
+      "E": 3,
+      "H": 80
+    },
+    "ceil": {
+      "N": 24,
+      "R": 64,
+      "EP": 160,
+      "U": 360,
+      "L": 640,
+      "E": 64,
+      "H": 1120
+    },
+    "low": 70,
+    "high": 130,
+    "weight": 30
+  },
   "stepsPerCoin": 50,
   "character": {
     "milestones": [

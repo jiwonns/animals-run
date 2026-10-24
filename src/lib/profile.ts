@@ -15,6 +15,8 @@ import { zodiacOf } from "./zodiac";
 export const STARTING_COINS = 100;
 
 export type Profile = {
+  /** Receipt checked against the listing and 시세 write by Firestore rules. */
+  lastAuction?: { id: string; action: 'list' | 'cancel' | 'buy' | 'sell'; character: CharacterId; price: number };
   /** Receipt for an atomic, server-validated arena payout. */
   lastArenaReward?: string;
   /** Receipt checked against current inventory and grade prices by Firestore rules. */
