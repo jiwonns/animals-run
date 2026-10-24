@@ -133,11 +133,14 @@ export default function GachaScreen() {
                           <Pressable
                             key={value}
                             accessibilityRole="button"
+                            accessibilityLabel={label}
                             accessibilityState={{ selected }}
                             onPress={() => setPaymentChoice(value)}
-                            style={[
+                            style={({ pressed }) => [
                               styles.paymentOption,
+                              { borderColor: selected ? (value === 'tickets' ? `${TICKET_COLOR}80` : '#D9981880') : 'transparent' },
                               selected && [styles.paymentSelected, { backgroundColor: colors.background }],
+                              pressed && { opacity: 0.75 },
                             ]}>
                             <CostMark kind={value} />
                             <Text
@@ -145,8 +148,11 @@ export default function GachaScreen() {
                                 styles.paymentLabel,
                                 { color: selected ? (value === 'tickets' ? TICKET_COLOR : colors.text) : colors.secondary },
                               ]}>
-                              {label}
+                              {value === 'coins' ? '코인' : '뽑기권'}
                             </Text>
+                            <View style={[styles.paymentIndicator, { backgroundColor: selected ? (value === 'tickets' ? TICKET_COLOR : '#D99818') : colors.border }]}>
+                              {selected && <Text style={styles.paymentCheck}>✓</Text>}
+                            </View>
                           </Pressable>
                         );
                       })}
@@ -322,6 +328,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   wallet: {
+    flexShrink: 1,
     flexDirection: 'row',
     gap: 8,
     marginBottom: 2,
@@ -367,12 +374,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 9,
+    paddingVertical: 8,
+    minHeight: 44,
+    borderWidth: 1,
     borderRadius: 11,
   },
   paymentSelected: {
     boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
   },
+  paymentIndicator: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 2,
+  },
+  paymentCheck: { color: '#fff', fontSize: 11, lineHeight: 14, fontWeight: '900' },
   paymentLabel: {
     fontSize: 14,
     fontWeight: '700',

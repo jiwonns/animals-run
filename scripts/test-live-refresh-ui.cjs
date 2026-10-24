@@ -10,15 +10,12 @@ const stubs={
  './session-provider':`const user={uid:'admin'};export const useSession=()=>({user});`,
  '@react-native-async-storage/async-storage':`export default{getItem:async()=>null,setItem:async()=>{}};`,
  '@/providers/session-provider':`const user={uid:'admin'};const profile={coins:999,tickets:30,characters:{mouse:1}};export const useSession=()=>({user,profile});`,
- '@/hooks/use-colors':`export const useColors=()=>({background:'#fffaf5',surface:'#ffffff',border:'#ddd',text:'#222',secondary:'#666',primary:'#ed701e'});`,
  '@/lib/admin-catalog':`export const useAdministrator=()=>({allowed:true,loading:false});export const uploadGachaImage=async()=>({uri:'https://example.com/image.png'});`,
  'expo-router':`export const Stack={Screen:()=>null};`,
  '@/hooks/use-confirm-exit':`export const useConfirmExit=()=>{};`,
  '@/lib/gacha':`export const acceptsTickets=b=>b.cost[1]<=10;export const drawCharacters=async()=>{throw Error('not used');};export class DrawError extends Error{}`,
  '@/components/gacha/draw-show':`export const DrawShow=()=>null;`,
  '@/components/banner-poster':`import * as React from 'react';import {Text,View} from 'react-native-web';export const BannerPoster=({banner,width,height})=><View style={{width,height,backgroundColor:'#ffe4ca'}}><Text>{banner.title}</Text></View>;`,
- '@/components/coin-badge':`export const CoinBadge=()=>null;export const CoinToken=()=>null;`,
- '@/components/ticket-badge':`export const TICKET_COLOR='#f90';export const TicketBadge=()=>null;export const TicketToken=()=>null;`,
  '@/components/odds-info':`import * as React from 'react';import {Pressable,Text} from 'react-native-web';export const OddsButton=({title})=><Pressable accessibilityRole='button' style={{minHeight:44,justifyContent:'center'}}><Text>{title}</Text></Pressable>;`,
  '@/components/gacha-image':`import * as React from 'react';import {View} from 'react-native-web';export const Image=({style})=><View style={style}/>;`,
  'react-native-safe-area-context':`import * as React from 'react';import {View} from 'react-native-web';export const SafeAreaView=({edges,...props})=><View {...props}/>;`,
@@ -32,6 +29,8 @@ const stubs={
  try{
   const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});page.setDefaultTimeout(8000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`http://127.0.0.1:${server.address().port}`);await page.getByText('노말 뽑기',{exact:true}).first().waitFor();await page.waitForFunction(()=>window.__forceReads>=1);
+  for(const colorScheme of ['light','dark']){
+  await page.emulateMedia({colorScheme});
   for(const size of [{width:390,height:844},{width:360,height:640},{width:320,height:568},{width:844,height:390}]){
    await page.setViewportSize(size);await page.waitForTimeout(150);
    for(const mode of ['coins','tickets']){
@@ -45,6 +44,7 @@ const stubs={
     assert.ok(geometry.bottom<=geometry.barTop+1,JSON.stringify({size,mode,geometry}));assert.equal(geometry.buttons.length,2);assert.ok(geometry.vertical.every(r=>r.content<=r.height+1),JSON.stringify({size,mode,geometry}));
     assert.ok(geometry.buttons.every(r=>r.bottom<=geometry.barTop+1&&r.top>=0&&r.height>=44),JSON.stringify({size,mode,geometry}));
    }
+  }
   }
   await page.setViewportSize({width:390,height:844});await page.getByRole('button',{name:'코인으로',exact:true}).first().click();
   await page.getByLabel('유지할 입력',{exact:true}).fill('새로고침해도 유지');const reads=await page.evaluate(()=>window.__forceReads);

@@ -16,9 +16,9 @@ export function TicketToken({ size = 24, cutoutColor = '#F2F2F7' }: { size?: num
 export function TicketBadge({ tickets }: { tickets: number }) {
   const colors = useColors();
   return (
-    <View accessibilityLabel={`보유 뽑기권 ${tickets}장`} style={[styles.badge, { backgroundColor: colors.surface }]}>
+    <View accessibilityLabel={`보유 뽑기권 ${tickets}장`} style={[styles.badge, { backgroundColor: colors.surface, borderColor: `${TICKET_COLOR}40` }]}>
       <TicketToken cutoutColor={colors.surface} />
-      <Text style={[styles.amount, { color: colors.text }]}>{tickets.toLocaleString()}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.amount, { color: colors.text }]}>{tickets.toLocaleString()}</Text>
     </View>
   );
 }
@@ -30,7 +30,8 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingLeft: 6,
     paddingRight: 12,
-    paddingVertical: 6,
+    paddingVertical: 5,
+    borderWidth: 1,
     borderRadius: 999,
   },
   ticket: {
@@ -47,6 +48,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   amount: {
+    flexShrink: 1,
     fontSize: 16,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],

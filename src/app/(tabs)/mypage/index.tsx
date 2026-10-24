@@ -8,7 +8,8 @@ import { BondCard } from '@/components/bond-card';
 import { EquippedMedal } from '@/components/medal-showcase';
 import { useMedalShowcase } from '@/hooks/use-medal-showcase';
 import { Icon, ICONS } from '@/components/icon';
-import { TICKET_COLOR } from '@/components/ticket-badge';
+import { CoinToken } from '@/components/coin-badge';
+import { TICKET_COLOR, TicketToken } from '@/components/ticket-badge';
 import { CHARACTERS } from '@/constants/characters';
 import { useAchievements } from '@/hooks/use-achievements';
 import { useColors } from '@/hooks/use-colors';
@@ -46,8 +47,8 @@ export default function MyPageScreen() {
     { label: '총 걸음', value: (profile?.steps ?? 0).toLocaleString() },
   ];
   const wallet = [
-    { label: '코인', value: profile?.coins ?? 0, mark: 'C', markStyle: styles.coinMark },
-    { label: '뽑기권', value: profile?.tickets ?? 0, mark: 'T', markStyle: styles.ticketMark },
+    { label: '코인', value: profile?.coins ?? 0, color: '#D99818' },
+    { label: '뽑기권', value: profile?.tickets ?? 0, color: TICKET_COLOR },
   ];
 
   function confirmSignOut() {
@@ -110,13 +111,13 @@ export default function MyPageScreen() {
       <BondCard />
       <View style={styles.wallet}>
         {wallet.map((item) => (
-          <View key={item.label} style={[styles.walletCard, { backgroundColor: colors.surface }]}>
-            <View style={item.markStyle}>
-              <Text style={styles.markLabel}>{item.mark}</Text>
+          <View key={item.label} accessibilityLabel={`보유 ${item.label} ${item.value.toLocaleString()}${item.label === '코인' ? '개' : '장'}`} style={[styles.walletCard, { backgroundColor: colors.surface, borderColor: `${item.color}40` }]}>
+            <View style={[styles.walletIcon, { backgroundColor: `${item.color}18` }]}>
+              {item.label === '코인' ? <CoinToken size={28} /> : <TicketToken size={30} cutoutColor={colors.surface} />}
             </View>
-            <View>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={[styles.walletLabel, { color: colors.secondary }]}>{item.label}</Text>
-              <Text style={[styles.walletValue, { color: colors.text }]}>{item.value.toLocaleString()}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.walletValue, { color: colors.text }]}>{item.value.toLocaleString()}</Text>
             </View>
           </View>
         ))}
@@ -249,10 +250,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 14,
+    gap: 8,
+    padding: 12,
+    borderWidth: 1,
     borderRadius: 16,
   },
+  walletIcon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   coinMark: {
     width: 34,
     height: 34,

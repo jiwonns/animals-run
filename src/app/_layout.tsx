@@ -1,4 +1,5 @@
-import { Stack } from "expo-router";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import { useColors } from '@/hooks/use-colors';
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -11,13 +12,17 @@ import { BondProvider } from '@/hooks/use-bond';
 import { FriendsProvider } from '@/providers/friends-provider';
 import { CatalogProvider } from '@/providers/catalog-provider';
 import { GlobalPullRefresh } from '@/components/global-pull-refresh';
-import { View } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 SplashScreen.setOptions({ duration: 400, fade: true });
 
 export default function RootLayout() {
+  const colors = useColors();
+  const baseTheme = useColorScheme() === 'dark' ? DarkTheme : DefaultTheme;
+  const theme = { ...baseTheme, colors: { ...baseTheme.colors, background: colors.background, card: colors.background, text: colors.text, border: colors.border, primary: colors.primary } };
   return (
+    <ThemeProvider value={theme}>
     <SessionProvider>
       <CatalogProvider>
       <FriendsProvider>
@@ -30,6 +35,7 @@ export default function RootLayout() {
       </FriendsProvider>
       </CatalogProvider>
     </SessionProvider>
+    </ThemeProvider>
   );
 }
 
