@@ -52,11 +52,13 @@ export type Profile = {
   birthday?: string;
   /** Egg slot most recently hatched; firestore.rules checks each hatch against that egg. */
   lastHatch?: string;
-  /** Times the player has hatched, evolved, fused and recycled; shown on the leaderboards. */
+  /** Times the player has hatched, evolved, fused, recycled, traded at auction, or won an arena duel. */
   hatchCount?: number;
   evolveCount?: number;
   fuseCount?: number;
   recycleCount?: number;
+  auctionTrades?: number;
+  arenaWins?: number;
   /** The most recent fusion, recycling or evolution; firestore.rules checks each against it. */
   lastCraft?: { inputs: CharacterId[]; output: CharacterId | null };
 };

@@ -598,8 +598,8 @@ export const COLLECTION_DATA: CollectionData<CollectionId, CharacterId>[] = [
 export const REWARDS: Rewards = {
   "ticketMaxCost": 10,
   "sale": {
-    "N": 0,
-    "R": 1,
+    "N": 1,
+    "R": 3,
     "EP": 10,
     "U": 30,
     "L": 50,
@@ -710,6 +710,24 @@ export const REWARDS: Rewards = {
     ],
     "every": 1000,
     "reward": 20
+  },
+  "auctionTrades": {
+    "milestones": [
+      1,
+      10,
+      50
+    ],
+    "every": 100,
+    "reward": 8
+  },
+  "arenaWins": {
+    "milestones": [
+      1,
+      10,
+      50
+    ],
+    "every": 100,
+    "reward": 10
   },
   "crafting": {
     "tiers": [

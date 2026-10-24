@@ -79,7 +79,12 @@ function readJson(file, label) {
 function readRewards() {
   const rewards = readJson(path.join(GACHA_DIR, 'rewards.json'), 'rewards.json');
   const isCount = (n) => Number.isInteger(n) && n >= 0;
-  const { character, grade, drawCount } = rewards;
+  const { character, grade, drawCount, auctionTrades, arenaWins } = rewards;
+  const isCountReward = (block) =>
+    Array.isArray(block?.milestones) &&
+    block.milestones.every(isCount) &&
+    block.every > 0 &&
+    isCount(block.reward);
   const ok =
     GRADES.every((g) => isCount(rewards.sale?.[g])) &&
     isCount(rewards.ticketMaxCost) &&
@@ -90,10 +95,9 @@ function readRewards() {
     character.milestones.every(isCount) &&
     character.every > 0 &&
     grade?.every > 0 &&
-    Array.isArray(drawCount?.milestones) &&
-    drawCount.milestones.every(isCount) &&
-    drawCount.every > 0 &&
-    isCount(drawCount.reward) &&
+    isCountReward(drawCount) &&
+    isCountReward(auctionTrades) &&
+    isCountReward(arenaWins) &&
     Object.keys(rewards.breeding?.hatchMinutes ?? {}).length > 0 &&
     Object.entries(rewards.breeding.hatchMinutes).every(
       ([g, minutes]) => GRADES.includes(g) && Number.isInteger(minutes) && minutes > 0,
@@ -373,7 +377,7 @@ export const SEOLLAL = ${q(seollalTable())}.split(',');
 
 function renderRules(collections, rewards) {
   const conditions = collections.map(c => `id == '${c.id}' ? (${c.characters.map(ch => `chars.get('${ch.id}', 0) > 0`).join(' && ')})`).join(' : ') + ' : false';
-  const rankingMedals = ['steps', 'hatchCount', 'evolveCount', 'fuseCount', 'recycleCount'].map(key => `ranking:${key}`)
+  const rankingMedals = ['steps', 'hatchCount', 'evolveCount', 'fuseCount', 'recycleCount', 'auctionTrades', 'arenaWins'].map(key => `ranking:${key}`)
     .concat([...new Set(collections.map(c => c.config.grade))].map(grade => `ranking:grade:${grade}`));
   const extra = fs.readFileSync(path.join(__dirname, 'bond-medals.rules'), 'utf8')
     .replace('__MEDAL_COLLECTION_CONDITIONS__', conditions).replace('__RANKING_MEDAL_IDS__', JSON.stringify(rankingMedals));
@@ -406,7 +410,7 @@ function renderBaseRules(collections, rewards) {
   const chain = (branches, fallback, indent = '      ') =>
     branches.map(([cond, value]) => `${cond} ? ${value}\n${indent}: `).join('') + fallback;
 
-  const { character, grade, drawCount } = rewards;
+  const { character, grade, drawCount, auctionTrades, arenaWins } = rewards;
   const grades = GRADES.filter((g) => collections.some((c) => c.config.grade === g));
   const ofGrade = (g) => collections.filter((c) => c.config.grade === g);
   const charAmount = (field) => {
@@ -626,7 +630,7 @@ ${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
     function isRanking(uid) {
       let user = get(/databases/$(database)/documents/users/$(uid)).data;
       let d = request.resource.data;
-      let counts = ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount'];
+      let counts = ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount', 'auctionTrades', 'arenaWins'];
       let fields = ['username', 'avatar', 'steps', 'characters', 'updatedAt'].concat(counts);
       return d.keys().hasOnly(fields.concat(['nickname'])) && d.keys().hasAll(fields)
         && d.username == user.username
@@ -638,6 +642,8 @@ ${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
         && d.evolveCount == user.get('evolveCount', 0)
         && d.fuseCount == user.get('fuseCount', 0)
         && d.recycleCount == user.get('recycleCount', 0)
+        && d.auctionTrades == user.get('auctionTrades', 0)
+        && d.arenaWins == user.get('arenaWins', 0)
         && d.updatedAt == request.time;
     }
 
@@ -973,6 +979,8 @@ ${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
       : p[0] == 'char_count' && p.size() == 3 ? charCountReward(p[1], p[2], u.characters)
       : p[0] == 'collection_complete' && p.size() == 2 ? collectionReward(p[1], u.characters)
       : p[0] == 'draws' && p.size() == 2 ? drawsReward(p[1], u.drawCount)
+      : p[0] == 'auction_trades' && p.size() == 2 ? auctionTradesReward(p[1], u.get('auctionTrades', 0))
+      : p[0] == 'arena_wins' && p.size() == 2 ? arenaWinsReward(p[1], u.get('arenaWins', 0))
       : -1;
   }
 
@@ -1032,6 +1040,22 @@ ${fs.readFileSync(path.join(ROOT, 'scripts/community.rules'), 'utf8').trimEnd()}
     return string(m) == s && n >= m
       && (${inline(drawCount.milestones)}.hasAny([m]) || (m > 0 && m % ${drawCount.every} == 0))
       ? ${drawCount.reward}
+      : -1;
+  }
+
+  function auctionTradesReward(s, n) {
+    let m = int(s);
+    return string(m) == s && n >= m
+      && (${inline(auctionTrades.milestones)}.hasAny([m]) || (m > 0 && m % ${auctionTrades.every} == 0))
+      ? ${auctionTrades.reward}
+      : -1;
+  }
+
+  function arenaWinsReward(s, n) {
+    let m = int(s);
+    return string(m) == s && n >= m
+      && (${inline(arenaWins.milestones)}.hasAny([m]) || (m > 0 && m % ${arenaWins.every} == 0))
+      ? ${arenaWins.reward}
       : -1;
   }
   }

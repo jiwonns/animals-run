@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Select } from '@/components/select';
 import { CHARACTERS, GRADES, type Character, type CharacterId, type Grade } from '@/constants/characters';
 import { useColors } from '@/hooks/use-colors';
+import { AuctionQuoteBoard } from '@/components/auction-quote-board';
 import {
   AuctionError,
   editBid,
@@ -168,20 +169,17 @@ export function AuctionOfferSheet({
                 )}
                 {picked && band && (
                   <>
-                    <Text style={[styles.band, { color: colors.text }]}>
-                      {picked.name} · 시세 {band.quote.toLocaleString()}코인
-                      {lastWindowVolume(quotes[picked.id]) > 0
-                        ? ` · 지난 ${lastWindowVolume(quotes[picked.id]).toLocaleString()}건`
-                        : ''}
-                    </Text>
-                    <Text style={[styles.meta, { color: colors.secondary }]}>
-                      {band.min.toLocaleString()}~{band.max.toLocaleString()}코인
-                      {selling
-                        ? editing
-                          ? ` · 지금 ${editing.price.toLocaleString()}`
-                          : ` · 가능 ${quantity}마리`
-                        : ` · 보유 ${wallet.toLocaleString()}코인`}
-                    </Text>
+                    <AuctionQuoteBoard
+                      band={band}
+                      volume={lastWindowVolume(quotes[picked.id])}
+                      extra={
+                        selling
+                          ? editing
+                            ? `지금 ${editing.price.toLocaleString()}`
+                            : `가능 ${quantity}마리`
+                          : `보유 ${wallet.toLocaleString()}코인`
+                      }
+                    />
                     <View style={styles.priceRow}>
                       <Pressable
                         accessibilityRole="button"
@@ -259,8 +257,6 @@ const styles = StyleSheet.create({
   picks: { gap: 8 },
   pick: { width: 76, alignItems: 'center', gap: 4, borderRadius: 16, padding: 8, borderWidth: 2 },
   pickName: { fontSize: 11, fontWeight: '700' },
-  band: { fontSize: 13, fontWeight: '700' },
-  meta: { fontSize: 12, fontWeight: '600' },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   step: { width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   stepLabel: { fontSize: 25 },

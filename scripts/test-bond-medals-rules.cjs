@@ -105,7 +105,7 @@ const denied = operation => assert.rejects(operation, e => e.code === 'permissio
   assert.equal(display.equippedMedal('ranking:steps', display.ownedMedals(uid, new Set(), changedEntries)), null, 'lost crown vanishes from representative slot');
   await assert.rejects(() => display.equipMedal(uid, 'ranking:steps'));
   await display.equipMedal(uid, medal.id);
-  for (const activity of ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount']) {
+  for (const activity of ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount', 'auctionTrades', 'arenaWins']) {
     const activityMedal = medals.MILESTONE_MEDALS.find(m => m.id === `${activity}:10`);
     await denied(() => medals.claimMedal(uid, activityMedal));
     profile = { ...profile, [activity]: 10 };

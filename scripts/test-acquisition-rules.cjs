@@ -59,7 +59,7 @@ function load(file,mocks){const module={exports:{}};new Function('require','modu
   const rewardApi=load('src/lib/rewards.ts',{'firebase/firestore':f,'@/constants/characters':{CHARACTER_BY_ID:chars,CHARACTERS:Object.values(chars),COLLECTIONS:[],GRADE_ORDER:['N','R','EP','U','L','H'],GRADES:Object.fromEntries(['N','R','EP','U','L','H'].map(g=>[g,{label:g}]))},'@/constants/gacha.generated':{REWARDS:amounts},'./firebase':{db},'./profile':{profileRef,claimRef:(uid,id)=>f.doc(db,'users',uid,'claims',id)}});
   const expected={mouse:3,premium_mouse:4,epic_mouse:5,unique_mouse:6,legendary_mouse:7,hidden_mouse:10};
   await put('users/'+user.uid,{...profile,characters:Object.fromEntries(Object.keys(expected).map(id=>[id,1])),tickets:0});
-  const pending=rewardApi.earnedRewards({characters:Object.fromEntries(Object.keys(expected).map(id=>[id,1])),gradeCounts:{},drawCount:0});
+  const pending=rewardApi.earnedRewards({characters:Object.fromEntries(Object.keys(expected).map(id=>[id,1])),gradeCounts:{},drawCount:0,auctionTrades:0,arenaWins:0});
   for(const [id,tickets] of Object.entries(expected)){
    const reward=pending.find(r=>r.id==='char_first:'+id);assert.equal(reward.tickets,tickets);
    await assert.rejects(rewardApi.claimReward(user.uid,{...reward,tickets:tickets+1}));

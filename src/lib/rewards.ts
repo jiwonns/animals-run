@@ -31,6 +31,8 @@ export type ProgressState = {
   characters: Partial<Record<CharacterId, number>>;
   gradeCounts: GradeCounts;
   drawCount: number;
+  auctionTrades: number;
+  arenaWins: number;
 };
 
 export const characterReward = (grade: Grade) => ({
@@ -130,6 +132,24 @@ export function earnedRewards(state: ProgressState): Reward[] {
       id: `draws:${m}`,
       label: `누적 ${m}회 뽑기`,
       tickets: reward,
+    });
+  }
+
+  const auction = REWARDS.auctionTrades;
+  for (const m of reached(state.auctionTrades, auction.milestones, auction.every)) {
+    rewards.push({
+      id: `auction_trades:${m}`,
+      label: m === 1 ? '첫 경매 거래' : `경매 거래 ${m}회`,
+      tickets: auction.reward,
+    });
+  }
+
+  const arena = REWARDS.arenaWins;
+  for (const m of reached(state.arenaWins, arena.milestones, arena.every)) {
+    rewards.push({
+      id: `arena_wins:${m}`,
+      label: m === 1 ? '첫 결투 승리' : `결투 승리 ${m}회`,
+      tickets: arena.reward,
     });
   }
 

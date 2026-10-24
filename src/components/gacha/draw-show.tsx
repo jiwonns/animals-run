@@ -20,7 +20,8 @@ import type { Banner } from '@/constants/banners';
 import { GRADES, GRADE_ORDER, type Grade } from '@/constants/characters';
 import { useColors } from '@/hooks/use-colors';
 import type { DrawResult } from '@/lib/gacha';
-import { totalTickets, type Reward } from '@/lib/rewards';
+import { claimRewards, totalTickets, type Reward } from '@/lib/rewards';
+import { useSession } from '@/providers/session-provider';
 
 import { GlowPulse, Halo, Sparkles } from './effects';
 import { FLIP_MS, FlipCard } from './flip-card';
@@ -294,10 +295,33 @@ function MultiReveal({ results, width, banner, opened, onOpen, summaryDelay }: {
 
 function RewardsPanel({ rewards, onOpen }: { rewards: Reward[]; onOpen: () => void }) {
   const colors = useColors();
+  const { user, claimed } = useSession();
+  const pending = rewards.filter((reward) => !claimed?.has(reward.id));
+  const [status, setStatus] = useState<'ready' | 'claiming' | 'done'>('ready');
+  const [paid, setPaid] = useState(0);
+  const total = totalTickets(pending);
+  if (!pending.length && status !== 'done') return null;
+
+  async function claim() {
+    if (!user || status !== 'ready' || !pending.length) return;
+    setStatus('claiming');
+    const got = await claimRewards(user.uid, pending);
+    if (!got.length) {
+      setStatus('ready');
+      return;
+    }
+    setPaid(totalTickets(got));
+    setStatus('done');
+  }
+
   return (
     <View style={[styles.rewards, { backgroundColor: colors.surface }]}>
-      <Text style={styles.rewardsTitle}>업적 달성 · 뽑기권 +{totalTickets(rewards)}장</Text>
-      {rewards.slice(0, REWARD_ROWS).map((reward) => (
+      <Text style={styles.rewardsTitle}>
+        {status === 'done'
+          ? `뽑기권 ${paid.toLocaleString()}장을 받았어요`
+          : `업적 달성 · 받을 수 있는 뽑기권 +${total.toLocaleString()}장`}
+      </Text>
+      {status !== 'done' && pending.slice(0, REWARD_ROWS).map((reward) => (
         <View key={reward.id} style={styles.rewardRow}>
           <Text style={[styles.rewardLabel, { color: colors.text }]} numberOfLines={1}>
             {reward.label}
@@ -305,16 +329,33 @@ function RewardsPanel({ rewards, onOpen }: { rewards: Reward[]; onOpen: () => vo
           <Text style={styles.rewardTickets}>+{reward.tickets}</Text>
         </View>
       ))}
-      {rewards.length > REWARD_ROWS && <Text style={[styles.rewardMore, { color: colors.secondary }]}>외 {rewards.length - REWARD_ROWS}개</Text>}
-      <Pressable
-        accessibilityRole="button"
-        hitSlop={8}
-        onPress={() => {
-          onOpen();
-          router.navigate('/mypage/achievements');
-        }}>
-        <Text style={styles.rewardLink}>업적에서 받기 ›</Text>
-      </Pressable>
+      {status !== 'done' && pending.length > REWARD_ROWS && (
+        <Text style={[styles.rewardMore, { color: colors.secondary }]}>외 {pending.length - REWARD_ROWS}개</Text>
+      )}
+      {status === 'done' ? (
+        <Text style={[styles.rewardMore, { color: colors.secondary }]}>지갑에 바로 들어왔어요.</Text>
+      ) : (
+        <View style={styles.rewardActions}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={!user || status === 'claiming'}
+            onPress={() => void claim()}
+            style={({ pressed }) => [pressed && styles.pressed]}
+          >
+            <Text style={styles.rewardLink}>{status === 'claiming' ? '받는 중…' : '지금 받기'}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => {
+              onOpen();
+              router.navigate('/mypage/achievements');
+            }}
+          >
+            <Text style={[styles.rewardLink, { opacity: 0.7 }]}>나중에 업적에서</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -472,10 +513,15 @@ const styles = StyleSheet.create({
   rewardMore: {
     fontSize: 13,
   },
+  rewardActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 14,
+    marginTop: 2,
+  },
   rewardLink: {
     color: TICKET_COLOR,
     fontSize: 14,
     fontWeight: '700',
-    alignSelf: 'flex-end',
   },
 });

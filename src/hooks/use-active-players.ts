@@ -1,6 +1,6 @@
 import { useRefreshRevision } from '@/lib/app-refresh';
 import { onSnapshot, query, where } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { locationRef, locationsRef, type PlayerLocation } from '@/lib/profile';
 import { friendIdentity } from '@/lib/friends';
@@ -54,9 +54,14 @@ export function useActivePlayers(uid: string | undefined) {
     return () => off.forEach(unsubscribe => unsubscribe());
   }, [uid, friendKey, refreshRevision]);
 
-  const friendIds = new Set(friendKey ? friendKey.split(',') : []);
-  const visible = new Map<string, ActivePlayer>();
-  if (state.uid === uid) state.players.filter(p => p.audience === 'public').forEach(p => visible.set(p.id, p));
-  if (friendState && friendState.uid === uid) friendState.players.filter(p => friendIds.has(p.id)).forEach(p => visible.set(p.id, p));
-  return { players: [...visible.values()].filter(p => p.id !== uid && (p.updatedAt?.toMillis() ?? 0) >= since), failed: state.uid === uid && state.failed };
+  const players = useMemo(() => {
+    const friendIds = new Set(friendKey ? friendKey.split(',') : []);
+    const visible = new Map<string, ActivePlayer>();
+    if (state.uid === uid) state.players.filter((p) => p.audience === 'public').forEach((p) => visible.set(p.id, p));
+    if (friendState && friendState.uid === uid) {
+      friendState.players.filter((p) => friendIds.has(p.id)).forEach((p) => visible.set(p.id, p));
+    }
+    return [...visible.values()].filter((p) => p.id !== uid && (p.updatedAt?.toMillis() ?? 0) >= since);
+  }, [friendKey, friendState, since, state, uid]);
+  return { players, failed: state.uid === uid && state.failed };
 }

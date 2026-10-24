@@ -13,7 +13,7 @@
           || (medalId == 'steps:10000' && p.get('steps', 0) >= 10000)
           || (medalId == 'steps:100000' && p.get('steps', 0) >= 100000)
           || (medalId == 'draws:100' && p.drawCount >= 100)
-          || (parts[0] in ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount'] && parts[1] == '10' && p.get(parts[0], 0) >= 10));
+          || (parts[0] in ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount', 'auctionTrades', 'arenaWins'] && parts[1] == '10' && p.get(parts[0], 0) >= 10));
       }
       allow read: if isSignedIn();
       allow create: if isOwner(uid) && earned() && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;

@@ -18,6 +18,7 @@ import {
 } from "@/constants/characters";
 import { REWARDS } from "@/constants/gacha.generated";
 import { useAchievements } from "@/hooks/use-achievements";
+import { refreshApplication } from "@/lib/app-refresh";
 import { useColors } from "@/hooks/use-colors";
 import {
   characterReward,
@@ -53,6 +54,8 @@ const CATEGORY: Record<
     color: "#0EA5E9",
   },
   draws: { icon: "draws", label: "누적 뽑기", color: "#10B981" },
+  auction_trades: { icon: "auction", label: "경매", color: "#0EA5E9" },
+  arena_wins: { icon: "swords", label: "결투", color: "#F43F5E" },
 };
 const categoryOf = (reward: Reward) =>
   CATEGORY[reward.id.split(":")[0]] ?? CATEGORY.draws;
@@ -71,9 +74,15 @@ export default function AchievementsScreen() {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
         <Text style={[styles.failed, { color: colors.secondary }]}>
-          업적 정보를 불러오지 못했어요.{"\n"}Firebase 콘솔에 최신
-          firestore.rules가 게시됐는지 확인해주세요.
+          업적 정보를 불러오지 못했어요.{"\n"}연결을 확인하고 다시 시도해주세요.
         </Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => void refreshApplication()}
+          style={[styles.claimAll, { backgroundColor: colors.primary, marginTop: 16 }]}
+        >
+          <Text style={styles.claimAllLabel}>다시 시도</Text>
+        </Pressable>
       </View>
     );
   }
@@ -120,6 +129,16 @@ export default function AchievementsScreen() {
     reward: drawReward,
   } = REWARDS.drawCount;
   const nextDraw = nextMilestone(state.drawCount, drawMilestones, drawEvery);
+  const nextAuction = nextMilestone(
+    state.auctionTrades,
+    REWARDS.auctionTrades.milestones,
+    REWARDS.auctionTrades.every,
+  );
+  const nextArena = nextMilestone(
+    state.arenaWins,
+    REWARDS.arenaWins.milestones,
+    REWARDS.arenaWins.every,
+  );
   const hidden = characterReward("H");
   const pendingIds = new Set(claimable.map((r) => r.id));
 
@@ -352,6 +371,34 @@ export default function AchievementsScreen() {
             caption={`${drawMilestones.join("·")}회, 이후 ${drawEvery.toLocaleString()}회마다`}
             progress={[state.drawCount, nextDraw]}
             reward={drawReward}
+          />
+        </Section>
+
+        <Section
+          icon="auction"
+          color={CATEGORY.auction_trades.color}
+          title="경매"
+          subtitle={`지금까지 ${state.auctionTrades.toLocaleString()}회 거래했어요`}
+        >
+          <AchievementRow
+            title={nextAuction === 1 ? '첫 경매 거래' : `경매 거래 ${nextAuction.toLocaleString()}회`}
+            caption={`${REWARDS.auctionTrades.milestones.join("·")}회, 이후 ${REWARDS.auctionTrades.every.toLocaleString()}회마다`}
+            progress={[state.auctionTrades, nextAuction]}
+            reward={REWARDS.auctionTrades.reward}
+          />
+        </Section>
+
+        <Section
+          icon="swords"
+          color={CATEGORY.arena_wins.color}
+          title="결투"
+          subtitle={`지금까지 ${state.arenaWins.toLocaleString()}승 했어요`}
+        >
+          <AchievementRow
+            title={nextArena === 1 ? '첫 결투 승리' : `결투 승리 ${nextArena.toLocaleString()}회`}
+            caption={`${REWARDS.arenaWins.milestones.join("·")}회, 이후 ${REWARDS.arenaWins.every.toLocaleString()}회마다`}
+            progress={[state.arenaWins, nextArena]}
+            reward={REWARDS.arenaWins.reward}
           />
         </Section>
 

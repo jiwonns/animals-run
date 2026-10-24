@@ -69,8 +69,8 @@ assert.deepEqual(
 );
 assert.deepEqual(availablePicks(["mouse"], null), []);
 assert.deepEqual(SALE_PRICES, {
-  N: 0,
-  R: 1,
+  N: 1,
+  R: 3,
   EP: 10,
   U: 30,
   L: 50,

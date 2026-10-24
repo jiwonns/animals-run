@@ -11,6 +11,7 @@ import { RunningLoader } from '@/components/running-loader';
 import { CHARACTERS, COLLECTIONS, GRADE_ORDER, GRADES, type Character, type Grade } from '@/constants/characters';
 import { useAuction, useAuctionBandSweep, useAuctionQuoteSettle, useMyBids, useMyListings } from '@/hooks/use-auction';
 import { useColors } from '@/hooks/use-colors';
+import { useListWindow } from '@/hooks/use-list-window';
 import { useGridCellWidth } from '@/hooks/use-grid-cell-width';
 import { lastWindowBoard, lastWindowVolume, marketBand, nextAuctionSlot, type AuctionQuote } from '@/lib/auction';
 import { AUCTION_BID_COLOR, AUCTION_SELL_COLOR, auctionSearchHit } from '@/lib/auction-ui';
@@ -80,6 +81,7 @@ export default function AuctionCatalogScreen() {
     });
   }, [buyCounts, grade, mineIds, scope, search, sellCounts]);
 
+  const page = useListWindow(rows, `${scope}:${grade ?? 'all'}:${search}`);
   const scopeCount = (id: Scope) => (id === 'live' ? liveCount : id === 'mine' ? mineIds.size : CHARACTERS.length);
 
   return (
@@ -121,7 +123,11 @@ export default function AuctionCatalogScreen() {
           );
         })}
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.chipScroll}
+        contentContainerStyle={styles.chips}>
         {[null, ...GRADE_ORDER].map((g) => {
           const selected = grade === g;
           const color = g ? GRADES[g].color : colors.text;
@@ -132,7 +138,9 @@ export default function AuctionCatalogScreen() {
               accessibilityState={{ selected }}
               onPress={() => setGrade(g)}
               style={[styles.chip, { backgroundColor: selected ? `${color}22` : colors.surface, borderColor: selected ? color : 'transparent' }]}>
-              <Text style={[styles.chipLabel, { color: selected ? color : colors.text }]}>{g ? GRADES[g].label : '전체 등급'}</Text>
+              <Text style={[styles.chipLabel, { color: selected ? color : colors.text }]} numberOfLines={1}>
+                {g ? GRADES[g].label : '전체 등급'}
+              </Text>
             </Pressable>
           );
         })}
@@ -170,9 +178,14 @@ export default function AuctionCatalogScreen() {
         <RunningLoader label="경매장을 열고 있어요" />
       ) : (
         <FlatList
-          data={rows}
+          data={page.data}
           numColumns={COLUMNS}
           keyExtractor={(item) => item.id}
+          onEndReached={page.loadMore}
+          onEndReachedThreshold={0.4}
+          initialNumToRender={12}
+          maxToRenderPerBatch={12}
+          windowSize={5}
           columnWrapperStyle={styles.columns}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
@@ -255,8 +268,17 @@ const styles = StyleSheet.create({
   scopes: { marginHorizontal: PADDING, marginTop: 10, flexDirection: 'row', borderRadius: 14, padding: 4, gap: 4 },
   scope: { flex: 1, minHeight: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   scopeLabel: { fontSize: 13, fontWeight: '800' },
-  chips: { paddingHorizontal: PADDING, paddingTop: 10, gap: 8, alignItems: 'center' },
-  chip: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1.5 },
+  chipScroll: { flexGrow: 0, flexShrink: 0 },
+  chips: { paddingHorizontal: PADDING, paddingTop: 10, paddingBottom: 2, gap: 8, alignItems: 'center', flexDirection: 'row' },
+  chip: {
+    flexGrow: 0,
+    flexShrink: 0,
+    minHeight: 36,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+    borderWidth: 1.5,
+  },
   chipLabel: { fontSize: 13, fontWeight: '800' },
   tick: { paddingTop: 10, gap: 8 },
   tickLabel: { paddingHorizontal: PADDING, fontSize: 12, fontWeight: '700' },

@@ -37,6 +37,10 @@
       return d.state.winner == 'draw' ? [3,4,5][tier]
         : (d.state.winner == 'player' ? d.owner == uid : d.recipient == uid && d.mode == 'friend') ? [6,10,14][tier] : [1,2,3][tier];
     }
+    function arenaWon(d, uid) {
+      return d.state.winner != 'draw'
+        && (d.state.winner == 'player' ? d.owner == uid : d.recipient == uid && d.mode == 'friend');
+    }
     function validArenaClaim(uid, id) {
       let d = get(/databases/$(database)/documents/arenaDuels/$(id)).data;
       let after = getAfter(/databases/$(database)/documents/arenaDuels/$(id)).data;
@@ -49,8 +53,9 @@
         && after.diff(d).affectedKeys().hasOnly(['claimed','updatedAt']) && after.claimed == d.claimed.concat([uid]) && after.updatedAt == request.time
         && wallet.keys().hasOnly(['day','count','lastDuel','updatedAt']) && wallet.day == day && wallet.lastDuel == id && wallet.updatedAt == request.time
         && wallet.count == (oldWallet.day == day ? oldWallet.count + 1 : 1) && wallet.count <= 5
-        && paid.diff(profile).affectedKeys().hasOnly(['coins','lastArenaReward']) && paid.lastArenaReward == id
-        && paid.coins == profile.coins + arenaCoins(d, uid);
+        && paid.diff(profile).affectedKeys().hasOnly(['coins','lastArenaReward','arenaWins']) && paid.lastArenaReward == id
+        && paid.coins == profile.coins + arenaCoins(d, uid)
+        && paid.get('arenaWins', 0) == profile.get('arenaWins', 0) + (arenaWon(d, uid) ? 1 : 0);
     }
     match /arenaWallets/{uid} {
       allow read: if isOwner(uid);

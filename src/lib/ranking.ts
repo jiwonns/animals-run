@@ -6,7 +6,7 @@ import { db } from './firebase';
 import type { Profile } from './profile';
 
 /** Profile counters copied onto the leaderboard. */
-export const RANKING_COUNTS = ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount'] as const;
+export const RANKING_COUNTS = ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount', 'auctionTrades', 'arenaWins'] as const;
 export type RankingCount = (typeof RANKING_COUNTS)[number];
 
 /** rankings/{uid}: firestore.rules require these to match the player's profile exactly. */

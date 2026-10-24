@@ -28,6 +28,8 @@ export const MILESTONE_MEDALS: Medal[] = [
   { id: 'evolveCount:10', name: '성장의 동반자', description: '진화 10회 · 친구의 더 큰 내일을 응원했어요.', eligible: p => (p.evolveCount ?? 0) >= 10 },
   { id: 'fuseCount:10', name: '가능성의 연금술사', description: '합성 10회 · 만남 속에서 새로운 가능성을 찾았어요.', eligible: p => (p.fuseCount ?? 0) >= 10 },
   { id: 'recycleCount:10', name: '순환의 지킴이', description: '재활용 10회 · 모든 이별을 새로운 시작으로 이었어요.', eligible: p => (p.recycleCount ?? 0) >= 10 },
+  { id: 'auctionTrades:10', name: '경매의 상인', description: '경매 거래 10회 · 시세 안에서 서로의 인연을 이어주었어요.', eligible: p => (p.auctionTrades ?? 0) >= 10 },
+  { id: 'arenaWins:10', name: '결투의 승자', description: '결투 승리 10회 · 기량으로 결투장을 지켜냈어요.', eligible: p => (p.arenaWins ?? 0) >= 10 },
 ];
 export const PERMANENT_MEDALS = [...COLLECTION_MEDALS, ...MILESTONE_MEDALS];
 export function rebuildCollectionMedals() {
@@ -41,7 +43,9 @@ const titles = { steps: ['대지의 선두주자', '누구보다 먼 길을 걸�
   hatchCount: ['탄생의 왕관', '가장 많은 새 생명을 맞이한 따뜻한 손길이에요.'],
   evolveCount: ['성장의 정점', '친구들의 가능성을 가장 높이 꽃피웠어요.'],
   fuseCount: ['창조의 거장', '가장 많은 만남으로 새로운 가능성을 만들었어요.'],
-  recycleCount: ['순환의 개척자', '가장 많은 새로운 시작을 이어주고 있어요.'] } as const;
+  recycleCount: ['순환의 개척자', '가장 많은 새로운 시작을 이어주고 있어요.'],
+  auctionTrades: ['경매의 제왕', '가장 많은 경매 거래를 성사시킨 상인이에요.'],
+  arenaWins: ['결투장의 패왕', '가장 많은 결투에서 승리한 강자예요.'] } as const;
 export const RANKING_MEDALS = [
   ...(['steps', ...RANKING_COUNTS] as const).map(key => ({ id: `ranking:${key}`, name: titles[key][0], description: titles[key][1], value: (e: RankingEntry) => e[key] ?? 0 })),
   ...GRADE_ORDER.map(grade => ({ id: `ranking:grade:${grade}`, name: `${GRADES[grade].label}의 왕관`, description: `${GRADES[grade].label} 친구들을 가장 다양하게 모은 수집의 정점이에요.`, value: (e: RankingEntry) => kindsByGrade(e.characters)[grade] })),

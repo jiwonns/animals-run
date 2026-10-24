@@ -258,10 +258,12 @@ export function buyListing(uid: string, listingId: string) {
       characters,
       coins: buyer.coins - listing.price,
       lastAuction: { ...receipt, action: 'buy' },
+      auctionTrades: (buyer.auctionTrades ?? 0) + 1,
     });
     tx.update(profileRef(listing.seller), {
       coins: seller.coins + listing.price,
       lastAuction: { ...receipt, action: 'sell' },
+      auctionTrades: (seller.auctionTrades ?? 0) + 1,
     });
     const next = quoteAfterTrade(listing.character, stored, listing.price);
     tx.set(quoteRef(listing.character), {
@@ -373,10 +375,12 @@ export function fillBid(uid: string, bidId: string) {
       characters: sold,
       coins: seller.coins + bid.price,
       lastAuction: { ...receipt, action: 'fill' },
+      auctionTrades: (seller.auctionTrades ?? 0) + 1,
     });
     tx.update(profileRef(bid.buyer), {
       characters: received,
       lastAuction: { ...receipt, action: 'filled' },
+      auctionTrades: (buyer.auctionTrades ?? 0) + 1,
     });
     const next = quoteAfterTrade(bid.character, stored, bid.price);
     tx.set(quoteRef(bid.character), {

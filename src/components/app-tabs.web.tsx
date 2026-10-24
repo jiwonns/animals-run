@@ -1,4 +1,4 @@
-import { TabList, TabSlot, Tabs, TabTrigger } from 'expo-router/ui';
+import { TabList, TabSlot, Tabs, TabTrigger, defaultTabsSlotRender } from 'expo-router/ui';
 import { Pressable, StyleSheet, Text, View, type PressableProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,13 +13,29 @@ const TABS = [
   { name: 'mypage', href: '/mypage', label: '마이페이지', icon: 'person' },
 ] as const;
 
+function renderMapTab(
+  descriptor: Parameters<typeof defaultTabsSlotRender>[0],
+  options: Parameters<typeof defaultTabsSlotRender>[1],
+) {
+  if (descriptor.route.name !== 'manage') return defaultTabsSlotRender(descriptor, options);
+  if (!options.loaded && !options.isFocused) return null;
+  return (
+    <View
+      collapsable={false}
+      pointerEvents={options.isFocused ? 'auto' : 'none'}
+      style={[styles.mapKeep, options.isFocused ? styles.mapShow : styles.mapHide]}>
+      {descriptor.render()}
+    </View>
+  );
+}
+
 /** Browsers have no system tab bar, so the web build draws a bottom bar like the apps'. */
 export function AppTabs() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   return (
     <Tabs style={styles.root}>
-      <TabSlot />
+      <TabSlot renderFn={renderMapTab} />
       <TabList
         style={[
           styles.bar,
@@ -80,5 +96,16 @@ const styles = StyleSheet.create({
   },
   labelFocused: {
     fontWeight: '800',
+  },
+  mapKeep: {
+    ...StyleSheet.absoluteFill,
+  },
+  mapShow: {
+    zIndex: 2,
+    opacity: 1,
+  },
+  mapHide: {
+    zIndex: 0,
+    opacity: 0,
   },
 });

@@ -126,7 +126,7 @@ service cloud.firestore {
           || (medalId == 'steps:10000' && p.get('steps', 0) >= 10000)
           || (medalId == 'steps:100000' && p.get('steps', 0) >= 100000)
           || (medalId == 'draws:100' && p.drawCount >= 100)
-          || (parts[0] in ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount'] && parts[1] == '10' && p.get(parts[0], 0) >= 10));
+          || (parts[0] in ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount', 'auctionTrades', 'arenaWins'] && parts[1] == '10' && p.get(parts[0], 0) >= 10));
       }
       allow read: if isSignedIn();
       allow create: if isOwner(uid) && earned() && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;
@@ -140,7 +140,7 @@ service cloud.firestore {
         let id = d.medalId;
         return d.keys().hasAll(['medalId', 'updatedAt']) && d.keys().hasOnly(['medalId', 'updatedAt'])
           && d.updatedAt == request.time && exists(/databases/$(database)/documents/users/$(uid))
-          && (id == null || (id is string && (id in ["ranking:steps","ranking:hatchCount","ranking:evolveCount","ranking:fuseCount","ranking:recycleCount","ranking:grade:N","ranking:grade:E","ranking:grade:R","ranking:grade:EP","ranking:grade:U","ranking:grade:L","ranking:grade:H"] || exists(/databases/$(database)/documents/users/$(uid)/medals/$(id)))));
+          && (id == null || (id is string && (id in ["ranking:steps","ranking:hatchCount","ranking:evolveCount","ranking:fuseCount","ranking:recycleCount","ranking:auctionTrades","ranking:arenaWins","ranking:grade:N","ranking:grade:E","ranking:grade:R","ranking:grade:EP","ranking:grade:U","ranking:grade:L","ranking:grade:H"] || exists(/databases/$(database)/documents/users/$(uid)/medals/$(id)))));
       }
       allow read: if isSignedIn();
       allow create, update: if isOwner(uid) && validDisplay();
@@ -342,6 +342,10 @@ service cloud.firestore {
       return d.state.winner == 'draw' ? [3,4,5][tier]
         : (d.state.winner == 'player' ? d.owner == uid : d.recipient == uid && d.mode == 'friend') ? [6,10,14][tier] : [1,2,3][tier];
     }
+    function arenaWon(d, uid) {
+      return d.state.winner != 'draw'
+        && (d.state.winner == 'player' ? d.owner == uid : d.recipient == uid && d.mode == 'friend');
+    }
     function validArenaClaim(uid, id) {
       let d = get(/databases/$(database)/documents/arenaDuels/$(id)).data;
       let after = getAfter(/databases/$(database)/documents/arenaDuels/$(id)).data;
@@ -354,8 +358,9 @@ service cloud.firestore {
         && after.diff(d).affectedKeys().hasOnly(['claimed','updatedAt']) && after.claimed == d.claimed.concat([uid]) && after.updatedAt == request.time
         && wallet.keys().hasOnly(['day','count','lastDuel','updatedAt']) && wallet.day == day && wallet.lastDuel == id && wallet.updatedAt == request.time
         && wallet.count == (oldWallet.day == day ? oldWallet.count + 1 : 1) && wallet.count <= 5
-        && paid.diff(profile).affectedKeys().hasOnly(['coins','lastArenaReward']) && paid.lastArenaReward == id
-        && paid.coins == profile.coins + arenaCoins(d, uid);
+        && paid.diff(profile).affectedKeys().hasOnly(['coins','lastArenaReward','arenaWins']) && paid.lastArenaReward == id
+        && paid.coins == profile.coins + arenaCoins(d, uid)
+        && paid.get('arenaWins', 0) == profile.get('arenaWins', 0) + (arenaWon(d, uid) ? 1 : 0);
     }
     match /arenaWallets/{uid} {
       allow read: if isOwner(uid);
@@ -457,6 +462,9 @@ service cloud.firestore {
         && data.character is string && gradeOf(data.character) in ['N', 'R', 'EP', 'U', 'L', 'E', 'H']
         && data.price is int && data.price > 0;
     }
+    function auctionTraded(before, after) {
+      return after.get('auctionTrades', 0) == before.get('auctionTrades', 0) + 1;
+    }
     function auctionListingGone(id) { return !existsAfter(auctionListingPath(id)); }
     function validAuctionQuote(c, price) {
       let after = getAfter(auctionQuotePath(c)).data;
@@ -522,7 +530,8 @@ service cloud.firestore {
       let trade = after.lastAuction;
       let listing = get(auctionListingPath(trade.id)).data;
       return isOwner(uid) && auctionTrade(trade) && trade.action == 'buy'
-        && after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastAuction'])
+        && after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastAuction', 'auctionTrades'])
+        && auctionTraded(before, after)
         && listing.seller != uid && listing.character == trade.character && listing.price == trade.price
         && listing.price >= auctionMinOf(listing.character) && listing.price <= auctionMaxOf(listing.character)
         && before.coins >= listing.price && after.coins == before.coins - listing.price
@@ -561,7 +570,8 @@ service cloud.firestore {
       let remaining = before.characters.get(trade.character, 0) - 1;
       let buyer = auctionUserAfter(bid.buyer);
       return isOwner(uid) && auctionTrade(trade) && trade.action == 'fill'
-        && after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastAuction'])
+        && after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastAuction', 'auctionTrades'])
+        && auctionTraded(before, after)
         && bid.buyer != uid && bid.character == trade.character && bid.price == trade.price
         && bid.price >= auctionMinOf(bid.character) && bid.price <= auctionMaxOf(bid.character)
         && remaining >= (before.get('avatar', null) == trade.character ? 1 : 0)
@@ -572,7 +582,8 @@ service cloud.firestore {
         && buyer.lastAuction.action == 'filled' && buyer.lastAuction.id == trade.id
         && buyer.lastAuction.character == trade.character && buyer.lastAuction.price == trade.price
         && buyer.characters.get(trade.character, 0) == auctionUserBefore(bid.buyer).characters.get(trade.character, 0) + 1
-        && buyer.coins == auctionUserBefore(bid.buyer).coins;
+        && buyer.coins == auctionUserBefore(bid.buyer).coins
+        && buyer.get('auctionTrades', 0) == auctionUserBefore(bid.buyer).get('auctionTrades', 0) + 1;
     }
     function isAuctionFilled(uid) {
       let before = auctionUserBefore(uid);
@@ -581,7 +592,8 @@ service cloud.firestore {
       let bid = get(auctionBidPath(trade.id)).data;
       let seller = auctionUserAfter(request.auth.uid);
       return isSignedIn() && request.auth.uid != uid && auctionTrade(trade) && trade.action == 'filled'
-        && after.diff(before).affectedKeys().hasOnly(['characters', 'lastAuction'])
+        && after.diff(before).affectedKeys().hasOnly(['characters', 'lastAuction', 'auctionTrades'])
+        && auctionTraded(before, after)
         && bid.buyer == uid && bid.character == trade.character && bid.price == trade.price
         && after.characters.diff(before.characters).affectedKeys().hasOnly([trade.character])
         && after.characters.get(trade.character, 0) == before.characters.get(trade.character, 0) + 1
@@ -635,7 +647,8 @@ service cloud.firestore {
       let listing = get(auctionListingPath(trade.id)).data;
       let buyer = auctionUserAfter(request.auth.uid);
       return isSignedIn() && request.auth.uid != uid && auctionTrade(trade) && trade.action == 'sell'
-        && after.diff(before).affectedKeys().hasOnly(['coins', 'lastAuction'])
+        && after.diff(before).affectedKeys().hasOnly(['coins', 'lastAuction', 'auctionTrades'])
+        && auctionTraded(before, after)
         && listing.seller == uid && listing.character == trade.character && listing.price == trade.price
         && after.coins == before.coins + listing.price && auctionListingGone(trade.id)
         && buyer.lastAuction.action == 'buy' && buyer.lastAuction.id == trade.id
@@ -731,7 +744,7 @@ service cloud.firestore {
       let sale = after.lastSale;
       let c = sale.character;
       let n = sale.quantity;
-      let prices = {"N":0,"R":1,"EP":10,"U":30,"L":50,"E":1,"H":100};
+      let prices = {"N":1,"R":3,"EP":10,"U":30,"L":50,"E":1,"H":100};
       let price = prices.get(gradeOf(c), -1);
       let remaining = before.characters.get(c, 0) - n;
       return after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastSale'])
@@ -857,7 +870,7 @@ service cloud.firestore {
     function isRanking(uid) {
       let user = get(/databases/$(database)/documents/users/$(uid)).data;
       let d = request.resource.data;
-      let counts = ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount'];
+      let counts = ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount', 'auctionTrades', 'arenaWins'];
       let fields = ['username', 'avatar', 'steps', 'characters', 'updatedAt'].concat(counts);
       return d.keys().hasOnly(fields.concat(['nickname'])) && d.keys().hasAll(fields)
         && d.username == user.username
@@ -869,6 +882,8 @@ service cloud.firestore {
         && d.evolveCount == user.get('evolveCount', 0)
         && d.fuseCount == user.get('fuseCount', 0)
         && d.recycleCount == user.get('recycleCount', 0)
+        && d.auctionTrades == user.get('auctionTrades', 0)
+        && d.arenaWins == user.get('arenaWins', 0)
         && d.updatedAt == request.time;
     }
 
@@ -1258,6 +1273,8 @@ service cloud.firestore {
       : p[0] == 'char_count' && p.size() == 3 ? charCountReward(p[1], p[2], u.characters)
       : p[0] == 'collection_complete' && p.size() == 2 ? collectionReward(p[1], u.characters)
       : p[0] == 'draws' && p.size() == 2 ? drawsReward(p[1], u.drawCount)
+      : p[0] == 'auction_trades' && p.size() == 2 ? auctionTradesReward(p[1], u.get('auctionTrades', 0))
+      : p[0] == 'arena_wins' && p.size() == 2 ? arenaWinsReward(p[1], u.get('arenaWins', 0))
       : -1;
   }
 
@@ -1353,6 +1370,22 @@ service cloud.firestore {
     return string(m) == s && n >= m
       && ([100, 500].hasAny([m]) || (m > 0 && m % 1000 == 0))
       ? 20
+      : -1;
+  }
+
+  function auctionTradesReward(s, n) {
+    let m = int(s);
+    return string(m) == s && n >= m
+      && ([1, 10, 50].hasAny([m]) || (m > 0 && m % 100 == 0))
+      ? 8
+      : -1;
+  }
+
+  function arenaWinsReward(s, n) {
+    let m = int(s);
+    return string(m) == s && n >= m
+      && ([1, 10, 50].hasAny([m]) || (m > 0 && m % 100 == 0))
+      ? 10
       : -1;
   }
   }

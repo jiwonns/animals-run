@@ -1,6 +1,6 @@
 import { useCatalog } from '@/providers/catalog-provider';
-import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { router, useIsFocused } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Linking,
   Platform,
@@ -32,6 +32,7 @@ const WALK_COLOR = "#10B981";
 export default function MapScreen() {
   useCatalog();
   const colors = useColors();
+  const focused = useIsFocused();
   useConfirmExit();
   const { user, profile } = useSession();
   const walk = useWalk();
@@ -48,23 +49,26 @@ export default function MapScreen() {
     requestLocation();
   }, [location, requestLocation]);
 
-  const players: MapPlayer[] = others.map((p) => ({
-    id: p.id,
-    name: displayName(p),
-    avatar: p.avatar,
-    lat: p.lat,
-    lng: p.lng,
-    me: false,
-  }));
-  if (walk.position && profile) {
-    players.push({
-      id: user?.uid ?? "me",
-      name: displayName(profile),
-      avatar: profile.avatar ?? null,
-      ...walk.position,
-      me: true,
-    });
-  }
+  const players = useMemo<MapPlayer[]>(() => {
+    const list = others.map((p) => ({
+      id: p.id,
+      name: displayName(p),
+      avatar: p.avatar,
+      lat: p.lat,
+      lng: p.lng,
+      me: false,
+    }));
+    if (walk.position && profile) {
+      list.push({
+        id: user?.uid ?? "me",
+        name: displayName(profile),
+        avatar: profile.avatar ?? null,
+        ...walk.position,
+        me: true,
+      });
+    }
+    return list;
+  }, [others, profile, user?.uid, walk.position]);
 
   const stepNote =
     Platform.OS === "web"
@@ -101,6 +105,7 @@ export default function MapScreen() {
           players={players}
           focusKey={focusKey}
           color={colors.primary}
+          visible={focused}
           onPlayerPress={(uid) =>
             router.navigate(mapProfileRoute(uid, user?.uid))
           }

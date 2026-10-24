@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { Alert, Modal, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GRADES, type Character } from "@/constants/characters";
+import { REWARDS } from "@/constants/gacha.generated";
 import { useColors } from "@/hooks/use-colors";
 import { HomeError } from "@/lib/home";
 import { availableCopies, SALE_PRICES } from "@/lib/inventory";
@@ -27,6 +28,7 @@ export function SellSheet({
   const maximum = availableCopies(profile, character.id);
   const quantity = Math.min(selected, maximum);
   const price = SALE_PRICES[character.grade];
+  const quote = REWARDS.auction.quote[character.grade];
   const total = price * quantity;
   const reserved = profile?.avatar === character.id;
   const close = () => {
@@ -40,8 +42,8 @@ export function SellSheet({
       const earned = await sellCharacters(user.uid, character.id, quantity);
       onClose();
       Alert.alert(
-        price === 0 ? "정리 완료" : "판매 완료",
-        `${character.name} ${quantity}마리${price === 0 ? "를 정리했어요. 지급 코인은 0코인이에요." : `를 판매하고 ${earned}코인을 받았어요.`}`,
+        "판매 완료",
+        `${character.name} ${quantity}마리를 상점에 팔고 ${earned}코인을 받았어요.`,
       );
     } catch (error) {
       Alert.alert(
@@ -58,11 +60,11 @@ export function SellSheet({
   function confirm() {
     if (!quantity || busy) return;
     Alert.alert(
-      price === 0 ? "0코인으로 정리할까요?" : `${total}코인에 판매할까요?`,
-      `${character.name} ${quantity}마리가 보관함에서 사라져요.${price === 0 ? "\n노말 등급은 코인이 지급되지 않아요." : ""}`,
+      `상점에 ${total.toLocaleString()}코인으로 팔까요?`,
+      `${character.name} ${quantity}마리가 보관함에서 바로 사라져요. 경매 시세는 약 ${quote.toLocaleString()}코인이라, 급하지 않으면 경매장에 올리는 편이 좋아요.`,
       [
         { text: "취소", style: "cancel" },
-        { text: price === 0 ? "정리하기" : "판매하기", onPress: sell },
+        { text: "상점에 팔기", onPress: sell },
       ],
     );
   }
@@ -132,13 +134,14 @@ export function SellSheet({
                   fontWeight: "700",
                 }}
               >
-                {GRADES[character.grade].label} · 1마리당 {price}코인
+                {GRADES[character.grade].label} · 상점 {price}코인 · 경매 시세 약 {quote}코인
               </Text>
             </View>
             <Text style={{ color: c.secondary, lineHeight: 21 }}>
               보유 {profile?.characters[character.id] ?? 0}마리 · 판매 가능{" "}
               {maximum}마리
               {reserved ? "\n대표 동물 1마리는 함께 걸어야 해서 남겨둬요." : ""}
+              {"\n"}상점은 바로 받고, 경매장은 시세 근처에서 더 받을 수 있어요.
             </Text>
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 14 }}
@@ -203,13 +206,6 @@ export function SellSheet({
                 </Text>
               </Pressable>
             </View>
-            {price === 0 && (
-              <Text
-                style={{ color: c.primary, fontWeight: "700", lineHeight: 21 }}
-              >
-                노말 동물은 0코인이에요. 수량 정리만 진행됩니다.
-              </Text>
-            )}
           </ScrollView>
           <Pressable
             accessibilityRole="button"
@@ -254,9 +250,7 @@ export function SellSheet({
                 ? "처리 중…"
                 : !quantity
                   ? "판매할 수 있는 동물이 없어요"
-                  : price === 0
-                    ? `${quantity}마리 정리 · 0코인`
-                    : `${quantity}마리 판매 · ${total.toLocaleString()}코인 받기`}
+                  : `상점에 ${quantity}마리 · ${total.toLocaleString()}코인`}
             </Text>
           </Pressable>
         </View>

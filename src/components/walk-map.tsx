@@ -13,28 +13,42 @@ type Props = {
   /** Changing this moves the map back to the player. */
   focusKey: number;
   color: string;
+  visible?: boolean;
   onPlayerPress?: (uid: string) => void;
 };
 
-export function WalkMap({ players, focusKey, color, onPlayerPress }: Props) {
+function playersKey(players: MapPlayer[]) {
+  return players
+    .map((p) => `${p.id}:${p.lat.toFixed(5)}:${p.lng.toFixed(5)}:${p.name}:${p.avatar ?? ""}:${p.me ? 1 : 0}`)
+    .join("|");
+}
+
+export function WalkMap({ players, focusKey, color, visible = true, onPlayerPress }: Props) {
   const web = useRef<WebView<object>>(null);
   const sentFaces = useRef(new Set<CharacterId>());
+  const lastPlayers = useRef("");
+  const playersRef = useRef(players);
   const [loads, setLoads] = useState(0);
-  const [source] = useState(() => ({ html: mapHtml(color), baseUrl: 'https://animalsrun.app/' }));
+  const [source] = useState(() => ({ html: mapHtml(color), baseUrl: "https://animalsrun.app/" }));
 
-  const run = (script: string) =>
-    web.current?.injectJavaScript(`${script};true;`);
+  const run = (script: string) => web.current?.injectJavaScript(`${script};true;`);
+
+  useEffect(() => {
+    playersRef.current = players;
+  }, [players]);
 
   useEffect(() => {
     if (!loads) return;
-    run(`app.setPlayers(${JSON.stringify(players)})`);
+    const key = playersKey(players);
+    if (lastPlayers.current !== key) {
+      lastPlayers.current = key;
+      run(`app.setPlayers(${JSON.stringify(players)})`);
+    }
     for (const { avatar } of players) {
       if (!avatar || sentFaces.current.has(avatar)) continue;
       sentFaces.current.add(avatar);
       avatarDataUri(avatar)
-        .then((uri) =>
-          run(`app.setFace(${JSON.stringify(avatar)}, ${JSON.stringify(uri)})`),
-        )
+        .then((uri) => run(`app.setFace(${JSON.stringify(avatar)}, ${JSON.stringify(uri)})`))
         .catch(() => sentFaces.current.delete(avatar));
     }
   }, [loads, players]);
@@ -43,6 +57,10 @@ export function WalkMap({ players, focusKey, color, onPlayerPress }: Props) {
     if (loads && focusKey) run("app.focusMe()");
   }, [loads, focusKey]);
 
+  useEffect(() => {
+    if (loads && visible) run("app.resize()");
+  }, [loads, visible]);
+
   return (
     <WebView<object>
       ref={web}
@@ -50,6 +68,7 @@ export function WalkMap({ players, focusKey, color, onPlayerPress }: Props) {
       originWhitelist={["*"]}
       source={source}
       cacheEnabled
+      androidLayerType="hardware"
       onMessage={(event) => {
         if (event.nativeEvent.data !== "ready") {
           try {
@@ -57,7 +76,7 @@ export function WalkMap({ players, focusKey, color, onPlayerPress }: Props) {
             if (
               message.type === "walk-map:player" &&
               typeof message.uid === "string" &&
-              players.some((p) => p.id === message.uid)
+              playersRef.current.some((p) => p.id === message.uid)
             )
               onPlayerPress?.(message.uid);
           } catch {
@@ -65,6 +84,7 @@ export function WalkMap({ players, focusKey, color, onPlayerPress }: Props) {
           }
           return;
         }
+        lastPlayers.current = "";
         sentFaces.current.clear();
         setLoads((n) => n + 1);
       }}

@@ -1,5 +1,6 @@
 import { onSnapshot } from 'firebase/firestore';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert } from 'react-native';
 
 import { useRefreshRevision } from '@/lib/app-refresh';
 import {
@@ -95,9 +96,16 @@ export function useAuctionBandSweep(
     if (!staleSell.length && !staleBuy.length) return;
     busy.current = true;
     Promise.all([
-      ...staleSell.map((row) => cancelListing(uid, row.id).catch(() => {})),
-      ...staleBuy.map((row) => cancelBid(uid, row.id).catch(() => {})),
-    ]).finally(() => {
+      ...staleSell.map((row) => cancelListing(uid, row.id).catch(() => null)),
+      ...staleBuy.map((row) => cancelBid(uid, row.id).catch(() => null)),
+    ]).then((results) => {
+      const done = results.filter((value) => value !== null).length;
+      if (!done) return;
+      Alert.alert(
+        '시세가 바뀌었어요',
+        `가격 범위를 벗어난 등록 ${done}건을 취소했어요. 동물과 걸어 둔 코인은 돌아왔어요.`,
+      );
+    }).finally(() => {
       busy.current = false;
     });
   }, [mineBuy, mineSell, quotes, uid]);

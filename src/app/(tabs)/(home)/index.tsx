@@ -187,7 +187,9 @@ export default function HomeScreen() {
                     pressed && styles.pressed,
                   ]}>
                   <Icon name={ICONS.plus} size={22} color={colors.secondary} />
-                  <Text style={[styles.slotHint, { color: colors.secondary }]}>빈 자리</Text>
+                  <Text style={[styles.slotHint, { color: colors.secondary }]}>
+                    {eggs === null ? '여는 중' : '빈 자리'}
+                  </Text>
                 </Pressable>
               );
             }

@@ -76,8 +76,20 @@ export async function drawCharacters(
     const gradeCounts = gradeCountsAfter(gradeBefore, picks);
     const drawCount = profile.drawCount + count;
     const rewards = newRewards(
-      { characters: profile.characters, gradeCounts: gradeBefore, drawCount: profile.drawCount },
-      { characters, gradeCounts, drawCount },
+      {
+        characters: profile.characters,
+        gradeCounts: gradeBefore,
+        drawCount: profile.drawCount,
+        auctionTrades: profile.auctionTrades ?? 0,
+        arenaWins: profile.arenaWins ?? 0,
+      },
+      {
+        characters,
+        gradeCounts,
+        drawCount,
+        auctionTrades: profile.auctionTrades ?? 0,
+        arenaWins: profile.arenaWins ?? 0,
+      },
     );
 
     transaction.update(profileRef(uid), {

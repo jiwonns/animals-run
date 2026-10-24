@@ -8,6 +8,8 @@ export function useAchievements(): { state: ProgressState; claimable: Reward[]; 
     characters: profile?.characters ?? {},
     gradeCounts: profile?.gradeCounts ?? {},
     drawCount: profile?.drawCount ?? 0,
+    auctionTrades: profile?.auctionTrades ?? 0,
+    arenaWins: profile?.arenaWins ?? 0,
   };
   const ready = profile !== null && claimed !== null;
   const claimable = ready ? earnedRewards(state).filter((r) => !claimed.has(r.id)) : [];

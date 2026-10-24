@@ -59,6 +59,18 @@ const BOARDS: { id: Board; label: string; caption: string; unit: string }[] = [
     unit: "회",
   },
   {
+    id: "auctionTrades",
+    label: "경매",
+    caption: "경매장에서 성사된 거래 횟수",
+    unit: "회",
+  },
+  {
+    id: "arenaWins",
+    label: "결투",
+    caption: "결투장에서 승리한 횟수",
+    unit: "회",
+  },
+  {
     id: "grade",
     label: "등급별 보유",
     caption: "보유한 동물 종류 수 · 같은 동물은 1종으로 계산",

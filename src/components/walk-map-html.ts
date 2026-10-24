@@ -1,4 +1,5 @@
 import type { CharacterId } from '@/constants/characters';
+import { LEAFLET_CSS, LEAFLET_JS } from '@/vendor/leaflet.generated';
 
 export type MapPlayer = {
   id: string;
@@ -14,9 +15,8 @@ export const mapHtml = (color: string) => `<!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
+${LEAFLET_CSS}
   html, body, #map { margin: 0; height: 100%; background: #eef1f4; }
   .pin { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
   .face {
@@ -40,6 +40,7 @@ export const mapHtml = (color: string) => `<!DOCTYPE html>
 </head>
 <body>
 <div id="map"></div>
+<script>${LEAFLET_JS}</script>
 <script>
   let savedView = null;
   try { const saved = JSON.parse(sessionStorage.getItem('walk-map:view') || 'null'); if (saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lng) && Number.isFinite(saved.zoom)) savedView = saved; } catch {}
@@ -121,6 +122,9 @@ export const mapHtml = (color: string) => `<!DOCTYPE html>
     },
     focusMe() {
       if (me) map.flyTo([me.lat, me.lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
+    },
+    resize() {
+      map.invalidateSize({ pan: false });
     },
   };
   if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('ready');

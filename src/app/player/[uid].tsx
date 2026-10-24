@@ -49,11 +49,11 @@ export default function PlayerScreen() {
     const apply=(data:RankingEntry|null)=>{setEntry(data);setLoadedUid(uid);setFailed(false);};
     const stop=onSnapshot(rankingRef(uid),snapshot=>{
       if(snapshot.exists()){stopLocation?.();stopLocation=undefined;apply(snapshot.data() as RankingEntry);}
-      else if(!stopLocation)stopLocation=onSnapshot(locationRef(uid),location=>apply(location.exists()?{...location.data(),steps:0,characters:{},hatchCount:0,evolveCount:0,fuseCount:0,recycleCount:0} as RankingEntry:null),()=>apply(null));
+      else if(!stopLocation)stopLocation=onSnapshot(locationRef(uid),location=>apply(location.exists()?{...location.data(),steps:0,characters:{},hatchCount:0,evolveCount:0,fuseCount:0,recycleCount:0,auctionTrades:0,arenaWins:0} as RankingEntry:null),()=>apply(null));
     },()=>{setFailed(true);setLoadedUid(uid);});
     return()=>{stop();stopLocation?.();};
   },[uid,retry,isSelf,refreshRevision]);
-  const entry:RankingEntry|null|undefined=isSelf ? profile ? {username:profile.username,nickname:profile.nickname,avatar:profile.avatar??null,steps:profile.steps??0,characters:profile.characters,hatchCount:profile.hatchCount??0,evolveCount:profile.evolveCount??0,fuseCount:profile.fuseCount??0,recycleCount:profile.recycleCount??0,updatedAt:null} : undefined : loadedUid===uid ? remoteEntry : undefined;
+  const entry:RankingEntry|null|undefined=isSelf ? profile ? {username:profile.username,nickname:profile.nickname,avatar:profile.avatar??null,steps:profile.steps??0,characters:profile.characters,hatchCount:profile.hatchCount??0,evolveCount:profile.evolveCount??0,fuseCount:profile.fuseCount??0,recycleCount:profile.recycleCount??0,auctionTrades:profile.auctionTrades??0,arenaWins:profile.arenaWins??0,updatedAt:null} : undefined : loadedUid===uid ? remoteEntry : undefined;
   const failed=!isSelf&&loadedUid===uid&&loadFailed;
   const owned = profileAnimals(entry?.characters ?? {});
   const grades = kindsByGrade(entry?.characters ?? {});
@@ -162,6 +162,8 @@ export default function PlayerScreen() {
               { label: "진화", value: entry.evolveCount },
               { label: "합성", value: entry.fuseCount },
               { label: "재활용", value: entry.recycleCount },
+              { label: "경매", value: entry.auctionTrades },
+              { label: "결투 승", value: entry.arenaWins },
             ].map((stat) => (
               <View
                 key={stat.label}

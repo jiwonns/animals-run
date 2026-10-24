@@ -45,6 +45,9 @@
         && data.character is string && gradeOf(data.character) in ['N', 'R', 'EP', 'U', 'L', 'E', 'H']
         && data.price is int && data.price > 0;
     }
+    function auctionTraded(before, after) {
+      return after.get('auctionTrades', 0) == before.get('auctionTrades', 0) + 1;
+    }
     function auctionListingGone(id) { return !existsAfter(auctionListingPath(id)); }
     function validAuctionQuote(c, price) {
       let after = getAfter(auctionQuotePath(c)).data;
@@ -110,7 +113,8 @@
       let trade = after.lastAuction;
       let listing = get(auctionListingPath(trade.id)).data;
       return isOwner(uid) && auctionTrade(trade) && trade.action == 'buy'
-        && after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastAuction'])
+        && after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastAuction', 'auctionTrades'])
+        && auctionTraded(before, after)
         && listing.seller != uid && listing.character == trade.character && listing.price == trade.price
         && listing.price >= auctionMinOf(listing.character) && listing.price <= auctionMaxOf(listing.character)
         && before.coins >= listing.price && after.coins == before.coins - listing.price
@@ -149,7 +153,8 @@
       let remaining = before.characters.get(trade.character, 0) - 1;
       let buyer = auctionUserAfter(bid.buyer);
       return isOwner(uid) && auctionTrade(trade) && trade.action == 'fill'
-        && after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastAuction'])
+        && after.diff(before).affectedKeys().hasOnly(['characters', 'coins', 'lastAuction', 'auctionTrades'])
+        && auctionTraded(before, after)
         && bid.buyer != uid && bid.character == trade.character && bid.price == trade.price
         && bid.price >= auctionMinOf(bid.character) && bid.price <= auctionMaxOf(bid.character)
         && remaining >= (before.get('avatar', null) == trade.character ? 1 : 0)
@@ -160,7 +165,8 @@
         && buyer.lastAuction.action == 'filled' && buyer.lastAuction.id == trade.id
         && buyer.lastAuction.character == trade.character && buyer.lastAuction.price == trade.price
         && buyer.characters.get(trade.character, 0) == auctionUserBefore(bid.buyer).characters.get(trade.character, 0) + 1
-        && buyer.coins == auctionUserBefore(bid.buyer).coins;
+        && buyer.coins == auctionUserBefore(bid.buyer).coins
+        && buyer.get('auctionTrades', 0) == auctionUserBefore(bid.buyer).get('auctionTrades', 0) + 1;
     }
     function isAuctionFilled(uid) {
       let before = auctionUserBefore(uid);
@@ -169,7 +175,8 @@
       let bid = get(auctionBidPath(trade.id)).data;
       let seller = auctionUserAfter(request.auth.uid);
       return isSignedIn() && request.auth.uid != uid && auctionTrade(trade) && trade.action == 'filled'
-        && after.diff(before).affectedKeys().hasOnly(['characters', 'lastAuction'])
+        && after.diff(before).affectedKeys().hasOnly(['characters', 'lastAuction', 'auctionTrades'])
+        && auctionTraded(before, after)
         && bid.buyer == uid && bid.character == trade.character && bid.price == trade.price
         && after.characters.diff(before.characters).affectedKeys().hasOnly([trade.character])
         && after.characters.get(trade.character, 0) == before.characters.get(trade.character, 0) + 1
@@ -223,7 +230,8 @@
       let listing = get(auctionListingPath(trade.id)).data;
       let buyer = auctionUserAfter(request.auth.uid);
       return isSignedIn() && request.auth.uid != uid && auctionTrade(trade) && trade.action == 'sell'
-        && after.diff(before).affectedKeys().hasOnly(['coins', 'lastAuction'])
+        && after.diff(before).affectedKeys().hasOnly(['coins', 'lastAuction', 'auctionTrades'])
+        && auctionTraded(before, after)
         && listing.seller == uid && listing.character == trade.character && listing.price == trade.price
         && after.coins == before.coins + listing.price && auctionListingGone(trade.id)
         && buyer.lastAuction.action == 'buy' && buyer.lastAuction.id == trade.id

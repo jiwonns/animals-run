@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AuctionBookRow } from '@/components/auction-book-row';
 import { AuctionOfferSheet, type AuctionOfferMode } from '@/components/auction-offer-sheet';
+import { AuctionQuoteBoard } from '@/components/auction-quote-board';
 import { GradeBadge } from '@/components/grade-badge';
 import { RunningLoader } from '@/components/running-loader';
 import { CHARACTER_BY_ID, COLLECTIONS } from '@/constants/characters';
@@ -191,24 +192,23 @@ export default function AuctionAnimalScreen() {
       ) : (
         <>
           <View style={[styles.info, { backgroundColor: colors.surface }]}>
-            <Image source={character.image} style={styles.hero} contentFit="contain" />
-            <View style={styles.infoBody}>
-              <View style={styles.titleRow}>
-                <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
-                  {character.name}
+            <View style={styles.infoTop}>
+              <Image source={character.image} style={styles.hero} contentFit="contain" />
+              <View style={styles.infoBody}>
+                <View style={styles.titleRow}>
+                  <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+                    {character.name}
+                  </Text>
+                  <GradeBadge grade={character.grade} />
+                </View>
+                <Text style={[styles.meta, { color: colors.secondary }]}>
+                  {collection?.name ?? character.collection}
+                  {owned ? ` · 보유 ${owned}마리` : ' · 미보유'}
+                  {extra ? ` · 등록 ${extra}` : ''}
                 </Text>
-                <GradeBadge grade={character.grade} />
               </View>
-              <Text style={[styles.quote, { color: colors.text }]}>{band.quote.toLocaleString()}코인</Text>
-              <Text style={[styles.meta, { color: colors.secondary }]}>
-                {owned ? `보유 ${owned}마리` : '미보유'}
-                {extra ? ` · 등록 ${extra}` : ''}
-                {volume > 0 ? ` · 지난 ${volume.toLocaleString()}건` : ''}
-              </Text>
-              <Text style={[styles.meta, { color: colors.secondary }]}>
-                {collection?.name ?? character.collection} · {band.min.toLocaleString()}~{band.max.toLocaleString()}
-              </Text>
             </View>
+            <AuctionQuoteBoard band={band} volume={volume} />
           </View>
           <View style={[styles.tabs, { backgroundColor: colors.surface }]}>
             <Pressable
@@ -312,12 +312,12 @@ export default function AuctionAnimalScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  info: { flexDirection: 'row', gap: 12, marginHorizontal: 20, marginTop: 12, borderRadius: 20, padding: 12, alignItems: 'center' },
-  hero: { width: 72, height: 72 },
-  infoBody: { flex: 1, gap: 2 },
+  info: { marginHorizontal: 20, marginTop: 12, borderRadius: 20, padding: 14, gap: 12 },
+  infoTop: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+  hero: { width: 64, height: 64 },
+  infoBody: { flex: 1, gap: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { flexShrink: 1, fontSize: 18, fontWeight: '900' },
-  quote: { fontSize: 20, fontWeight: '900' },
   meta: { fontSize: 12, fontWeight: '600', lineHeight: 16 },
   tabs: { flexDirection: 'row', marginHorizontal: 20, marginTop: 10, borderRadius: 16, padding: 4, gap: 4 },
   tab: { flex: 1, minHeight: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

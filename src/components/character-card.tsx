@@ -1,10 +1,15 @@
 import { Image } from '@/components/gacha-image';
+import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { GradeBadge } from '@/components/grade-badge';
 import { GRADES, type Character } from '@/constants/characters';
 import { useColors } from '@/hooks/use-colors';
 import { COLLECTION_DATA } from '@/constants/gacha.generated';
+
+const EVOLUTION_COLLECTIONS = new Set(
+  COLLECTION_DATA.filter((c) => c.acquisition === 'evolution').map((c) => c.id),
+);
 
 type Props = {
   character: Character;
@@ -15,11 +20,11 @@ type Props = {
   count?: number;
 };
 
-export function CharacterCard({ character, width, owned = true, count = 0 }: Props) {
+export const CharacterCard = memo(function CharacterCard({ character, width, owned = true, count = 0 }: Props) {
   const colors = useColors();
   const { color } = GRADES[character.grade];
   const rare = owned && character.grade !== 'N';
-  const evolved = COLLECTION_DATA.find(c=>c.id===character.collection)?.acquisition==='evolution';
+  const evolved = EVOLUTION_COLLECTIONS.has(character.collection);
   return (
     <View
       style={[
@@ -47,7 +52,7 @@ export function CharacterCard({ character, width, owned = true, count = 0 }: Pro
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   cell: {

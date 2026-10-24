@@ -70,8 +70,15 @@ export function claimDuelReward(uid: string, id: string) {
     const day = Math.floor(Date.now() / 86400000); // UTC; rules enforce the server's day.
     const count = wallet.data()?.day === day ? wallet.data()?.count ?? 0 : 0;
     if (count >= 5) throw new Error('오늘의 결투 보상 5회를 모두 받았어요. UTC 자정(한국 오전 9시)에 초기화돼요.');
-    const amount = duelReward(duel.mode, duel.difficulty, duel.state.winner, duel.owner === uid ? 'player' : 'rival');
-    tx.update(profileRef(uid), { coins: profile.data()!.coins + amount, lastArenaReward: id });
+    const side = duel.owner === uid ? 'player' : 'rival';
+    const amount = duelReward(duel.mode, duel.difficulty, duel.state.winner, side);
+    const won = duel.state.winner === side;
+    const data = profile.data()!;
+    tx.update(profileRef(uid), {
+      coins: data.coins + amount,
+      lastArenaReward: id,
+      ...(won && { arenaWins: (data.arenaWins ?? 0) + 1 }),
+    });
     tx.set(walletRef, { day, count: count + 1, lastDuel: id, updatedAt: serverTimestamp() });
     tx.update(ref, { claimed: [...duel.claimed, uid], updatedAt: serverTimestamp() });
     return amount;

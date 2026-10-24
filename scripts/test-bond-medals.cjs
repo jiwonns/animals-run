@@ -24,7 +24,7 @@ function load(file, extra = {}) {
     '@/constants/characters': constants,
     './firebase': { db: {} },
     './profile': { displayName: p => p.nickname || p.username },
-    './ranking': { RANKING_COUNTS: ['hatchCount','evolveCount','fuseCount','recycleCount'] },
+    './ranking': { RANKING_COUNTS: ['hatchCount','evolveCount','fuseCount','recycleCount','auctionTrades','arenaWins'] },
     './inventory': { kindsByGrade },
     '@/constants/gacha.generated': { REWARDS: { sale: {} } },
     'firebase/firestore': {},
@@ -99,4 +99,4 @@ const rules = renderRules(collections, readRewards());
 assert.equal(fs.readFileSync('firestore.rules', 'utf8'), rules, 'generated rules stay reproducible');
 assert.ok(rules.includes('match /bonds/{uid}'));
 assert.ok(rules.includes('match /users/{uid}/medals/{medalId}'));
-console.log(`PASS five bond levels, boundary values, offline time, retained bonds, ${medals.COLLECTION_MEDALS.length} collections, seven milestones, crown transfer and ties, uncapped rankings, reproducible rules`);
+console.log(`PASS five bond levels, boundary values, offline time, retained bonds, ${medals.COLLECTION_MEDALS.length} collections, ${medals.MILESTONE_MEDALS.length} milestones, crown transfer and ties, uncapped rankings, reproducible rules`);

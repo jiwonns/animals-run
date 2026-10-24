@@ -35,7 +35,7 @@ type GradeOverrides<T> = { default: T } & Partial<Record<Grade, Partial<T>>>;
 
 /** assets/gacha/rewards.json; amounts are free tickets. */
 export type Rewards = {
-  /** Coins paid per sold copy, including zero-coin normal cleanup. */
+  /** Coins paid per sold copy to the shop. */
   sale: Record<Grade, number>;
   /**
    * Player-to-player auction: starting 시세 per grade, hard floor/ceil, the live band
@@ -59,6 +59,10 @@ export type Rewards = {
   grade: { every: number } & GradeOverrides<{ first: number; every: number }>;
   collectionComplete: number;
   drawCount: { milestones: number[]; every: number; reward: number };
+  /** Completed player-to-player auction trades (buy or fill, both sides). */
+  auctionTrades: { milestones: number[]; every: number; reward: number };
+  /** Claimed arena victories. */
+  arenaWins: { milestones: number[]; every: number; reward: number };
   /** Grades crafting moves between, lowest first, and the collections it can produce. */
   crafting: { tiers: Grade[]; pool: string[] };
   /**
