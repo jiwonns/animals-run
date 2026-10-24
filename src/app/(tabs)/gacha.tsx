@@ -38,7 +38,8 @@ export default function GachaScreen() {
   const banners=[...BANNERS];
   const colors = useColors();
   useConfirmExit();
-  const { width } = useWindowDimensions();
+  const { width,height:windowHeight } = useWindowDimensions();
+  const compact=windowHeight<700;
   const { user, profile } = useSession();
   const coins = profile?.coins ?? 0;
   const tickets = profile?.tickets ?? 0;
@@ -76,9 +77,9 @@ export default function GachaScreen() {
   }
 
   return (
-    <ScrollView style={{flex:1}} contentContainerStyle={{flexGrow:1}}>
-    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
+    <ScrollView style={{flex:1}} contentContainerStyle={{flex:1,minHeight:0}} showsVerticalScrollIndicator={false}>
+    <SafeAreaView testID="gacha-screen" edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header,compact&&{marginTop:8}]}>
         <Text style={[styles.title, { color: colors.text }]}>뽑기</Text>
         <View style={styles.wallet}>
           <TicketBadge tickets={tickets} />
@@ -86,7 +87,7 @@ export default function GachaScreen() {
         </View>
       </View>
 
-      <View style={styles.dots}>
+      <View style={[styles.dots,compact&&{marginTop:6}]}>
         {banners.map((b, index) => (
           <Dot
             key={b.id}
@@ -117,9 +118,9 @@ export default function GachaScreen() {
             renderItem={({item:banner}) => {
               const payment: Payment = acceptsTickets(banner) ? paymentChoice : 'coins';
               return (
-                <BannerPage key={banner.id} banner={banner} width={width} height={pagerHeight}>
+                <BannerPage key={banner.id} banner={banner} width={width} height={pagerHeight} compact={compact}>
                   {acceptsTickets(banner) && (
-                    <View style={[styles.payment, { backgroundColor: colors.surface }]}>
+                    <View style={[styles.payment,compact&&{marginBottom:10}, { backgroundColor: colors.surface }]}>
                       {(
                         [
                           ['coins', '코인으로'],
@@ -151,7 +152,7 @@ export default function GachaScreen() {
                     </View>
                   )}
 
-                  <View style={styles.buttons}>
+                  <View style={[styles.buttons,compact&&{marginBottom:12}]}>
                     <DrawButton
                       label="1회 뽑기"
                       cost={costLabel(banner, payment, 1)}
@@ -209,22 +210,23 @@ function discountLabel(banner: Banner) {
 }
 
 /** One swipeable page: the poster, its odds and the controls that draw from it. */
-function BannerPage({ banner, width, height, children }: {
+function BannerPage({ banner, width, height,compact,children }: {
   banner: Banner;
   width: number;
   height: number;
+  compact: boolean;
   children: ReactNode;
 }) {
   const [stageHeight, setStageHeight] = useState(0);
-  const posterWidth = width - SIDE_PADDING * 2;
-  const posterHeight = Math.min(stageHeight - 16, posterWidth * MAX_POSTER_RATIO);
+  const posterWidth = Math.min(Math.max(0,width-SIDE_PADDING*2),Math.max(0,stageHeight-16)/MAX_POSTER_RATIO);
+  const posterHeight = posterWidth*MAX_POSTER_RATIO;
 
   return (
-    <View style={{ width, height }}>
+    <View style={{ width, height,overflow:'hidden' }}>
       <View style={styles.stage} onLayout={(e) => setStageHeight(e.nativeEvent.layout.height)}>
         {stageHeight > 0 && <BannerPoster banner={banner} width={posterWidth} height={posterHeight} />}
       </View>
-      <View style={styles.odds}>
+      <View style={[styles.odds,compact&&{marginBottom:6}]}>
         <OddsButton
           title={`${banner.title} 확률`}
           rows={DRAW_GRADES.map(grade => {
@@ -304,6 +306,7 @@ function DrawButton({ label, cost, kind, badge, primary = false, disabled, onPre
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minHeight: 0,
   },
   header: {
     flexDirection: 'row',
@@ -323,9 +326,12 @@ const styles = StyleSheet.create({
   },
   pager: {
     flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
   },
   stage: {
     flex: 1,
+    minHeight: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,5 +1,4 @@
 import { useCatalog } from '@/providers/catalog-provider';
-import { RefreshHandle } from '@/components/refresh-handle';
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -77,7 +76,7 @@ export default function MapScreen() {
           : `${REWARDS.stepsPerCoin}걸음마다 1코인 · 오늘 +${Math.floor(walk.todaySteps / REWARDS.stepsPerCoin).toLocaleString()}코인`;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View testID="map-screen" style={[styles.container, { backgroundColor: colors.background }]}>
       {walk.location === "denied" ? (
         <Message
           title="위치 권한이 필요해요"
@@ -109,7 +108,6 @@ export default function MapScreen() {
       )}
 
       <SafeAreaView edges={["top"]} style={styles.top} pointerEvents="box-none">
-        <RefreshHandle />
         <View
           style={[
             styles.card,

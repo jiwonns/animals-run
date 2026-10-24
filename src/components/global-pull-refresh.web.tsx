@@ -15,7 +15,7 @@ export function GlobalPullRefresh(){
     let start:{x:number;y:number}|null=null,amount=0;
     function atTop(target:EventTarget|null){
       let node=target instanceof Element?target:null;
-      if(node?.closest('input,textarea,select,iframe,[data-no-pull-refresh]'))return false;
+      if(node?.closest('input,textarea,select,iframe,[data-no-pull-refresh],[data-testid="map-screen"]'))return false;
       while(node){
         const style=getComputedStyle(node);
         if(/auto|scroll/.test(style.overflowY)&&node.scrollHeight>node.clientHeight+1)return node.scrollTop<=0;
