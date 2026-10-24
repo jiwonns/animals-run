@@ -4,7 +4,9 @@ import { Image } from '@/components/gacha-image';
 import { router, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AuctionOfferSheet } from '@/components/auction-offer-sheet';
 import { CoinBadge } from '@/components/coin-badge';
 import { GradeBadge } from '@/components/grade-badge';
 import { RunningLoader } from '@/components/running-loader';
@@ -13,7 +15,7 @@ import { useAuction, useAuctionBandSweep, useAuctionQuoteSettle, useMyBids, useM
 import { useColors } from '@/hooks/use-colors';
 import { useListWindow } from '@/hooks/use-list-window';
 import { useGridCellWidth } from '@/hooks/use-grid-cell-width';
-import { lastWindowBoard, lastWindowVolume, marketBand, nextAuctionSlot, type AuctionQuote } from '@/lib/auction';
+import { lastWindowVolume, marketBand, nextAuctionSlot, type AuctionQuote } from '@/lib/auction';
 import { AUCTION_BID_COLOR, AUCTION_SELL_COLOR, auctionSearchHit } from '@/lib/auction-ui';
 import { useSession } from '@/providers/session-provider';
 
@@ -21,10 +23,9 @@ const COLUMNS = 2;
 const PADDING = 20;
 const GAP = 10;
 
-type Scope = 'all' | 'live' | 'mine';
+type Scope = 'live' | 'mine';
 
 const SCOPES: { id: Scope; label: string }[] = [
-  { id: 'all', label: '전체' },
   { id: 'live', label: '거래중' },
   { id: 'mine', label: '내 등록' },
 ];
@@ -32,6 +33,7 @@ const SCOPES: { id: Scope; label: string }[] = [
 export default function AuctionCatalogScreen() {
   useCatalog();
   const colors = useColors();
+  const insets = useSafeAreaInsets();
   const { user, profile } = useSession();
   const { listings, bids, quotes, failed } = useAuction();
   const mineSell = useMyListings(user?.uid, listings);
@@ -41,8 +43,12 @@ export default function AuctionCatalogScreen() {
   const cellWidth = useGridCellWidth(COLUMNS, PADDING, GAP);
   const [search, setSearch] = useState('');
   const [grade, setGrade] = useState<Grade | null>(null);
-  const [scope, setScope] = useState<Scope>('all');
-  const lastWindow = useMemo(() => lastWindowBoard(quotes), [quotes]);
+  const [scope, setScope] = useState<Scope>('live');
+  const [offering, setOffering] = useState(false);
+  const lastVolume = useMemo(
+    () => Object.values(quotes).reduce((sum, quote) => sum + lastWindowVolume(quote), 0),
+    [quotes],
+  );
   const nextHour = new Date(nextAuctionSlot() + 9 * 60 * 60 * 1000).getUTCHours();
   const mineIds = useMemo(() => new Set([...mineSell, ...mineBuy].map((row) => row.character)), [mineBuy, mineSell]);
   const sellCounts = useMemo(() => {
@@ -67,9 +73,8 @@ export default function AuctionCatalogScreen() {
       if (!auctionSearchHit(character, search)) return false;
       const sell = sellCounts.get(character.id) ?? 0;
       const buy = buyCounts.get(character.id) ?? 0;
-      if (scope === 'live' && sell + buy === 0) return false;
-      if (scope === 'mine' && !mineIds.has(character.id)) return false;
-      return true;
+      if (scope === 'mine') return mineIds.has(character.id);
+      return sell + buy > 0;
     }).sort((a, b) => {
       const aLive = (sellCounts.get(a.id) ?? 0) + (buyCounts.get(a.id) ?? 0);
       const bLive = (sellCounts.get(b.id) ?? 0) + (buyCounts.get(b.id) ?? 0);
@@ -82,7 +87,7 @@ export default function AuctionCatalogScreen() {
   }, [buyCounts, grade, mineIds, scope, search, sellCounts]);
 
   const page = useListWindow(rows, `${scope}:${grade ?? 'all'}:${search}`);
-  const scopeCount = (id: Scope) => (id === 'live' ? liveCount : id === 'mine' ? mineIds.size : CHARACTERS.length);
+  const scopeCount = (id: Scope) => (id === 'mine' ? mineIds.size : liveCount);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -145,32 +150,10 @@ export default function AuctionCatalogScreen() {
           );
         })}
       </ScrollView>
-      <View style={styles.tick}>
-        <Text style={[styles.tickLabel, { color: colors.secondary }]}>다음 시세 {nextHour}시</Text>
-        {lastWindow.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.volumeRow}>
-            {lastWindow.map((row) => {
-              const character = CHARACTERS.find((c) => c.id === row.id);
-              if (!character) return null;
-              return (
-                <Pressable
-                  key={row.id}
-                  accessibilityRole="button"
-                  onPress={() => router.push(`/auction/${row.id}` as Href)}
-                  style={[styles.volumeCard, { backgroundColor: colors.surface }]}>
-                  <Image source={character.thumb} style={styles.volumeThumb} contentFit="contain" />
-                  <Text style={[styles.volumeName, { color: colors.text }]} numberOfLines={1}>
-                    {character.name}
-                  </Text>
-                  <Text style={[styles.volumeMeta, { color: colors.secondary }]}>{row.count.toLocaleString()}건</Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        ) : (
-          <Text style={[styles.tickHint, { color: colors.secondary }]}>지난 2시간 거래가 아직 없어요</Text>
-        )}
-      </View>
+      <Text style={[styles.tick, { color: colors.secondary }]}>
+        {`다음 시세 ${nextHour}시`}
+        {lastVolume > 0 ? ` · 지난 ${lastVolume.toLocaleString()}건` : ' · 지난 2시간 거래가 아직 없어요'}
+      </Text>
 
       {failed ? (
         <Text style={[styles.empty, { color: colors.secondary }]}>목록을 불러오지 못했어요. 아래로 당겨 다시 시도해주세요.</Text>
@@ -190,7 +173,7 @@ export default function AuctionCatalogScreen() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <Text style={[styles.empty, { color: colors.secondary }]}>
-              {scope === 'mine' ? '내가 올린 동물이 없어요.' : scope === 'live' ? '지금 올라온 거래가 없어요.' : '검색과 맞는 동물이 없어요.'}
+              {scope === 'mine' ? '내가 올린 동물이 없어요.' : search || grade ? '검색과 맞는 거래가 없어요.' : '지금 올라온 거래가 없어요.'}
             </Text>
           }
           renderItem={({ item }) => (
@@ -205,6 +188,25 @@ export default function AuctionCatalogScreen() {
           )}
         />
       )}
+      <View style={[styles.bar, { paddingBottom: Math.max(12, insets.bottom), backgroundColor: colors.background }]}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setOffering(true)}
+          style={[styles.offer, { backgroundColor: AUCTION_SELL_COLOR }]}>
+          <Text style={styles.offerLabel}>여분 올리기</Text>
+        </Pressable>
+      </View>
+      {offering ? (
+        <AuctionOfferSheet
+          mode="sell"
+          initial={null}
+          gradeFilter={grade}
+          quotes={quotes}
+          busy={false}
+          onClose={() => setOffering(false)}
+          onDone={() => setOffering(false)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -280,15 +282,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   chipLabel: { fontSize: 13, fontWeight: '800' },
-  tick: { paddingTop: 10, gap: 8 },
-  tickLabel: { paddingHorizontal: PADDING, fontSize: 12, fontWeight: '700' },
-  tickHint: { paddingHorizontal: PADDING, fontSize: 12 },
-  volumeRow: { paddingHorizontal: PADDING, gap: 8 },
-  volumeCard: { width: 76, alignItems: 'center', gap: 2, borderRadius: 14, padding: 8 },
-  volumeThumb: { width: 36, height: 36 },
-  volumeName: { fontSize: 11, fontWeight: '800' },
-  volumeMeta: { fontSize: 11, fontWeight: '700' },
-  list: { paddingHorizontal: PADDING, paddingTop: 12, paddingBottom: 32 },
+  tick: { paddingHorizontal: PADDING, paddingTop: 10, paddingBottom: 2, fontSize: 12, fontWeight: '700' },
+  list: { paddingHorizontal: PADDING, paddingTop: 12, paddingBottom: 16 },
+  bar: { paddingHorizontal: PADDING, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#00000014' },
+  offer: { minHeight: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  offerLabel: { color: '#fff', fontSize: 16, fontWeight: '800' },
   columns: { gap: GAP, marginBottom: GAP },
   empty: { textAlign: 'center', padding: 28, lineHeight: 22 },
   card: { borderRadius: 18, padding: 12, gap: 6 },

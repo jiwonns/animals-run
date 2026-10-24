@@ -18,8 +18,8 @@ export default function SignInScreen() {
       onSubmit={signIn}
       footer={
         <Pressable accessibilityRole="link" onPress={() => router.push('/sign-up')} hitSlop={8}>
-          <Text style={{ color: colors.secondary, fontSize: 15 }}>
-            처음이신가요? <Text style={{ color: colors.primary, fontWeight: '700' }}>회원가입</Text>
+          <Text style={{ color: '#A07155', fontSize: 14, fontWeight: '600' }}>
+            처음이신가요? <Text style={{ color: colors.primary, fontWeight: '800' }}>회원가입</Text>
           </Text>
         </Pressable>
       }

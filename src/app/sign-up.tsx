@@ -17,8 +17,8 @@ export default function SignUpScreen() {
       onSubmit={signUp}
       footer={
         <Pressable accessibilityRole="link" onPress={() => router.back()} hitSlop={8}>
-          <Text style={{ color: colors.secondary, fontSize: 15 }}>
-            이미 계정이 있나요? <Text style={{ color: colors.primary, fontWeight: '700' }}>로그인</Text>
+          <Text style={{ color: '#A07155', fontSize: 14, fontWeight: '600' }}>
+            이미 계정이 있나요? <Text style={{ color: colors.primary, fontWeight: '800' }}>로그인</Text>
           </Text>
         </Pressable>
       }

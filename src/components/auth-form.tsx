@@ -1,7 +1,18 @@
 import { ScrollView } from '@/components/refreshable';
 import { Image } from 'expo-image';
 import { useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View,
+  type TextInputProps,
+} from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon, ICONS } from '@/components/icon';
@@ -11,7 +22,8 @@ import { validateNickname, validatePassword, validateUsername, type SignUpExtras
 import { parseBirthday, zodiacOf } from '@/lib/zodiac';
 import { useSession } from '@/providers/session-provider';
 
-const APP_ICON = require('../../assets/images/icon.png');
+const PUPPY = require('../../assets/images/splash-icon.png');
+const ACCENT = '#FB7103';
 
 type Props = {
   title: string;
@@ -26,10 +38,14 @@ type Props = {
 export function AuthForm({ title, submitLabel, signUp = false, onSubmit, footer }: Props) {
   const colors = useColors();
   const { notice } = useSession();
+  const { width, height } = useWindowDimensions();
+  const mark = Math.round(Math.min(width * 0.34, height * (signUp ? 0.12 : 0.18), signUp ? 96 : 132));
   const [username, setUsername] = useState('');
   const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [birthdayDigits, setBirthdayDigits] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -54,110 +70,112 @@ export function AuthForm({ title, submitLabel, signUp = false, onSubmit, footer 
     if (submitError) setError(submitError);
   }
 
-  const inputStyle = styles.input;
-
   return (
     <SafeAreaView style={styles.container}>
+      <View pointerEvents="none" style={[styles.sun, { top: -height * 0.1, right: -width * 0.2 }]} />
+      <View pointerEvents="none" style={[styles.hill, { bottom: -width * 0.34, left: -width * 0.28 }]} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
-          <View style={styles.hero}>
-            <View style={styles.halo} />
-            <View style={styles.brandSeal}><Image source={APP_ICON} style={styles.brandIcon} /></View>
-            <View style={styles.brandPaw}><Icon name={ICONS.character} size={20} color="#C98860" /></View>
-            <Text style={styles.brandName}>Animals Run</Text>
-            <Text style={styles.brandTagline}>걷고, 만나고, 함께 자라요</Text>
-          </View>
-          <View style={styles.heading}>
-            <Text style={styles.title}>{title}</Text>
-            <Text style={styles.subtitle}>{signUp ? '새로운 친구들과 함께 달려볼까요?' : '다시 만나 반가워요. 모험을 이어가요!'}</Text>
-          </View>
+        <ScrollView
+          contentContainerStyle={[styles.form, signUp ? styles.formSignup : styles.formLogin]}
+          keyboardShouldPersistTaps="handled">
+          <Animated.View entering={FadeInDown.duration(420)} style={styles.hero}>
+            <View style={[styles.heroMark, { width: mark + 20, height: mark + 16 }]}>
+              <View style={[styles.glow, { width: mark * 0.88, height: mark * 0.88, borderRadius: mark }]} />
+              <Image source={PUPPY} style={{ width: mark, height: mark, zIndex: 1 }} contentFit="contain" />
+            </View>
+            <Text style={styles.eyebrow}>EVERY STEP, A NEW FRIEND</Text>
+            <Text style={styles.brand} allowFontScaling={false} numberOfLines={1} adjustsFontSizeToFit>
+              Animals <Text style={styles.run}>Run</Text>
+            </Text>
+            <View style={styles.rule} />
+            <Text style={styles.tagline}>걷고, 만나고, 함께 자라요</Text>
+          </Animated.View>
 
-          <View style={styles.fieldGroup}><Text style={styles.fieldLabel}>아이디</Text><TextInput
-            value={username}
-            onChangeText={setUsername}
-            placeholder="영문 소문자·숫자·_ 4~20자"
-            placeholderTextColor="#B7A79C"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="username"
-            textContentType="username"
-            style={inputStyle}
-          /></View>
-          {signUp && (
-            <View style={styles.fieldGroup}><Text style={styles.fieldLabel}>닉네임</Text><TextInput
-              value={nickname}
-              onChangeText={setNickname}
-              placeholder="한글·영문·숫자·_ 2~10자"
-              placeholderTextColor="#B7A79C"
+          <Animated.View entering={FadeInDown.duration(420).delay(80)} style={styles.card}>
+            <View style={styles.heading}>
+              <Text style={styles.title}>{title}</Text>
+              <Text style={styles.subtitle}>
+                {signUp ? '새로운 친구들과 함께 달려볼까요?' : '다시 만나 반가워요. 모험을 이어가요!'}
+              </Text>
+            </View>
+
+            <Field
+              label="아이디"
+              value={username}
+              onChangeText={setUsername}
+              placeholder="영문 소문자·숫자·_ 4~20자"
+              autoCapitalize="none"
               autoCorrect={false}
-              autoComplete="nickname"
-              textContentType="nickname"
-              maxLength={10}
-              style={inputStyle}
-            /></View>
-          )}
-          <View style={styles.fieldGroup}><Text style={styles.fieldLabel}>비밀번호</Text><TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="비밀번호를 입력해주세요"
-            placeholderTextColor="#B7A79C"
-            secureTextEntry
-            autoComplete={signUp ? 'new-password' : 'current-password'}
-            textContentType={signUp ? 'newPassword' : 'password'}
-            style={inputStyle}
-            onSubmitEditing={signUp ? undefined : submit}
-          /></View>
-          {signUp && (
-            <>
-              <View style={styles.fieldGroup}><Text style={styles.fieldLabel}>비밀번호 확인</Text><TextInput
-                value={passwordConfirm}
-                onChangeText={setPasswordConfirm}
-                placeholder="비밀번호를 한 번 더 입력해주세요"
-                placeholderTextColor="#B7A79C"
-                secureTextEntry
-                autoComplete="new-password"
-                textContentType="newPassword"
-                style={inputStyle}
-              /></View>
-              <View style={styles.fieldGroup}><Text style={styles.fieldLabel}>생년월일</Text><TextInput
-                value={birthdayDigits}
-                onChangeText={(text) => setBirthdayDigits(text.replace(/\D/g, '').slice(0, 8))}
-                placeholder="8자리 숫자 (예: 19990329)"
-                placeholderTextColor="#B7A79C"
-                keyboardType="number-pad"
-                autoComplete="birthdate-full"
-                maxLength={8}
-                style={inputStyle}
-                onSubmitEditing={submit}
-              /></View>
-              {zodiac && (
-                <View style={styles.zodiac}>
-                  <Image source={zodiac.image} style={styles.zodiacImage} contentFit="contain" />
-                  <Text style={styles.zodiacText}>
-                    <Text style={styles.zodiacStrong}>{zodiac.yearName}</Text>
-                    {`예요! 가입하면 노말 ${zodiac.name}을(를) 함께 드려요`}
-                  </Text>
-                </View>
-              )}
-            </>
-          )}
+              autoComplete="username"
+              textContentType="username"
+            />
+            {signUp ? (
+              <Field
+                label="닉네임"
+                value={nickname}
+                onChangeText={setNickname}
+                placeholder="한글·영문·숫자·_ 2~10자"
+                autoCorrect={false}
+                autoComplete="nickname"
+                textContentType="nickname"
+                maxLength={10}
+              />
+            ) : null}
+            <Field
+              label="비밀번호"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="비밀번호를 입력해주세요"
+              secureTextEntry={!showPassword}
+              autoComplete={signUp ? 'new-password' : 'current-password'}
+              textContentType={signUp ? 'newPassword' : 'password'}
+              onSubmitEditing={signUp ? undefined : submit}
+              secret={{ shown: showPassword, onToggle: () => setShowPassword((value) => !value) }}
+            />
+            {signUp ? (
+              <>
+                <Field
+                  label="비밀번호 확인"
+                  value={passwordConfirm}
+                  onChangeText={setPasswordConfirm}
+                  placeholder="비밀번호를 한 번 더 입력해주세요"
+                  secureTextEntry={!showConfirm}
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                  secret={{ shown: showConfirm, onToggle: () => setShowConfirm((value) => !value) }}
+                />
+                <Field
+                  label="생년월일"
+                  value={birthdayDigits}
+                  onChangeText={(text) => setBirthdayDigits(text.replace(/\D/g, '').slice(0, 8))}
+                  placeholder="8자리 숫자 (예: 19990329)"
+                  keyboardType="number-pad"
+                  autoComplete="birthdate-full"
+                  maxLength={8}
+                  onSubmitEditing={submit}
+                />
+                {zodiac ? (
+                  <View style={styles.zodiac}>
+                    <Image source={zodiac.image} style={styles.zodiacImage} contentFit="contain" />
+                    <Text style={styles.zodiacText}>
+                      <Text style={styles.zodiacStrong}>{zodiac.yearName}</Text>
+                      {`예요! 가입하면 노말 ${zodiac.name}을(를) 함께 드려요`}
+                    </Text>
+                  </View>
+                ) : null}
+              </>
+            ) : null}
 
-          {(error || notice) && <Text style={[styles.error, { color: colors.danger }]}>{error || notice}</Text>}
+            {error || notice ? <Text style={[styles.error, { color: colors.danger }]}>{error || notice}</Text> : null}
 
-          <Pressable
-            accessibilityRole="button"
-            disabled={submitting}
-            onPress={submit}
-            style={({ pressed }) => [
-              styles.button,
-              { backgroundColor: colors.primary, opacity: submitting ? 0.6 : pressed ? 0.8 : 1 },
-            ]}>
-            {submitting ? (
-              <RunningDot />
-            ) : (
-              <Text style={styles.buttonLabel}>{submitLabel}</Text>
-            )}
-          </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              disabled={submitting}
+              onPress={submit}
+              style={({ pressed }) => [styles.button, { opacity: submitting ? 0.65 : pressed ? 0.88 : 1 }]}>
+              {submitting ? <RunningDot /> : <Text style={styles.buttonLabel}>{submitLabel}</Text>}
+            </Pressable>
+          </Animated.View>
 
           <View style={styles.footer}>{footer}</View>
         </ScrollView>
@@ -166,48 +184,124 @@ export function AuthForm({ title, submitLabel, signUp = false, onSubmit, footer 
   );
 }
 
+function Field({
+  label,
+  secret,
+  ...input
+}: TextInputProps & { label: string; secret?: { shown: boolean; onToggle: () => void } }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <View style={[styles.inputWrap, focused && styles.inputFocus]}>
+        <TextInput
+          {...input}
+          placeholderTextColor="#C4A994"
+          accessibilityLabel={label}
+          onFocus={(event) => {
+            setFocused(true);
+            input.onFocus?.(event);
+          }}
+          onBlur={(event) => {
+            setFocused(false);
+            input.onBlur?.(event);
+          }}
+          style={styles.input}
+        />
+        {secret ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={secret.shown ? `${label} 숨기기` : `${label} 보기`}
+            onPress={secret.onToggle}
+            hitSlop={8}
+            style={styles.secret}>
+            <Icon name={secret.shown ? ICONS.hidden : ICONS.visible} size={20} color={focused ? ACCENT : '#B08970'} />
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF6ED' },
+  container: { flex: 1, backgroundColor: '#FFF3E7' },
   flex: { flex: 1 },
-  form: {
-    flexGrow: 1, paddingTop: 24, paddingBottom: 28, justifyContent: 'center', paddingHorizontal: 22,
-    gap: 16, maxWidth: 520, width: '100%', alignSelf: 'center',
+  sun: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: '#FFD7B0',
+    opacity: 0.5,
   },
-  hero: { alignItems: 'center', paddingBottom: 4, gap: 4 },
-  halo: { position: 'absolute', top: 3, width: 108, height: 108, borderRadius: 54, backgroundColor: '#FFE4D1' },
-  brandSeal: {
-    width: 96, height: 96, alignItems: 'center', justifyContent: 'center', borderRadius: 48,
-    backgroundColor: '#FFFCF8', borderWidth: 1, borderColor: '#F3D6C2', marginBottom: 5,
+  hill: {
+    position: 'absolute',
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: '#F4D2B0',
+    opacity: 0.4,
   },
-  brandPaw: {
-    position: 'absolute', right: '28%', top: 68, width: 34, height: 34, borderRadius: 17,
-    backgroundColor: '#FFF6ED', alignItems: 'center', justifyContent: 'center',
+  form: { flexGrow: 1, paddingBottom: 28, paddingHorizontal: 22, gap: 18, maxWidth: 480, width: '100%', alignSelf: 'center' },
+  formLogin: { justifyContent: 'center', paddingTop: 12 },
+  formSignup: { justifyContent: 'flex-start', paddingTop: 8 },
+  hero: { alignItems: 'center', gap: 6 },
+  heroMark: { alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
+  glow: { position: 'absolute', alignSelf: 'center', backgroundColor: '#FFE9CF' },
+  eyebrow: { marginTop: 4, fontSize: 10, letterSpacing: 2.2, color: '#C4844E', fontWeight: '800' },
+  brand: { fontSize: 30, letterSpacing: -1, fontWeight: '900', color: '#5C3324' },
+  run: { color: ACCENT },
+  rule: { width: 32, height: 3, borderRadius: 99, backgroundColor: ACCENT, opacity: 0.85, marginTop: 2 },
+  tagline: { color: '#A07155', fontSize: 13, fontWeight: '600' },
+  card: {
+    backgroundColor: '#FFFCF8',
+    borderRadius: 24,
+    padding: 20,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: '#F3DCC8',
   },
-  brandIcon: { width: 80, height: 80, borderRadius: 24 },
-  brandName: { fontSize: 22, fontWeight: '900', letterSpacing: -0.5, color: '#634331' },
-  brandTagline: { color: '#A88870', fontSize: 12, fontWeight: '600', marginBottom: 7 },
-  heading: { gap: 5, marginTop: 1, marginBottom: 1 },
-  title: { fontSize: 25, fontWeight: '900', color: '#503B30' },
-  subtitle: { fontSize: 13, color: '#9B8170', fontWeight: '500' },
-  fieldGroup: { gap: 7 },
-  fieldLabel: { color: '#705A4B', fontSize: 12, fontWeight: '800', marginLeft: 3 },
-  input: {
-    height: 54, borderRadius: 15, paddingHorizontal: 15, fontSize: 15, color: '#503B30',
-    backgroundColor: '#FFFEFC', borderWidth: 1, borderColor: '#F0DFD1', shadowColor: '#775139',
-    shadowOpacity: 0.035, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
+  heading: { gap: 4, marginBottom: 2 },
+  title: { fontSize: 22, fontWeight: '900', color: '#5C3324' },
+  subtitle: { fontSize: 13, color: '#A07155', fontWeight: '500', lineHeight: 18 },
+  field: { gap: 7 },
+  fieldLabel: { color: '#7A5846', fontSize: 12, fontWeight: '800', marginLeft: 2 },
+  inputWrap: {
+    minHeight: 54,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8F2',
+    borderWidth: 1.5,
+    borderColor: '#EED8C4',
   },
+  inputFocus: { borderColor: ACCENT, backgroundColor: '#FFF' },
+  input: { flex: 1, paddingVertical: 14, fontSize: 15, color: '#5C3324' },
+  secret: { paddingLeft: 8, minHeight: 44, justifyContent: 'center' },
   error: { fontSize: 13, lineHeight: 19 },
   zodiac: {
-    flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8,
-    backgroundColor: '#FFFCF8', borderWidth: 1, borderColor: '#F3E4D8',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#FFF4E8',
+    borderWidth: 1,
+    borderColor: '#F3D6B8',
   },
-  zodiacImage: { width: 40, height: 40 },
-  zodiacText: { flex: 1, fontSize: 14, color: '#634331' },
-  zodiacStrong: { fontWeight: '800' },
+  zodiacImage: { width: 44, height: 44 },
+  zodiacText: { flex: 1, fontSize: 13, lineHeight: 19, color: '#5C3324' },
+  zodiacStrong: { fontWeight: '800', color: ACCENT },
   button: {
-    height: 56, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginTop: 1,
-    shadowColor: '#D64D1C', shadowOpacity: 0.2, shadowRadius: 11, shadowOffset: { width: 0, height: 6 },
+    minHeight: 54,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    backgroundColor: ACCENT,
   },
-  buttonLabel: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  footer: { alignItems: 'center', marginTop: 0 },
+  buttonLabel: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  footer: { alignItems: 'center', paddingTop: 2 },
 });

@@ -3,7 +3,7 @@ import { collection, doc, getDocsFromServer, onSnapshot, serverTimestamp, setDoc
 import { CHARACTER_BY_ID, GRADES, type CharacterId, type Grade } from '@/constants/characters';
 
 import { db } from './firebase';
-import type { Profile } from './profile';
+import { displayName, type Profile } from './profile';
 
 /** Profile counters copied onto the leaderboard. */
 export const RANKING_COUNTS = ['hatchCount', 'evolveCount', 'fuseCount', 'recycleCount', 'auctionTrades', 'arenaWins'] as const;
@@ -71,6 +71,35 @@ function rankingEntries(snapshot:QuerySnapshot<DocumentData>): (RankingEntry & {
       ...(Object.fromEntries(RANKING_COUNTS.map((key) => [key, data[key] ?? 0])) as Record<RankingCount, number>),
     };
   });
+}
+
+export type RankedRow = {
+  uid: string;
+  username: string;
+  avatar: RankingEntry['avatar'];
+  value: number;
+  rank: number;
+};
+
+/** Highest first; tied players share a rank (1, 2, 2, 4). */
+export function rankEntries(
+  entries: (RankingEntry & { uid: string })[],
+  valueOf: (entry: RankingEntry) => number,
+): RankedRow[] {
+  const rows = entries
+    .map((entry) => ({
+      uid: entry.uid,
+      username: displayName(entry),
+      avatar: entry.avatar,
+      value: valueOf(entry),
+      rank: 0,
+    }))
+    .filter((row) => row.value > 0)
+    .sort((a, b) => b.value - a.value);
+  rows.forEach((row, i) => {
+    row.rank = i > 0 && row.value === rows[i - 1].value ? rows[i - 1].rank : i + 1;
+  });
+  return rows;
 }
 
 /** Copies owned of each grade, counting duplicates. */

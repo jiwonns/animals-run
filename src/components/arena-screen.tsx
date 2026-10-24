@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from './gacha-image';
+import { ArenaRankBoard } from './arena-rank-board';
 import { AvatarFace } from './avatar-face';
 import { DuelStage } from './duel-stage';
 import { Icon, ICONS } from './icon';
@@ -77,6 +78,7 @@ function ArenaContent() {
     <View style={s.topline}><Text style={s.eyebrow}>ANIMALS ARENA</Text><View style={s.livePill}><View style={s.dot} /><Text style={s.liveText}>전술 대전</Text></View></View>
     {!match && <><Text style={s.title}>본능을 깨우는{ '\n' }한 판의 승부.</Text><Text style={s.subtitle}>나의 동물과 함께 도전하고, 친구와 실력을 겨뤄보세요.</Text></>}
     <View style={s.wallet}><Icon name={ICONS.trophy} color="#EDC584" size={19} /><Text style={s.walletText}>오늘의 보상 <Text style={{ color: '#F4D296' }}>{Math.max(0, 5 - count)} / 5회</Text></Text><Text style={s.reset}>매일 오전 9시 초기화</Text></View>
+    {!match && uid ? <ArenaRankBoard uid={uid} /> : null}
     {(failed || friendsFailed || error) && <Text accessibilityRole="alert" style={s.error}>{error || '대전 정보를 불러오지 못했어요. 네트워크를 확인해주세요.'}</Text>}
     {!!toast && <Text accessibilityLiveRegion="polite" style={s.toast}>{toast}</Text>}
     {opened && !match && <Text style={s.subtitle}>{loading ? '대전장을 불러오는 중…' : '대전 상태를 동기화하고 있어요.'}</Text>}

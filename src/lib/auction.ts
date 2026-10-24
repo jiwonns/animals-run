@@ -121,15 +121,6 @@ export function lastWindowVolume(quote?: Pick<AuctionQuote, 'lastWindowCount'> |
   return quote?.lastWindowCount ?? 0;
 }
 
-export function lastWindowBoard(quotes: Partial<Record<CharacterId, AuctionQuote>>) {
-  return Object.entries(quotes)
-    .flatMap(([id, quote]) => {
-      const count = lastWindowVolume(quote);
-      return quote && count > 0 ? [{ id: id as CharacterId, quote: quote.quote, count }] : [];
-    })
-    .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
-}
-
 function clampQuote(id: CharacterId, value: number) {
   const { floor, ceil } = marketBand(id, { quote: value });
   return Math.min(ceil, Math.max(floor, value));

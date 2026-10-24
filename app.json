@@ -2,7 +2,7 @@
   "expo": {
     "name": "Animals Run",
     "slug": "animals-run",
-    "version": "1.0.14",
+    "version": "1.0.15",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -15,7 +15,7 @@
       }
     },
     "android": {
-      "versionCode": 15,
+      "versionCode": 16,
       "package": "com.animalsrun.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -35,8 +35,9 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FFF3E7",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 205
+          "image": "./assets/images/splash-mark.png",
+          "imageWidth": 188,
+          "resizeMode": "contain"
         }
       ],
       "expo-asset",

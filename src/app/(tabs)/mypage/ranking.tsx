@@ -1,7 +1,7 @@
 import { useCatalog } from '@/providers/catalog-provider';
 import { FlatList, ScrollView } from '@/components/refreshable';
 import { useListWindow } from '@/hooks/use-list-window';
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
@@ -10,10 +10,11 @@ import { RunningLoader } from "@/components/running-loader";
 import { Select, type SelectOption } from "@/components/select";
 import { GRADES, GRADE_ORDER, type Grade } from "@/constants/characters";
 import { useColors } from "@/hooks/use-colors";
-import { displayName } from "@/lib/profile";
 import {
   fetchRankings,
+  rankEntries,
   watchRankings,
+  type RankedRow,
   type RankingCount,
   type RankingEntry,
 } from "@/lib/ranking";
@@ -22,13 +23,6 @@ import { kindsByGrade } from "@/lib/inventory";
 import { RANKING_MEDALS, rankingMedalHolder } from '@/lib/medals';
 
 type Board = "steps" | RankingCount | "grade";
-type Row = {
-  uid: string;
-  username: string;
-  avatar: RankingEntry["avatar"];
-  value: number;
-  rank: number;
-};
 
 const MEDALS = ["#F5B300", "#A3A3A3", "#C67C3E"];
 
@@ -84,34 +78,14 @@ const GRADE_OPTIONS: SelectOption<Grade>[] = GRADE_ORDER.map((g) => ({
   color: GRADES[g].color,
 }));
 
-/** Highest first; tied players share a rank (1, 2, 2, 4). */
-function rank(
-  entries: (RankingEntry & { uid: string })[],
-  board: Board,
-  grade: Grade,
-): Row[] {
-  const rows = entries
-    .map((e) => ({
-      uid: e.uid,
-      username: displayName(e),
-      avatar: e.avatar,
-      value: board === "grade" ? kindsByGrade(e.characters)[grade] : e[board],
-      rank: 0,
-    }))
-    .filter((r) => r.value > 0)
-    .sort((a, b) => b.value - a.value);
-  rows.forEach((row, i) => {
-    row.rank =
-      i > 0 && row.value === rows[i - 1].value ? rows[i - 1].rank : i + 1;
-  });
-  return rows;
-}
-
 export default function RankingScreen() {
   useCatalog();
   const colors = useColors();
   const { user } = useSession();
-  const [board, setBoard] = useState<Board>("steps");
+  const { board: boardParam } = useLocalSearchParams<{ board?: string }>();
+  const fromParam = BOARDS.some((item) => item.id === boardParam) ? (boardParam as Board) : null;
+  const [picked, setPicked] = useState<Board | null>(null);
+  const board = picked ?? fromParam ?? "steps";
   const [grade, setGrade] = useState<Grade>(GRADE_ORDER[0]);
   const [entries, setEntries] = useState<
     (RankingEntry & { uid: string })[] | null
@@ -136,7 +110,9 @@ export default function RankingScreen() {
     setRefreshing(false);
   }
 
-  const rows = entries ? rank(entries, board, grade) : [];
+  const rows = entries
+    ? rankEntries(entries, (entry) => (board === "grade" ? kindsByGrade(entry.characters)[grade] : entry[board]))
+    : [];
   const page = useListWindow(rows, board + ':' + grade);
   const mine = rows.find((r) => r.uid === user?.uid);
   const current = BOARDS.find((b) => b.id === board)!;
@@ -144,7 +120,7 @@ export default function RankingScreen() {
   const crown = RANKING_MEDALS.find(m => m.id === (board === 'grade' ? `ranking:grade:${grade}` : `ranking:${board}`));
   const crownUid = entries && crown ? rankingMedalHolder(entries, crown) : null;
 
-  function renderRow(row: Row, pinned = false) {
+  function renderRow(row: RankedRow, pinned = false) {
     const me = row.uid === user?.uid;
     const medal = MEDALS[row.rank - 1];
     return (
@@ -225,7 +201,7 @@ export default function RankingScreen() {
                     key={b.id}
                     accessibilityRole="tab"
                     accessibilityState={{ selected: active }}
-                    onPress={() => setBoard(b.id)}
+                    onPress={() => setPicked(b.id)}
                     style={[
                       styles.tab,
                       {
