@@ -1,5 +1,15 @@
 # APK 배포 절차
 
+## 2026-10-24 · 1.0.4 APK 압축 파일 교체
+
+- 같은 1.0.4 / versionCode 5이며 ARM64·x86_64 및 서명 인증서 유지.
+- 다운로드 APK: 62,705,148 → 31,355,392바이트, 약 50% 감소. 설치 후 저장 공간과는 별개.
+- 원본 assets/gacha 폴더 삭제 없이 Expo SDK 58 build-properties의 useLegacyPackaging으로 네이티브 라이브러리를 압축.
+- 압축 설정 커밋: `73b1803a0e3cfec140a98ba4d68b419d58b73355`.
+- 현재 공개 APK SHA-256: `b1cb06a9b9eefd099e551bf8fe62d9b79ee1e476be316e7da3ff333eff15d5f1`.
+- 이전 APK와 네이티브 라이브러리 54개·JavaScript 번들·DEX의 해시 일치, 서명·두 CPU 지원·덮어 설치 및 개발 서버 없는 로그인 화면 실행 확인. AndroidRuntime/ReactNativeJS 오류 없음.
+- Expo 설정 introspect에서 압축 활성화, lint/typecheck 통과. GitHub 파일 교체 후 재다운로드 SHA-256 일치 확인.
+
 ## 2026-10-24 · 1.0.4 배포 기록
 
 - 앱 버전 1.0.4 / versionCode 5, arm64-v8a 및 x86_64.
