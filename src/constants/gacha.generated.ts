@@ -731,8 +731,7 @@ export const REWARDS: Rewards = {
       "evolution_unique": "evolution_legendary",
       "evolution_cats_rare": "evolution_cats_epic",
       "evolution_cats_epic": "evolution_cats_unique",
-      "evolution_cats_unique": "evolution_cats_legendary",
-      "premium": "epic"
+      "evolution_cats_unique": "evolution_cats_legendary"
     },
     "steps": {
       "N": 3000,

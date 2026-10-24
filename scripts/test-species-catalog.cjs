@@ -33,6 +33,7 @@ for(const [from,to] of Object.entries(rewards.evolution.paths)) {
   assert.equal(b.config.acquisition,'evolution');
   for(const ch of a.characters) assert.ok(b.characters.some(target=>target.key===ch.key),'species stays the same');
 }
+assert.equal(rewards.evolution.paths.premium,undefined,'premium animals cannot evolve');
 const evolved=seed.collections.filter(c=>c.acquisition==='evolution');
 assert.deepEqual(banners.filter(c=>c.banner.enabled!==false).map(c=>c.id),['normal','premium']);
 assert.equal(evolved.reduce((n,c)=>n+c.characters.length,0),176);

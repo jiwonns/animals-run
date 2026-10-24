@@ -16,6 +16,12 @@ function load(file,mocks){const module={exports:{}};new Function('require','modu
   const {user}=await createUserWithEmailAndPassword(auth,'acquisition@users.animalsrun.local','local-password');const token=await user.getIdTokenResult();
   await put(`activeSessions/${user.uid}`,{active:true,authTime:token.claims.auth_time,sessionId:'a'.repeat(20)});
   const profileRef=uid=>f.doc(db,'users',uid),companionRef=uid=>f.doc(db,'companions',uid);
+  await put('users/'+user.uid,{username:'acquisition',nickname:'획득검사',coins:1000,tickets:0,characters:{premium_mouse:1},drawCount:0,gradeCounts:{},steps:0,avatar:null});
+  await put('companions/'+user.uid,{steps:{premium_mouse:6000}});
+  await assert.rejects(f.runTransaction(db,async tx=>{
+   tx.update(profileRef(user.uid),{characters:{premium_mouse:0,epic_mouse:1},coins:970,evolveCount:1,lastCraft:{inputs:['premium_mouse'],output:'epic_mouse'}});
+   tx.update(companionRef(user.uid),{'steps.premium_mouse':0});
+  }));
   await put(`users/${user.uid}`,{username:'acquisition',nickname:'획득검사',coins:1000,tickets:0,characters:{mouse:2},drawCount:0,gradeCounts:{},steps:0,avatar:null});
   await put(`companions/${user.uid}`,{steps:{mouse:3000}});
   async function evolve(output) {

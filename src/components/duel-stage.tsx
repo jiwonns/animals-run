@@ -69,7 +69,6 @@ export function DuelStage({ duel, before, viewer }: { duel: Duel; before?: DuelS
           const damage = i === 0 ? pDamage : rDamage;
           const offset = acting && attacks ? action.interpolate({ inputRange: [0, 1], outputRange: [0, i === 0 ? 32 : -32] }) : damage > 0 ? impact.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, i === 0 ? -7 : 7, 0] }) : 0;
           return <Animated.View key={`${ch.id}:${i}`} style={[s.character, { transform: [{ translateX: offset }, { scale: acting && duel.lastMove === 'burst' ? action.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) : 1 }] }]}>
-            {ch.id.startsWith('evolution_') && <View pointerEvents="none" style={{position:'absolute',width:150,height:150,borderRadius:75,borderWidth:2,borderColor:`${GRADES[ch.grade].color}77`,backgroundColor:`${GRADES[ch.grade].color}15`}}/>}
             <Image source={ch.image} contentFit="contain" style={s.animal} />
             {acting && duel.lastMove==='focus' && <Animated.Text style={[s.damage,{color:'#82EDBC',opacity:impact,transform:[{translateY:impact.interpolate({inputRange:[0,1],outputRange:[0,-25]})}]}]}>+{heal}</Animated.Text>}
             {damage > 0 && <Animated.Text style={[s.damage, { opacity: impact.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 1, 1] }), transform: [{ translateY: impact.interpolate({ inputRange: [0, 1], outputRange: [0, -25] }) }] }]}>−{damage}</Animated.Text>}

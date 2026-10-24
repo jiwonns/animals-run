@@ -870,7 +870,6 @@ service cloud.firestore {
       : c.matches('^evolution_cats_rare_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 'evolution_cats_epic_' + speciesOf(c)
       : c.matches('^evolution_cats_epic_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 'evolution_cats_unique_' + speciesOf(c)
       : c.matches('^evolution_cats_unique_(abyssinian|american_shorthair|bengal|british_shorthair|maine_coon|persian|ragdoll|russian_blue|siamese|turkish_angora)$') ? 'evolution_cats_legendary_' + speciesOf(c)
-      : c.matches('^premium_(mouse|cow|tiger|rabbit|dragon|snake|horse|sheep|monkey|chicken|dog|pig)$') ? 'epic_' + speciesOf(c)
       : '';
   }
 

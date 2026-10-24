@@ -27,7 +27,6 @@ export function CharacterCard({ character, width, owned = true, count = 0 }: Pro
         { width, backgroundColor: colors.surface },
         rare && { borderWidth: 1.5, borderColor: `${color}66` },
       ]}>
-      {evolved && owned && <View pointerEvents="none" style={{position:'absolute',width:'82%',aspectRatio:1,borderRadius:999,borderWidth:2,borderColor:`${color}88`,backgroundColor:`${color}14`}}/>}
       <Image
         source={character.thumb}
         style={styles.image}
