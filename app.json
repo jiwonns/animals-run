@@ -59,6 +59,14 @@
         {
           "motionPermission": "걸음 수를 세어 코인으로 바꿔주기 위해 동작 및 피트니스 정보를 사용해요."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "useLegacyPackaging": true
+          }
+        }
       ]
     ],
     "experiments": {

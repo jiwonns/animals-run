@@ -57,7 +57,7 @@ $env:ANIMALS_RUN_CMAKE_HOME = 'C:\tools\cmake' # Windows에서 긴 경로를 지
 npx expo prebuild --platform android --no-install
 .\android\gradlew.bat -p android :step-counter:testDebugUnitTest :app:assembleRelease `
   '-PreactNativeArchitectures=arm64-v8a,x86_64' `
-  '-Pandroid.enableMinifyInReleaseBuilds=true' --max-workers=2
+  '-Pandroid.enableMinifyInReleaseBuilds=true' '-Pexpo.useLegacyPackaging=true' --max-workers=2
 ```
 
 결과물은 `android/app/build/outputs/apk/release/app-release.apk`입니다. `app-debug.apk`나 Metro 연결이 필요한 개발 빌드를 공개 APK로 배포하지 않습니다.
