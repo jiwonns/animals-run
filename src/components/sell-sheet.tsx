@@ -216,7 +216,7 @@ export function SellSheet({
             disabled={busy || !quantity}
             onPress={() => {
               onClose();
-              router.push(`/auction?character=${character.id}` as Href);
+              router.push(`/auction/${character.id}?offer=sell` as Href);
             }}
             style={{
               marginHorizontal: 24,
