@@ -1,2 +1,2 @@
-// Native needs no setup; the web build patches Alert and loads the icon font in web-setup.web.ts.
+// Native needs no setup; the web build loads the icon font in web-setup.web.ts. Dialogs use AppDialogHost.
 export {};

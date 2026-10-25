@@ -1,21 +1,6 @@
 import { Asset } from 'expo-asset';
-import { Alert, type AlertButton } from 'react-native';
 
-// react-native-web's Alert.alert does nothing, which would leave confirm flows (logout, hatch, leave) stuck.
-// The app never shows more than two buttons, so the browser's alert/confirm covers every case.
-Alert.alert = (title: string, message?: string, buttons?: AlertButton[]) => {
-  const text = [title, message].filter(Boolean).join('\n\n');
-  const list = buttons ?? [];
-  const cancel = list.find((b) => b.style === 'cancel');
-  const confirm = list.find((b) => b !== cancel);
-  if (!cancel || !confirm) {
-    window.alert(text);
-    (confirm ?? cancel)?.onPress?.();
-    return;
-  }
-  if (window.confirm(text)) confirm.onPress?.();
-  else cancel.onPress?.();
-};
+// Native Alert.alert is a no-op on web. AppDialogHost patches it to the in-app dialog.
 
 function addToHead(tag: 'link' | 'meta', attributes: Record<string, string>) {
   const element = document.createElement(tag);

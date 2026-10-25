@@ -453,7 +453,7 @@ service cloud.firestore {
     }
     function auctionSettledQuote(c, before) {
       let count = before.get('windowCount', 0);
-      return count == 0 ? before.quote : auctionClamp(c, int(math.round(before.windowSum / count)));
+      return count == 0 ? before.get('quote', auctionBase(c)) : auctionClamp(c, int(math.round(before.get('windowSum', 0) / count)));
     }
     function auctionTrade(data) {
       return data.keys().hasOnly(['id', 'action', 'character', 'price'])
@@ -479,12 +479,12 @@ service cloud.firestore {
     function validAuctionQuoteUpdate(c, price, slot, after) {
       let before = get(auctionQuotePath(c)).data;
       let same = before.get('windowStart', 0) == slot;
-      return after.quote == (same ? before.quote : auctionSettledQuote(c, before))
-        && after.trades == before.trades + 1
+      return after.quote == (same ? before.get('quote', auctionBase(c)) : auctionSettledQuote(c, before))
+        && after.trades == before.get('trades', 0) + 1
         && after.windowSum == (same ? before.get('windowSum', 0) + price : price)
         && after.windowCount == (same ? before.get('windowCount', 0) + 1 : 1)
         && after.lastWindowCount == (same ? before.get('lastWindowCount', 0) : before.get('windowCount', 0))
-        && (same ? after.updatedAt == before.updatedAt : after.updatedAt == request.time);
+        && (after.updatedAt == request.time || (same && after.updatedAt == before.get('updatedAt', after.updatedAt)));
     }
     function isAuctionSettle(id) {
       let before = get(auctionQuotePath(id)).data;
@@ -492,8 +492,8 @@ service cloud.firestore {
       let slot = auctionSlot();
       return exists(auctionQuotePath(id)) && before.get('windowStart', 0) < slot
         && after.keys().hasOnly(['quote', 'trades', 'lastPrice', 'updatedAt', 'windowStart', 'windowSum', 'windowCount', 'lastWindowCount'])
-        && after.quote == auctionSettledQuote(id, before) && after.trades == before.trades
-        && after.lastPrice == before.lastPrice && after.windowStart == slot
+        && after.quote == auctionSettledQuote(id, before) && after.trades == before.get('trades', 0)
+        && after.lastPrice == before.get('lastPrice', 0) && after.windowStart == slot
         && after.windowSum == 0 && after.windowCount == 0
         && after.lastWindowCount == before.get('windowCount', 0) && after.updatedAt == request.time;
     }

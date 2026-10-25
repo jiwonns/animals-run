@@ -21,15 +21,15 @@ function afterTrade(grade, stored, price, now) {
   const current = slot(now);
   const same = (stored?.windowStart ?? 0) === current;
   const count = stored?.windowCount ?? 0;
-  const settled = count === 0 ? stored.quote : Math.round(stored.windowSum / count);
+  const settled = count === 0 ? stored.quote : Math.round((stored.windowSum ?? 0) / count);
   const { floor, ceil } = band(grade, stored.quote);
   const quote = same ? stored.quote : Math.min(ceil, Math.max(floor, settled));
   return {
     quote,
     windowStart: current,
-    windowSum: same ? stored.windowSum + price : price,
-    windowCount: same ? stored.windowCount + 1 : 1,
-    lastWindowCount: same ? (stored.lastWindowCount ?? 0) : stored.windowCount,
+    windowSum: same ? (stored.windowSum ?? 0) + price : price,
+    windowCount: same ? (stored.windowCount ?? 0) + 1 : 1,
+    lastWindowCount: same ? (stored.lastWindowCount ?? 0) : (stored.windowCount ?? 0),
   };
 }
 
@@ -59,6 +59,12 @@ assert.equal(later.quote, 5);
 assert.equal(later.windowCount, 1);
 assert.equal(later.windowSum, 6);
 assert.equal(later.lastWindowCount, 2);
+
+const legacy = afterTrade('N', { quote: 8 }, 7, noonKst);
+assert.equal(legacy.quote, 8);
+assert.equal(legacy.windowCount, 1);
+assert.equal(legacy.windowSum, 7);
+assert.equal(legacy.lastWindowCount, 0);
 
 const nBand = band('N');
 const cheap = [

@@ -99,7 +99,13 @@ export default function AuctionAnimalScreen() {
       await task();
       Alert.alert(label, ok);
     } catch (error) {
-      Alert.alert(label, error instanceof AuctionError ? error.message : '연결 상태를 확인하고 다시 시도해주세요.');
+      const message =
+        error instanceof AuctionError
+          ? error.message
+          : error instanceof Error && error.cause instanceof AuctionError
+            ? error.cause.message
+            : '연결 상태를 확인하고 다시 시도해주세요.';
+      Alert.alert(label, message);
     } finally {
       lock.current = false;
       setBusy(false);

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { BrandSplash } from '@/components/brand-splash';
 
 import "@/lib/web-setup";
+import { AppDialogHost } from '@/components/app-dialog';
 import { SessionProvider, useSession } from "@/providers/session-provider";
 import { WalkProvider } from "@/providers/walk-provider";
 import { BondProvider } from '@/hooks/use-bond';
@@ -28,7 +29,7 @@ export default function RootLayout() {
       <FriendsProvider>
       <BondProvider>
       <WalkProvider>
-        <View style={{flex:1}}><RootNavigator /><GlobalPullRefresh /></View>
+        <View style={{flex:1}}><RootNavigator /><GlobalPullRefresh /><AppDialogHost /></View>
       </WalkProvider>
       </BondProvider>
       <StatusBar style="auto" />

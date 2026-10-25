@@ -126,6 +126,19 @@ function clampQuote(id: CharacterId, value: number) {
   return Math.min(ceil, Math.max(floor, value));
 }
 
+function rethrowAuction(error: unknown): never {
+  if (error instanceof AuctionError) throw error;
+  const code = error && typeof error === 'object' && 'code' in error ? String((error as { code: unknown }).code) : '';
+  if (code === 'permission-denied') {
+    throw new AuctionError('지금은 이 가격으로 거래할 수 없어요. 시세와 여분을 확인하고 다시 시도해주세요.');
+  }
+  throw error instanceof Error ? error : new AuctionError('연결 상태를 확인하고 다시 시도해주세요.');
+}
+
+function quoteWrite(id: CharacterId, stored: AuctionQuote | null, price: number) {
+  return { ...quoteAfterTrade(id, stored, price), updatedAt: serverTimestamp() };
+}
+
 function settledQuote(id: CharacterId, stored: AuctionQuote | null | undefined) {
   const count = stored?.windowCount ?? 0;
   const current = stored?.quote ?? AUCTION.quote[gradeOf(id)];
@@ -256,12 +269,8 @@ export function buyListing(uid: string, listingId: string) {
       lastAuction: { ...receipt, action: 'sell' },
       auctionTrades: (seller.auctionTrades ?? 0) + 1,
     });
-    const next = quoteAfterTrade(listing.character, stored, listing.price);
-    tx.set(quoteRef(listing.character), {
-      ...next,
-      updatedAt: stored && (stored.windowStart ?? 0) === next.windowStart ? stored.updatedAt : serverTimestamp(),
-    });
-  });
+    tx.set(quoteRef(listing.character), quoteWrite(listing.character, stored, listing.price));
+  }).catch(rethrowAuction);
 }
 
 export function placeBid(uid: string, id: CharacterId, price: number) {
@@ -373,12 +382,8 @@ export function fillBid(uid: string, bidId: string) {
       lastAuction: { ...receipt, action: 'filled' },
       auctionTrades: (buyer.auctionTrades ?? 0) + 1,
     });
-    const next = quoteAfterTrade(bid.character, stored, bid.price);
-    tx.set(quoteRef(bid.character), {
-      ...next,
-      updatedAt: stored && (stored.windowStart ?? 0) === next.windowStart ? stored.updatedAt : serverTimestamp(),
-    });
-  });
+    tx.set(quoteRef(bid.character), quoteWrite(bid.character, stored, bid.price));
+  }).catch(rethrowAuction);
 }
 
 /** Close an expired window so 시세 becomes that window's average even if nobody just traded. */
@@ -391,8 +396,8 @@ export function settleQuote(id: CharacterId) {
     if ((stored.windowStart ?? 0) >= slot) return;
     tx.update(quoteRef(id), {
       quote: settledQuote(id, stored),
-      trades: stored.trades,
-      lastPrice: stored.lastPrice,
+      trades: stored.trades ?? 0,
+      lastPrice: stored.lastPrice ?? 0,
       windowStart: slot,
       windowSum: 0,
       windowCount: 0,
